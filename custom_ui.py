@@ -51,8 +51,8 @@ class ButtonMove:
     def draw(self):
         if self.clicked:
             self.surface.fill(((self.background[0] - 50) % 256, (self.background[1] - 50) % 256, (self.background[2] - 50) % 256))
-            self.x -= (self.mouse_pos_last[0] - pygame.mouse.get_pos()[0])
-            self.y -= (self.mouse_pos_last[1] - pygame.mouse.get_pos()[1])
+            self.x = min(self.screen_size[0] - self.size[0], max(0, self.x - (self.mouse_pos_last[0] - pygame.mouse.get_pos()[0])))
+            self.y = min(self.screen_size[1] - self.size[1], max(0, self.y - (self.mouse_pos_last[1] - pygame.mouse.get_pos()[1])))
             self.mouse_pos_last = pygame.mouse.get_pos()
             self.rect = pygame.Rect((self.x, self.y), self.size)
         else:
@@ -112,3 +112,35 @@ class ButtonFix:
                 self.clicked = True
         elif event.type == pygame.MOUSEBUTTONUP:
             self.clicked = False
+
+class Label:
+    def __init__(self, screen, screen_size, text, font, padding = 0, position = None, pos_x = 0, pos_y = 0, fg = [255, 255, 255], bg = [0, 0, 0]):
+        #self.rect = pygame.Rect()
+        self.screen = screen
+        self.screen_size = screen_size
+        self.text = text
+        self.color = fg
+        self.background = bg
+        self.font = font
+        self.padding = padding
+        self.x = pos_x
+        self.y = pos_y
+        self.message = self.font.render(self.text, True, self.color)
+        self.surface = pygame.Surface((self.message.get_size()[0] + self.padding, self.message.get_size()[1] + self.padding))
+        self.surface.fill(self.background)
+        self.size = self.surface.get_size()
+        if (position):
+            position = position.lower()
+            if (position in possible_positions):
+                self.x, self.y  = positionFromStr(position, self.size, self.screen_size)
+            else:
+                self.x = pos_x
+                self.y = pos_y
+        else:
+            self.x = pos_x
+            self.y = pos_y
+        self.rect = pygame.Rect((self.x, self.y), self.size)
+    
+    def draw(self):
+        self.surface.blit(self.message, ((self.surface.get_width() - self.message.get_width()) // 2, (self.surface.get_height() - self.message.get_height()) // 2))
+        self.screen.blit(self.surface, (self.x, self.y))
