@@ -32,7 +32,7 @@ buttons.append(custom_ui.ButtonMove(screen, screen_size, "right side", idk, seco
 buttons.append(custom_ui.ButtonMove(screen, screen_size, "Im in center", idk, secondary_font, padding = 12, position="center"))
 buttons.append(custom_ui.ButtonFix(screen, screen_size, "postition null", idk, secondary_font, padding = 12))
 
-label = custom_ui.Label(screen, screen_size, "Drag the bottom, left, right and center button around", secondary_font, position="center", bg=[210, 20, 45])
+label = custom_ui.Label(screen, screen_size, "Drag the left, right and center button around", secondary_font, position="center", bg=[210, 20, 45])
 
 while True:
     for event in pygame.event.get():
