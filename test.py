@@ -18,7 +18,8 @@ colliders = [platform, platform1]
 
 player_vel = [0, 0]
 
-gravity = 1
+gravity = 0.2
+acceleration = 0.3
 
 last_time = pygame.time.get_ticks()
 delta_time = 0
@@ -42,14 +43,14 @@ while running:
     # print(pygame.mouse.get_pressed())
     
     if keys_pressed[pygame.K_LEFT] or keys_pressed[pygame.K_a]:
-        player_vel[0] = -5
+        player_vel[0] = max(player_vel[0] - acceleration, -8)
 
     elif keys_pressed[pygame.K_RIGHT] or keys_pressed[pygame.K_d]:
-        player_vel[0] = 5
+        player_vel[0] = min(player_vel[0] + acceleration, 8)
 
     else:
         if (player_vel[0] != 0):
-            player_vel[0] -= player_vel[0] * 0.005
+            player_vel[0] -= player_vel[0] * 0.01
     
     player.x += player_vel[0]
 
@@ -81,13 +82,16 @@ while running:
                 player_vel[1] = 0
 
 
-    if keys_pressed[pygame.K_SPACE] and on_ground:
-        player_vel[1] = -25
+    if (keys_pressed[pygame.K_SPACE] or keys_pressed[pygame.K_UP]) and on_ground:
+        player_vel[1] = -12
 
 
     if mouse_state[0]:
         player.x = mouse_pos[0]
         player.y = mouse_pos[1]
+
+    player.x = max(0, min(width - player.width, player.x))
+    player.y = max(0, min(height - player.height, player.y))
 
     text_surface = my_font.render(f'{mouse_pos}', True, (0, 255, 0))
     last_time_text = my_font.render(f'{last_time}', True, (0, 255, 0))
@@ -106,6 +110,6 @@ while running:
     pygame.draw.rect(screen, (255, 255, 255), player)
     
     pygame.display.flip() # pygame.display.update()
-    clock.tick(120)
+    clock.tick(125)
 
 pygame.quit()
