@@ -110,6 +110,6 @@ while running:
     pygame.draw.rect(screen, (255, 255, 255), player)
     
     pygame.display.flip() # pygame.display.update()
-    clock.tick(125)
+    clock.tick(120)
 
 pygame.quit()

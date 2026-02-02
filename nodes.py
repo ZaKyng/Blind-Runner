@@ -45,6 +45,11 @@ class parentNode:
             if hasattr(child, 'draw'):
                 child.draw()
 
+    def event(self, event):
+        for child in self.childern:
+            if hasattr(child, 'event'):
+                child.event(event)    
+
 class hitBox:
     def __init__(self, parentNode, width, height, position=None, offset_x = 0, offset_y = 0):
         self.parentNode = parentNode
@@ -92,7 +97,7 @@ class label:
         self.parentNode.screen.blit(self.surface, (self.parentNode.x + self.offset_x, self.parentNode.y + self.offset_y))
 
 
-class flexible:
+class clickMouse:
     def __init__(self, parentNode):
         self.parentNode = parentNode
 
@@ -104,7 +109,7 @@ class flexible:
             self.parentNode.x, self.parentNode.y = pygame.mouse.get_pos()
             print(self.parentNode.childern)
 
-class mouseMove:
+class moveMouse:
     def __init__(self, parentNode):
         self.parentNode = parentNode
         self.parentNode.childern.append(self)
