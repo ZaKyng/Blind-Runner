@@ -1,4 +1,5 @@
 import pygame
+import random
 
 
 pygame.init()
@@ -11,10 +12,27 @@ screen = pygame.display.set_mode((width, height))
 clock = pygame.time.Clock()
 
 player = pygame.Rect(200, 200, 50, 50) # pygame.Rect((200, 200), (50, 50))
-platform = pygame.Rect(0, height-20, width, 20)
-platform1 = pygame.Rect(200, 500, 200, 20)
+platforms = []
+platforms.append(pygame.Rect(0, height-20, width, 20))
+platforms.append(pygame.Rect(200, 500, 200, 20))
+platforms.append(pygame.Rect(600, 350, 250, 20))
 
-colliders = [platform, platform1]
+
+stars = []
+star_size = 5
+
+
+for i in range(10):
+    star_x = random.randint(0, width - star_size)
+    star_y = random.randint(0, height - 100 - star_size)
+    new_star = pygame.Rect(star_x, star_y, star_size, star_size)
+    while pygame.Rect.collidelist(new_star, platforms) != -1:
+        star_x = random.randint(0, width - star_size)
+        star_y = random.randint(0, height - 100 - star_size)
+        new_star = pygame.Rect(star_x, star_y, star_size, star_size)
+    stars.append([new_star, True])
+
+score_count = 0
 
 player_vel = [0, 0]
 
@@ -54,7 +72,12 @@ while running:
     
     player.x += player_vel[0]
 
-    for collider in colliders:
+    for star in stars:
+        if star[1] and player.colliderect(star[0]):
+            star[1] = False
+            score_count += 1
+
+    for collider in platforms:
         if player.colliderect(collider):
             if player_vel[0] > 0:
                 player.right = collider.left
@@ -71,7 +94,7 @@ while running:
 
     on_ground = False
 
-    for collider in colliders:
+    for collider in platforms:
         if player.colliderect(collider):
             if player_vel[1] > 0:
                 player.bottom = collider.top
@@ -93,6 +116,7 @@ while running:
     player.x = max(0, min(width - player.width, player.x))
     player.y = max(0, min(height - player.height, player.y))
 
+    score = my_font.render(f'score: {score_count}', True, (0, 0, 255))
     text_surface = my_font.render(f'{mouse_pos}', True, (0, 255, 0))
     last_time_text = my_font.render(f'{last_time}', True, (0, 255, 0))
     delta_time_text = my_font.render(f'{delta_time}', True, (0, 255, 0))
@@ -100,14 +124,19 @@ while running:
     # screen.fill("purple")
     screen.fill((0, 0, 0))
 
-    screen.blit(text_surface, (100, 100))
-    screen.blit(last_time_text, (100, 150))
-    screen.blit(delta_time_text, (100, 200))
+    screen.blit(score, (100, 100))
+    screen.blit(text_surface, (100, 150))
+    screen.blit(last_time_text, (100, 200))
+    screen.blit(delta_time_text, (100, 250))
 
-    
-    pygame.draw.rect(screen, (50, 50, 255), platform)
-    pygame.draw.rect(screen, (255, 50, 50), platform1)
+
+    for i in range(len(platforms)):
+        pygame.draw.rect(screen, (i * 20, 100 + i * 10, 255 - i * 10), platforms[i])
+
     pygame.draw.rect(screen, (255, 255, 255), player)
+    for star in stars:
+        if star[1]:
+            pygame.draw.rect(screen, (255, 255, 0), star[0])
     
     pygame.display.flip() # pygame.display.update()
     clock.tick(120)
