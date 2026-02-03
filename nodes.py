@@ -101,9 +101,6 @@ class clickMouse:
     def __init__(self, parentNode):
         self.parentNode = parentNode
 
-        self.screen = parentNode.screen
-        self.screen_size = parentNode.screen_size
-    
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self.parentNode.x, self.parentNode.y = pygame.mouse.get_pos()
@@ -114,8 +111,6 @@ class moveMouse:
         self.parentNode = parentNode
         self.parentNode.childern.append(self)
 
-        self.screen = parentNode.screen
-        self.screen_size = parentNode.screen_size
         self.clicked = False
     
     def draw(self):
@@ -137,16 +132,29 @@ class moveInput:
         self.parentNode = parentNode
         self.parentNode.childern.append(self)
 
-        self.screen = parentNode.screen
-        self.screen_size = parentNode.screen_size
+        self.move_x = 0
+        self.move_y = 0
+
+    def draw(self):
+        self.parentNode.x = max(0, min(self.parentNode.screen_size[0] - self.parentNode.size[0], self.parentNode.x + self.move_x))
+        self.parentNode.y = max(0, min(self.parentNode.screen_size[1] - self.parentNode.size[1], self.parentNode.y + self.move_y))
     
     def event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                self.parentNode.x = max(0, self.parentNode.x - 10)
+                self.move_x += -10
             elif event.key == pygame.K_RIGHT:
-                self.parentNode.x = min(self.screen_size[0] - self.parentNode.size[0], self.parentNode.x + 10)
+                self.move_x += 10
             elif event.key == pygame.K_UP:
-                self.parentNode.y = max(0, self.parentNode.y - 10)
+                self.move_y += -10
             elif event.key == pygame.K_DOWN:
-                self.parentNode.y = min(self.screen_size[1] - self.parentNode.size[1], self.parentNode.y + 10)
+                self.move_y += 10
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                self.move_x -= -10
+            elif event.key == pygame.K_RIGHT:
+                self.move_x -= 10
+            elif event.key == pygame.K_UP:
+                self.move_y -= -10
+            elif event.key == pygame.K_DOWN:
+                self.move_y -= 10
