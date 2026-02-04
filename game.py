@@ -1,5 +1,5 @@
 import pygame
-import nodes2 as nodes
+import nodes
 
 pygame.init()
 pygame.font.init()
@@ -19,18 +19,14 @@ clock = pygame.time.Clock()
 
 level_ground = nodes.parentNode(screen, screen_size)
 level_blocks = []
-level_collision = []
 
 for i in range(300):
+    size = (screen_size[1] // 20, screen_size[1] // 20)
     offset_x = i * (screen_size[1] // 20) % screen_size[1]
     offset_y = i // 20 * (screen_size[1] // 20)
-    level_blocks.append(nodes.block(
-    level_ground, screen_size[1] // 20, screen_size[1] // 20, 
-    color = [i*8 % 256, (0 + i*15) % 256, (100 + i*5) % 256],
-    offset_x = offset_x, offset_y = offset_y))
-
-    level_ground.add_hitbox(screen_size[1] // 20, screen_size[1] // 20, 
-    offset_x = offset_x, offset_y = offset_y)
+    color = [i*8 % 256, (0 + i*15) % 256, (100 + i*5) % 256]
+    level_ground.rect_list.append(nodes.addWorldBlock(level_ground, size, 
+    color, offset_x=offset_x, offset_y=offset_y))
 
 level_modifier = nodes.moveMouse(level_ground)
 

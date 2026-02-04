@@ -26,63 +26,58 @@ class parentNode:
         self.screen = _screen
         self.screen_size = _screen_size
 
-        self.childern = []
+        self.children = []
 
+        self.x = x
+        self.y = y
         if (position):
             position = position.lower()
             if (position in possible_positions):
-                self.x, self.y  = positionFromStr(position, self.size, self.screen_size)
-            else:
-                self.x = x
-                self.y = y
-        else:
-            self.x = x
-            self.y = y
+                self.x, self.y  = positionFromStr(position, self.size, 
+                                                self.screen_size)
         
-        self.rect_list = [pygame.Rect((self.x, self.y), self.size)]
+        self.rect_list = []
+
+    def addHitbox(self, size, position=None, offset_x = 0, offset_y = 0):
+        offset_x = offset_x
+        offset_y = offset_y
+        if (position):
+            position = position.lower()
+            if (position in possible_positions):
+                offset_x, offset_y = positionFromStr(position, size, 
+                                                     self.screen_size)
+        
+        self.rect_list.append([offset_x, offset_y, size,
+        pygame.Rect((self.x + offset_x, self.y + offset_y), size)])
     
     def draw(self):
-        for child in self.childern:
+        for rect_item in self.rect_list:
+            rect_item[3] = pygame.Rect((self.x + rect_item[0], 
+            self.y + rect_item[1]), rect_item[2])
+
+        for child in self.children:
             if hasattr(child, 'draw'):
                 child.draw()
 
     def event(self, event):
-        for child in self.childern:
+        for child in self.children:
             if hasattr(child, 'event'):
                 child.event(event)    
 
-class hitBox:
-    def __init__(self, parentNode, width, height, position=None, offset_x = 0, offset_y = 0):
-        self.parentNode = parentNode
-        self.parentNode.childern.append(self)
-
-        self.size = [width, height]
-        self.offset_x = offset_x
-        self.offset_y = offset_y
-        if (position and position in possible_positions):
-            position = position.lower()
-            self.offset_x, self.offset_y = positionFromStr(position, self.size, parentNode.size)
-
-        self.parentNode.rect_list.append(pygame.Rect((self.parentNode.x + self.offset_x, self.parentNode.y + self.offset_y), self.size))
-
-    def draw(self):
-        self.parentNode.rect = pygame.Rect((self.parentNode.x + self.offset_x, self.parentNode.y + self.offset_y), self.size)
-        if self.size[0] == 0 or self.size[1] == 0:
-            self.surface = pygame.Surface(self.size)
-            self.surface.fill((255, 0, 0))
-            self.parentNode.screen.blit(self.surface, (self.parentNode.x + self.offset_x, self.parentNode.y + self.offset_y))
-
 class label:
-    def __init__(self, parentNode, text, font, padding = 0, position=None, offset_x = 0, offset_y = 0, fg = [255, 255, 255], bg = [0, 0, 0]):
+    def __init__(self, parentNode, text, font, 
+                padding = 0, position=None, offset_x = 0, offset_y = 0,
+                fg = [255, 255, 255], bg = [0, 0, 0]):
         self.parentNode = parentNode
-        self.parentNode.childern.append(self)
+        self.parentNode.children.append(self)
 
         self.text = text
         self.color = fg
         self.background = bg
         self.font = font
         self.message = self.font.render(self.text, True, self.color)
-        self.surface = pygame.Surface((self.message.get_size()[0] + padding * 2, self.message.get_size()[1] + padding * 2))
+        self.surface = pygame.Surface((self.message.get_size()[0] + padding * 2, 
+                                       self.message.get_size()[1] + padding * 2))
 
         self.size = self.surface.get_size()
 
@@ -90,31 +85,45 @@ class label:
         self.offset_y = offset_y
         if (position and position in possible_positions):
             position = position.lower()
-            self.offset_x, self.offset_y = positionFromStr(position, self.size, parentNode.size)
+            self.offset_x, self.offset_y = positionFromStr(position, self.size, 
+                                                            parentNode.size)
 
     def draw(self):
         self.surface.fill(self.background)
-        self.surface.blit(self.message, ((self.surface.get_width() - self.message.get_width()) // 2, (self.surface.get_height() - self.message.get_height()) // 2))
-        self.parentNode.screen.blit(self.surface, (self.parentNode.x + self.offset_x, self.parentNode.y + self.offset_y))
+
+        self.surface.blit(self.message, (
+        (self.surface.get_width() - self.message.get_width()) // 2, 
+        (self.surface.get_height() - self.message.get_height()) // 2))
+
+        self.parentNode.screen.blit(self.surface, (
+        self.parentNode.x + self.offset_x, self.parentNode.y + self.offset_y))
 
 class block:
-    def __init__(self, parentNode, width, height, color = [0, 255, 0], position=None, offset_x = 0, offset_y = 0):
+    def __init__(self, parentNode, size, 
+                color = [0, 255, 0], position=None, offset_x = 0, offset_y = 0):
         self.parentNode = parentNode
-        self.parentNode.childern.append(self)
+        self.parentNode.children.append(self)
 
-        self.size = [width, height]
+        self.size = size
         self.color = color
 
         self.offset_x = offset_x
         self.offset_y = offset_y
         if (position and position in possible_positions):
             position = position.lower()
-            self.offset_x, self.offset_y = positionFromStr(position, self.size, parentNode.size)
+            self.offset_x, self.offset_y = positionFromStr(position, self.size,
+                                                            parentNode.size)
 
     def draw(self):
-        pygame.draw.rect(self.parentNode.screen, self.color, (self.parentNode.x + self.offset_x, self.parentNode.y + self.offset_y, self.size[0], self.size[1]))
+        pygame.draw.rect(self.parentNode.screen, self.color, 
+        (self.parentNode.x + self.offset_x, 
+        self.parentNode.y + self.offset_y, self.size[0], self.size[1]))
 
 
+def addWorldBlock(parentNode, size, color = [0, 255, 0], position=None, offset_x = 0, offset_y = 0):
+    block_instance = block(parentNode, size, color, position, offset_x, offset_y)
+    parentNode.addHitbox(size, position, offset_x, offset_y)
+    return [offset_x, offset_y, size,block_instance]
 # ----- Modifiers ----- #
 
 class clickMouse:
@@ -124,12 +133,12 @@ class clickMouse:
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self.parentNode.x, self.parentNode.y = pygame.mouse.get_pos()
-            print(self.parentNode.childern)
+            print(self.parentNode.children)
 
 class moveMouse:
     def __init__(self, parentNode):
         self.parentNode = parentNode
-        self.parentNode.childern.append(self)
+        self.parentNode.children.append(self)
 
         self.clicked = False
     
@@ -141,23 +150,30 @@ class moveMouse:
     
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.parentNode.rect.collidepoint(event.pos):
-                self.mouse_pos_last = event.pos
-                self.clicked = True
+            for rect in self.parentNode.rect_list:
+                if rect[3].collidepoint(event.pos):
+                    self.mouse_pos_last = event.pos
+                    self.clicked = True
+                    break
         elif event.type == pygame.MOUSEBUTTONUP:
             self.clicked = False
 
 class moveInput:
     def __init__(self, parentNode):
         self.parentNode = parentNode
-        self.parentNode.childern.append(self)
+        self.parentNode.children.append(self)
 
         self.move_x = 0
         self.move_y = 0
 
     def draw(self):
-        self.parentNode.x = max(0, min(self.parentNode.screen_size[0] - self.parentNode.size[0], self.parentNode.x + self.move_x))
-        self.parentNode.y = max(0, min(self.parentNode.screen_size[1] - self.parentNode.size[1], self.parentNode.y + self.move_y))
+        self.parentNode.x = max(0, 
+        min(self.parentNode.screen_size[0] - self.parentNode.size[0], 
+        self.parentNode.x + self.move_x))
+
+        self.parentNode.y = max(0,
+        min(self.parentNode.screen_size[1] - self.parentNode.size[1],
+        self.parentNode.y + self.move_y))
     
     def event(self, event):
         if event.type == pygame.KEYDOWN:
