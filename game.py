@@ -19,14 +19,13 @@ clock = pygame.time.Clock()
 
 level_ground = nodes.parentNode(screen, screen_size)
 level_blocks = []
+level_colidors = []
 
-for i in range(300):
+for i in range(5):
     size = (screen_size[1] // 20, screen_size[1] // 20)
-    offset_x = i * (screen_size[1] // 20) % screen_size[1]
-    offset_y = i // 20 * (screen_size[1] // 20)
-    color = [i*8 % 256, (0 + i*15) % 256, (100 + i*5) % 256]
-    level_ground.rect_list.append(nodes.addWorldBlock(level_ground, size, 
-    color, offset_x=offset_x, offset_y=offset_y))
+    offset = (i * size[0] * 2, 0)
+    level_colidors.append(nodes.hitBox(level_ground, size, offset = offset))
+    level_blocks.append(nodes.block(level_ground, size, color = [0, 0, 255], offset = offset))
 
 level_modifier = nodes.moveMouse(level_ground)
 
