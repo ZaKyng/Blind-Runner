@@ -29,6 +29,10 @@ for i in range(5):
 
 level_modifier = nodes.moveMouse(level_ground)
 
+player_node = nodes.parentNode(screen, screen_size, physics_layer = 1, position_str = "center")
+player_block = nodes.block(player_node, (50, 50), color = [255, 0, 0])
+player_movement = nodes.moveInput(player_node)
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -36,10 +40,12 @@ while True:
             exit()
         else:
             level_ground.event(event)
+            player_node.event(event)
 
     screen.fill((20, 70, 40))
 
     level_ground.draw()
+    player_node.draw()
 
    
     clock.tick(120)

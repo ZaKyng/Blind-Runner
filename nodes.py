@@ -162,6 +162,7 @@ class moveInput:
         self.parentNode.children.append(self)
 
         self.move = [0, 0]
+        self.speed = 5
 
     def draw(self):
         self.parentNode.position[0] = max(0, 
@@ -173,21 +174,14 @@ class moveInput:
         self.parentNode.position[1] + self.move[1]))
     
     def event(self, event):
-        if event.type == pygame.KEYDOWN:
+        if event.type == pygame.KEYUP or event.type == pygame.KEYDOWN:
+            i = 1 if event.type == pygame.KEYDOWN else -1
+            speed = self.speed * i
             if event.key == pygame.K_LEFT:
-                self.move[0] += -10
+                self.move[0] += -speed
             elif event.key == pygame.K_RIGHT:
-                self.move[0] += 10
+                self.move[0] += speed
             elif event.key == pygame.K_UP:
-                self.move[1] += -10
+                self.move[1] += -speed
             elif event.key == pygame.K_DOWN:
-                self.move[1] += 10
-        elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_LEFT:
-                self.move[0] -= -10
-            elif event.key == pygame.K_RIGHT:
-                self.move[0] -= 10
-            elif event.key == pygame.K_UP:
-                self.move[1] -= -10
-            elif event.key == pygame.K_DOWN:
-                self.move[1] -= 10
+                self.move[1] += speed
