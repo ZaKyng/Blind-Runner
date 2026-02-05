@@ -47,8 +47,8 @@ player_node = nodes.parentNode(scene, screen, screen_size, physics_layer = 1, po
 player_block = nodes.block(player_node, (50, 50), color = [255, 0, 0])
 player_colidor = nodes.hitBox(player_node, (50, 50))
 
-player_colide_with = nodes.collideWith(player_node, 2)
 player_gravity = nodes.moveGravity(player_node)
+player_colide_with = nodes.collideWith(player_node, 2)
 
 player_mouse = nodes.moveMouse(player_node)
 
