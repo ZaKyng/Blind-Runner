@@ -137,13 +137,16 @@ class hitBox:
         self.rect.topleft = (self.parentNode.position[0] + self.offset[0], 
         self.parentNode.position[1] + self.offset[1])
     
-    def checkCollision(self, layer):
+    def event(self, event):
         for node in self.parentNode.scene.rootNodes:
-            if node.physics_layer == layer:
+            if node.physics_layer != self.parentNode.physics_layer:
                 for hitBox in node.hitBoxes:
                     if self.rect.colliderect(hitBox.rect):
-                        return hitBox
+                        print([hitBox.parentNode.physics_layer, hitBox])
         return None
+
+
+# ----- Modifiers ----- #
 
 class clickMouse:
     def __init__(self, parentNode):

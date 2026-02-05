@@ -19,6 +19,12 @@ clock = pygame.time.Clock()
 
 scene = nodes.scene()
 
+def player(scene, screen, screen_size, size, color = [255, 0, 0]):
+    player_node = nodes.parentNode(scene, screen, screen_size, physics_layer = 1, position_str = "center")
+    player_block = nodes.block(player_node, size, color = color)
+    player_colidor = nodes.hitBox(player_node, size)
+    player_movement = nodes.moveInput(player_node)
+
 level_ground = nodes.parentNode(scene, screen, screen_size, physics_layer = 2)
 level_blocks = []
 level_colidors = []
@@ -31,10 +37,7 @@ for i in range(5):
 
 level_modifier = nodes.moveMouse(level_ground)
 
-player_node = nodes.parentNode(scene, screen, screen_size, physics_layer = 1, position_str = "center")
-player_block = nodes.block(player_node, (50, 50), color = [255, 0, 0])
-player_colidor = nodes.hitBox(player_node, (50, 50))
-player_movement = nodes.moveInput(player_node)
+player(scene, screen, screen_size, (50, 50))
 
 while True:
     for event in pygame.event.get():
@@ -47,9 +50,7 @@ while True:
     screen.fill((20, 70, 40))
 
     scene.draw()
-    print(player_colidor.checkCollision(2))
 
    
     clock.tick(120)
     pygame.display.flip()
-
