@@ -79,11 +79,20 @@ while running:
 
     for collider in platforms:
         if player.colliderect(collider):
+            if player_vel[1] > 0:
+                player.bottom = collider.top
+                player_vel[1] = 0
+                on_ground = True
+            if player_vel[1] < 0:
+                player.top = collider.bottom
+                player_vel[1] = 0
+
             if player_vel[0] > 0:
                 player.right = collider.left
-            elif player_vel[0] < 0:
+                player_vel[0] = 0
+            if player_vel[0] < 0:
                 player.left = collider.right
-            player_vel[0] = 0
+                player_vel[0] = 0
 
 
     # --- Gravity ---
@@ -94,15 +103,6 @@ while running:
 
     on_ground = False
 
-    for collider in platforms:
-        if player.colliderect(collider):
-            if player_vel[1] > 0:
-                player.bottom = collider.top
-                player_vel[1] = 0
-                on_ground = True
-            elif player_vel[1] < 0:
-                player.top = collider.bottom
-                player_vel[1] = 0
 
 
     if (keys_pressed[pygame.K_SPACE] or keys_pressed[pygame.K_UP]) and on_ground:
@@ -115,6 +115,9 @@ while running:
 
     player.x = max(0, min(width - player.width, player.x))
     player.y = max(0, min(height - player.height, player.y))
+    if player.y == 0:
+        player.y = 1
+        player_vel[1] = 0
 
     score = my_font.render(f'score: {score_count}', True, (0, 0, 255))
     text_surface = my_font.render(f'{mouse_pos}', True, (0, 255, 0))
