@@ -19,10 +19,23 @@ possible_positions = [
 ]
 
 # ---- Nodes ----- #
+class scene:
+    def __init__(self):
+        self.rootNodes = []
+
+    def draw(self):
+        for node in self.rootNodes:
+            node.draw()
+
+    def event(self, event):
+        for node in self.rootNodes:
+            node.event(event)
 
 class parentNode:
-    def __init__(self, _screen, _screen_size, physics_layer = 0 ,position_str = None, position = [0, 0]):
+    def __init__(self, scene, _screen, _screen_size, physics_layer = 0, position_str = None, position = [0, 0]):
         self.size = [0, 0]
+        self.scene = scene
+        self.scene.rootNodes.append(self)
         self.screen = _screen
         self.screen_size = _screen_size
 
@@ -123,6 +136,14 @@ class hitBox:
     def draw(self):
         self.rect.topleft = (self.parentNode.position[0] + self.offset[0], 
         self.parentNode.position[1] + self.offset[1])
+    
+    def checkCollision(self, layer):
+        for node in self.parentNode.scene.rootNodes:
+            if node.physics_layer == layer:
+                for hitBox in node.hitBoxes:
+                    if self.rect.colliderect(hitBox.rect):
+                        return hitBox
+        return None
 
 class clickMouse:
     def __init__(self, parentNode):
