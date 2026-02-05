@@ -29,9 +29,9 @@ level_ground = nodes.parentNode(scene, screen, screen_size, physics_layer = 2)
 level_blocks = []
 level_colidors = []
 
-for i in range(5):
+for i in range(100):
     size = (screen_size[1] // 20, screen_size[1] // 20)
-    offset = (i * size[0] * 2, 0)
+    offset = (i * size[0], screen_size[1] - size[1] * 3)
     level_colidors.append(nodes.hitBox(level_ground, size, offset = offset))
     level_blocks.append(nodes.block(level_ground, size, color = [0, 0, 255], offset = offset))
 
