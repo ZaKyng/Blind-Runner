@@ -79,20 +79,11 @@ while running:
 
     for collider in platforms:
         if player.colliderect(collider):
-            if player_vel[1] > 0:
-                player.bottom = collider.top
-                player_vel[1] = 0
-                on_ground = True
-            if player_vel[1] < 0:
-                player.top = collider.bottom
-                player_vel[1] = 0
-
             if player_vel[0] > 0:
                 player.right = collider.left
-                player_vel[0] = 0
-            if player_vel[0] < 0:
+            elif player_vel[0] < 0:
                 player.left = collider.right
-                player_vel[0] = 0
+            player_vel[0] = 0
 
 
     # --- Gravity ---
@@ -102,6 +93,15 @@ while running:
     player.y += player_vel[1]
 
     on_ground = False
+
+    for collider in platforms:
+        if player.colliderect(collider):
+            if player_vel[1] > 0:
+                player.bottom = collider.top
+                on_ground = True
+            elif player_vel[1] < 0:
+                player.top = collider.bottom
+            player_vel[1] = 0
 
 
 
