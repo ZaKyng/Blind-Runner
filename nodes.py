@@ -127,11 +127,13 @@ class block:
         self.parentNode.position[1] + self.offset[1], self.size[0], self.size[1]))
 
 class hitBox:
-    def __init__(self, parentNode, size, position=None, offset = (0, 0)):
+    def __init__(self, parentNode, size, position=None, offset = (0, 0), can_leave_window = False):
         self.parentNode = parentNode
         self.parentNode.children.append(self)
 
         self.size = size
+
+        self.can_leave_window = can_leave_window
 
         self.offset = offset
         if (position):
@@ -148,14 +150,21 @@ class hitBox:
     def update(self):
         self.rect.topleft = (self.parentNode.position[0] + self.offset[0], 
         self.parentNode.position[1] + self.offset[1])
+
+        if not self.can_leave_window:
+            if self.parentNode.position[0] < 0:
+                self.parentNode.position[0] = 0
+            elif self.parentNode.position[0] + self.size[0] > self.parentNode.screen_size[0]:
+                self.parentNode.position[0] = self.parentNode.screen_size[0] - self.size[0]
+
+            if self.parentNode.position[1] < 0:
+                self.parentNode.position[1] = 0
+                self.parentNode.velocity[1] = 0
+            elif self.parentNode.position[1] + self.size[1] > self.parentNode.screen_size[1]:
+                self.parentNode.position[1] = self.parentNode.screen_size[1] - self.size[1]
+                self.parentNode.onGround = True
     
-    """def event(self, event):
-        for node in self.parentNode.scene.rootNodes:
-            if node.physics_layer != self.parentNode.physics_layer:
-                for hitBox in node.hitBoxes:
-                    if self.rect.colliderect(hitBox.rect):
-                        print([hitBox.parentNode.physics_layer, hitBox])
-        return None"""
+    
     
     def draw(self):
         pygame.draw.rect(self.parentNode.screen, [0, 255, 0], self.rect, 2)
@@ -229,42 +238,87 @@ class moveInput:
 
 
 class playerMove:
-    def __init__(self, parentNode, physics_check, speed = 5, jump_strength = 10, gravity = 0.5):
+    def __init__(self, parentNode, physics_check, speed = 5, jump_strength = 11.5 , gravity = 0.5):
         self.parentNode = parentNode
         self.parentNode.children.append(self)
 
         self.physics_check = physics_check
 
+        self.left, self.right = False, False
+
         self.speed = speed
         self.jump_strength = jump_strength
         self.gravity = gravity
 
-    def collision_check(self):
-        self.parentNode.onGround = False
-
+    def collision_x(self):
         for node in self.parentNode.scene.rootNodes:
             if node.physics_layer == self.physics_check:
-                for myHB in self.parentNode.hitBoxes:
+                for ownHitBox in self.parentNode.hitBoxes:
                     for targetHB in node.hitBoxes:
                         targetHB.update()
-                        if myHB.rect.colliderect(targetHB.rect):
-                            if self.parentNode.velocity[1] >= 0: # Falling/Down
-                                self.parentNode.position[1] = targetHB.rect.top - myHB.size[1] - myHB.offset[1]
+                        if ownHitBox.rect.colliderect(targetHB.rect):
+                            if self.parentNode.velocity[0] > 0: # Moving right
+                                self.parentNode.position[0] = targetHB.rect.left - ownHitBox.size[0] - ownHitBox.offset[0]
+                                self.parentNode.velocity[0] = 0
+                            elif self.parentNode.velocity[0] < 0: # Moving left
+                                self.parentNode.position[0] = targetHB.rect.right - ownHitBox.offset[0]
+                                self.parentNode.velocity[0] = 0
+                                self.parentNode.velocity[0] = 0
+                        ownHitBox.update()
+    
+    def collision_y(self):
+        for node in self.parentNode.scene.rootNodes:
+            if node.physics_layer == self.physics_check:
+                for ownHitBox in self.parentNode.hitBoxes:
+                    for targetHB in node.hitBoxes:
+                        targetHB.update()
+                        if ownHitBox.rect.colliderect(targetHB.rect):
+                            if self.parentNode.velocity[1] > 0: # Moving down
+                                self.parentNode.position[1] = targetHB.rect.top - ownHitBox.size[1] - ownHitBox.offset[1]
                                 self.parentNode.velocity[1] = 0
                                 self.parentNode.onGround = True
+                            elif self.parentNode.velocity[1] < 0: # Moving up
+                                self.parentNode.position[1] = targetHB.rect.bottom - ownHitBox.offset[1]
+                                self.parentNode.velocity[1] = 0
+                        ownHitBox.update()
     
     def event(self, event):
-        if event.type == pygame.KEYUP or event.type == pygame.KEYDOWN:
-            i = 1 if event.type == pygame.KEYDOWN else -1
-            speed = self.speed * i
+        if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                self.move[0] += -speed
+                self.left = True
             elif event.key == pygame.K_RIGHT:
-                self.move[0] += speed
+                self.right = True
             elif event.key == pygame.K_UP:
-                self.move[1] += -speed
-            elif event.key == pygame.K_DOWN:
-                self.move[1] += speed
+                if self.parentNode.onGround:
+                    self.parentNode.velocity[1] += -self.jump_strength
+                    self.parentNode.onGround = False
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                self.left = False
+            elif event.key == pygame.K_RIGHT:
+                self.right = False
+    
+    def update(self):
+        if self.parentNode.velocity[1] > 0:
+            self.parentNode.onGround = False
+
+        if self.left and not self.right:
+            self.parentNode.velocity[0] = -self.speed
+        elif self.right and not self.left:
+            self.parentNode.velocity[0] = self.speed
+        else:
+            self.parentNode.velocity[0] = 0
+
+
+        self.parentNode.velocity[1] += self.gravity
+
+        # Move X
+        self.parentNode.position[0] += self.parentNode.velocity[0]
+        self.collision_x()
+
+        # Move Y
+        self.parentNode.position[1] += self.parentNode.velocity[1]
+        self.collision_y()
     
 
 

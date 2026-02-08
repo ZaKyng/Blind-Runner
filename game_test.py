@@ -27,28 +27,25 @@ level_colidors = []
 for i in range(36):
     size = (screen_size[1] // 20, screen_size[1] // 20)
     offset = (i * size[0], 18 * size[1])
-    level_colidors.append(nodes.hitBox(level_ground, size, offset = offset))
+    level_colidors.append(nodes.hitBox(level_ground, size, offset = offset, can_leave_window = True))
     level_blocks.append(nodes.block(level_ground, size, color = [0, 0, 255], offset = offset))
 
-size = (screen_size[1] // 20, screen_size[1] // 20)
-offset = (3 * size[0], 17 * size[1])
-level_colidors.append(nodes.hitBox(level_ground, size, offset = offset))
-level_blocks.append(nodes.block(level_ground, size, color = [0, 0, 255], offset = offset))
 
-size = (screen_size[1] // 20, screen_size[1] // 20)
-offset = (16 * size[0], 17 * size[1])
-level_colidors.append(nodes.hitBox(level_ground, size, offset = offset))
-level_blocks.append(nodes.block(level_ground, size, color = [0, 0, 255], offset = offset))
+for i in range(13):
+    size = (screen_size[1] // 20, screen_size[1] // 20)
+    offset = (2 * (i + 2) * size[0], (15 - i) * size[1])
+    level_colidors.append(nodes.hitBox(level_ground, size, offset = offset, can_leave_window = True))
+    level_blocks.append(nodes.block(level_ground, size, color = [0, 0, 255], offset = offset))
+
 
 level_modifier = nodes.moveMouse(level_ground)
 
 
-player_node = nodes.parentNode(scene, screen, screen_size, physics_layer = 1, position_str = "center")
+player_node = nodes.parentNode(scene, screen, screen_size, physics_layer = 1, position_str="left")
 player_block = nodes.block(player_node, (50, 50), color = [255, 0, 0])
 player_colidor = nodes.hitBox(player_node, (50, 50))
 
-player_gravity = nodes.moveGravity(player_node)
-player_colide_with = nodes.collideWith(player_node, 2)
+player_gravity = nodes.playerMove(player_node, 2)
 
 player_mouse = nodes.moveMouse(player_node)
 
