@@ -38,14 +38,13 @@ for i in range(13):
     level_blocks.append(nodes.block(level_ground, size, color = [0, 0, 255], offset = offset))
 
 
-level_modifier = nodes.moveMouse(level_ground)
 
 
-player_node = nodes.parentNode(scene, screen, screen_size, physics_layer = 1, position_str="left")
+player_node = nodes.parentNode(scene, screen, screen_size, physics_layer = 1)
 player_block = nodes.block(player_node, (50, 50), color = [255, 0, 0])
 player_colidor = nodes.hitBox(player_node, (50, 50))
 
-player_gravity = nodes.playerMove(player_node, 2)
+nodes.playerMove(player_node, 2)
 
 player_mouse = nodes.moveMouse(player_node)
 
@@ -62,6 +61,8 @@ while True:
     scene.update()
 
     scene.draw()
+
+    print(level_ground.position)
 
    
     clock.tick(120)
