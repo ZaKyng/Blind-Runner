@@ -20,8 +20,10 @@ possible_positions = [
 
 # ---- Nodes ----- #
 class scene:
-    def __init__(self):
+    def __init__(self, screen, screen_size):
         self.rootNodes = []
+        self.screen = screen
+        self.screen_size = screen_size
 
     def draw(self):
         for node in self.rootNodes:
@@ -36,12 +38,9 @@ class scene:
             node.update()
 
 class parentNode:
-    def __init__(self, _scene, _screen, _screen_size, physics_layer = 0, position_str = None, position = [0, 0]):
+    def __init__(self, _scene, physics_layer = 0, position_str = None, position = [0, 0]):
         self.size = [0, 0]
         self.scene = _scene
-        
-        self.screen = _screen
-        self.screen_size = _screen_size
 
         self.physics_layer = physics_layer
 
@@ -56,7 +55,7 @@ class parentNode:
             position_str = position_str.lower()
             if (position_str in possible_positions):
                 self.position = positionFromStr(position_str, self.size, 
-                                                self.screen_size)
+                                                self.scene.screen_size)
         
         for otherNode in self.scene.rootNodes:
             change_x = 0
@@ -72,16 +71,15 @@ class parentNode:
                     self.position[0] = 0
                     change_x = 0
                     change_y = 1
-                if self.position[1] > self.screen_size[1]:
-                    self.position[1] = self.screen_size[1]
+                if self.position[1] > self.scene.screen_size[1]:
+                    self.position[1] = self.scene.screen_size[1]
                     change_x = 1
                     change_y = 0
-                if self.position[0] > self.screen_size[0]:
+                if self.position[0] > self.scene.screen_size[0]:
                     print("Too many nodes at the same position, could not find a free spot")
                     pygame.quit()
                     exit()
         
-        print(self.position)
         self.scene.rootNodes.append(self)
 
         
@@ -130,8 +128,8 @@ class label:
         (self.surface.get_width() - self.message.get_width()) // 2, 
         (self.surface.get_height() - self.message.get_height()) // 2))
 
-        self.parentNode.screen.blit(self.surface, (
-        self.parentNode.x + self.offset_x, self.parentNode.y + self.offset_y))
+        self.parentNode.scene.screen.blit(self.surface, (
+        self.parentNode.position[0] + self.offset[0], self.parentNode.position[1] + self.offset[1]))
 
 class block:
     def __init__(self, parentNode, size, 
@@ -149,7 +147,7 @@ class block:
                                         parentNode.size)
 
     def draw(self):
-        pygame.draw.rect(self.parentNode.screen, self.color, 
+        pygame.draw.rect(self.parentNode.scene.screen, self.color, 
         (self.parentNode.position[0] + self.offset[0], 
         self.parentNode.position[1] + self.offset[1], self.size[0], self.size[1]))
 
@@ -180,14 +178,14 @@ class hitBox:
         if not self.can_leave_window:
             if self.parentNode.position[0] < 0:
                 self.parentNode.position[0] = 0
-            elif self.parentNode.position[0] + self.size[0] > self.parentNode.screen_size[0]:
-                self.parentNode.position[0] = self.parentNode.screen_size[0] - self.size[0]
+            elif self.parentNode.position[0] + self.size[0] > self.parentNode.scene.screen_size[0]:
+                self.parentNode.position[0] = self.parentNode.scene.screen_size[0] - self.size[0]
 
             if self.parentNode.position[1] < 0:
                 self.parentNode.position[1] = 0
                 self.parentNode.velocity[1] = 0
-            elif self.parentNode.position[1] + self.size[1] > self.parentNode.screen_size[1]:
-                self.parentNode.position[1] = self.parentNode.screen_size[1] - self.size[1]
+            elif self.parentNode.position[1] + self.size[1] > self.parentNode.scene.screen_size[1]:
+                self.parentNode.position[1] = self.parentNode.scene.screen_size[1] - self.size[1]
                 self.parentNode.onGround = True
         
         self.rect.topleft = (self.parentNode.position[0] + self.offset[0], 
@@ -198,7 +196,7 @@ class hitBox:
     
     
     """def draw(self):
-        pygame.draw.rect(self.parentNode.screen, [0, 255, 0], self.rect, 2)"""
+        pygame.draw.rect(self.parentNode.scene.screen, [0, 255, 0], self.rect, 2)"""
 
 
 # ----- Modifiers ----- #
@@ -210,7 +208,6 @@ class clickMouse:
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self.parentNode.position = pygame.mouse.get_pos()
-            print(self.parentNode.children)
 
 class moveMouse:
     def __init__(self, parentNode):
@@ -245,11 +242,11 @@ class moveInput:
 
     def draw(self):
         self.parentNode.position[0] = max(0, 
-        min(self.parentNode.screen_size[0] - self.parentNode.size[0], 
+        min(self.parentNode.scene.screen_size[0], 
         self.parentNode.position[0] + self.move[0]))
 
         self.parentNode.position[1] = max(0,
-        min(self.parentNode.screen_size[1] - self.parentNode.size[1],
+        min(self.parentNode.scene.screen_size[1],
         self.parentNode.position[1] + self.move[1]))
     
     def event(self, event):
@@ -320,9 +317,7 @@ class playerMove:
             elif event.key == pygame.K_RIGHT:
                 self.right = True
             elif event.key == pygame.K_UP:
-                print("JUMPPPPPPPP")
                 if self.parentNode.onGround:
-                    print("HEREEEEEEEEEEEEEEEEEEEEE")
                     self.parentNode.velocity[1] += -self.jump_strength
                     self.parentNode.onGround = False
         elif event.type == pygame.KEYUP:
