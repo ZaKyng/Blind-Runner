@@ -37,7 +37,7 @@ for i in range(13):
     level_colidors.append(nodes.hitBox(level_ground, size, offset = offset, can_leave_window = True))
     level_blocks.append(nodes.block(level_ground, size, color = [0, 0, 255], offset = offset))
 
-
+level_modifier = nodes.moveMouse(level_ground)
 
 
 player_node = nodes.parentNode(scene, screen, screen_size, physics_layer = 1)
@@ -62,7 +62,8 @@ while True:
 
     scene.draw()
 
-    print(level_ground.position)
+
+    print(player_node.onGround)
 
    
     clock.tick(120)
