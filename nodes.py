@@ -46,22 +46,28 @@ class levelGrid:
         self.children = []
 
         self.physics_layer = 0
-
+        
+        self.num_cells_width = num_cells_width
         self.cell_size = [self.scene.screen_size[0] // num_cells_width, 
                           self.scene.screen_size[0] // num_cells_width]
         self.position = [-self.cell_size[0] // 2, -self.cell_size[1] // 2]
 
         print(self.position)
 
-        self.level = parentNode(self.scene, physics_layer = 1, position = self.position)
-        print(self.level.position)
-
-        block(self.level, self.cell_size, color = [0, 0, 255])
-        hitBox(self.level, self.cell_size, can_leave_window = True)
-        block(self.level, self.cell_size, color = [0, 0, 255], offset=(self.cell_size[0], self.cell_size[1]))
-        hitBox(self.level, self.cell_size, offset=(self.cell_size[0], self.cell_size[1]), can_leave_window = True)
+    def ground(self, color = [0, 0, 255], physics_layer = 0):
+        self.level = parentNode(self.scene, physics_layer = physics_layer, position = self.position)
 
         self.children.append(self.level)
+
+        for i in range((self.num_cells_width + 2) * 2):
+            self.level.collisionBlock(self.cell_size, color = color, offset = [i // 2 * self.cell_size[0], self.scene.screen_size[1] * (i % 2)], can_leave_window = True)
+
+        """block(self.level, self.cell_size, color = [0, 0, 255])
+        hitBox(self.level, self.cell_size, can_leave_window = True)
+        block(self.level, self.cell_size, color = [0, 0, 255], offset=(self.cell_size[0], self.cell_size[1]))
+        hitBox(self.level, self.cell_size, offset=(self.cell_size[0], self.cell_size[1]), can_leave_window = True)"""
+
+        
     
     def draw(self):
         for child in self.children:
@@ -124,6 +130,10 @@ class parentNode:
                     exit()
         
         self.scene.rootNodes.append(self)
+    
+    def collisionBlock(self, size, color = [0, 0, 0], position_str = None, offset = [0, 0], can_leave_window = False):
+        block(self, size, color, position_str = position_str, offset = offset)
+        hitBox(self, size, position_str = position_str, offset = offset, can_leave_window = can_leave_window)
 
         
     def draw(self):
@@ -143,7 +153,7 @@ class parentNode:
 
 class label:
     def __init__(self, parentNode, text, font, 
-                padding = 0, position=None, offset = (0, 0),
+                padding = 0, position_str = None, offset = (0, 0),
                 fg = [255, 255, 255], bg = [0, 0, 0]):
         self.parentNode = parentNode
         self.parentNode.children.append(self)
@@ -159,9 +169,9 @@ class label:
         self.size = self.surface.get_size()
 
         self.offset = offset
-        if (position and position in possible_positions):
-            position = position.lower()
-            self.offset = positionFromStr(position, self.size, 
+        if (position_str and position_str in possible_positions):
+            position_str = position_str.lower()
+            self.offset = positionFromStr(position_str, self.size,
                                         parentNode.size)
 
     def draw(self):
@@ -176,7 +186,7 @@ class label:
 
 class block:
     def __init__(self, parentNode, size, 
-                color = [0, 255, 0], position=None, offset = (0, 0)):
+                color = [0, 255, 0], position_str = None, offset = (0, 0)):
         self.parentNode = parentNode
         self.parentNode.children.append(self)
 
@@ -184,9 +194,9 @@ class block:
         self.color = color
 
         self.offset = offset
-        if (position and position in possible_positions):
-            position = position.lower()
-            self.offset = positionFromStr(position, self.size,
+        if (position_str and position_str in possible_positions):
+            position_str = position_str.lower()
+            self.offset = positionFromStr(position_str, self.size,
                                         parentNode.size)
 
     def draw(self):
@@ -195,7 +205,7 @@ class block:
         self.parentNode.position[1] + self.offset[1], self.size[0], self.size[1]))
 
 class hitBox:
-    def __init__(self, parentNode, size, position=None, offset = (0, 0), can_leave_window = False):
+    def __init__(self, parentNode, size, position_str = None, offset = (0, 0), can_leave_window = False):
         self.parentNode = parentNode
         self.parentNode.children.append(self)
 
@@ -204,11 +214,10 @@ class hitBox:
         self.can_leave_window = can_leave_window
 
         self.offset = offset
-        if (position):
-            position = position.lower()
-            if (position in possible_positions):
-                self.offset = positionFromStr(position, size, 
-                                            parentNode.size)
+        if (position_str and position_str in possible_positions):
+            position_str = position_str.lower()
+            self.offset = positionFromStr(position_str, self.size,
+                                        parentNode.size)
         
         self.rect = pygame.Rect((self.parentNode.position[0] + self.offset[0], 
         self.parentNode.position[1] + self.offset[1]), size)
@@ -238,8 +247,8 @@ class hitBox:
     
     
     
-    """def draw(self):
-        pygame.draw.rect(self.parentNode.scene.screen, [0, 255, 0], self.rect, 2)"""
+    def draw(self):
+        pygame.draw.rect(self.parentNode.scene.screen, [0, 255, 0], self.rect, 2)
 
 
 # ----- Modifiers ----- #
