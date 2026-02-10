@@ -19,21 +19,17 @@ clock = pygame.time.Clock()
 
 scene = nodes.scene(screen, screen_size)
 
-print(5.9 // 3)
+grid = nodes.levelGrid(scene, 20)
 
-grid = nodes.levelGrid(scene, 8)
+ground = grid.groundInit(physics_layer = 1)
 
-grid.ground(physics_layer = 1)
+player = grid.player(position = [3, 2], physics_check = 1)
+nodes.moveMouse(player)
 
-grid_modifier = nodes.moveMouse(grid.level)
 
+label_parent = nodes.parentNode(scene, position = [5 * grid.cell_size[0], 2 * grid.cell_size[1]])
+label = nodes.label(label_parent, "Score: 0", secondary_font, position_str = "center")
 
-player_node = nodes.parentNode(scene, physics_layer = 5, position = [grid.cell_size[0] // 2, grid.cell_size[1] // 2])
-player_node.collisionBlock(grid.cell_size, color = [0, 255, 0])
-
-nodes.playerMove(player_node, 1)
-
-player_mouse = nodes.moveMouse(player_node)
 
 while True:
     for event in pygame.event.get():
@@ -44,10 +40,9 @@ while True:
 
     screen.fill((20, 70, 40))
 
-
     scene.update()
-
     scene.draw()
+
    
     clock.tick(120)
     pygame.display.flip()

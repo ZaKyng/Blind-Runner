@@ -40,42 +40,58 @@ class scene:
             node.update()
 
 class levelGrid:
-    def __init__(self, scene, num_cells_width):
+    def __init__(self, scene, num_cells):
         self.scene = scene
 
         self.children = []
 
         self.physics_layer = 0
         
-        num_cells_width += 1
+        num_cells += 1
         changer = -1
-        while self.scene.screen_size[0] % num_cells_width != 0:
-            num_cells_width += changer
+        while self.scene.screen_size[0] % num_cells != 0:
+            num_cells += changer
 
             changer *= -1
             changer += 1
             if changer < 0:
                 changer += -2
         
-        print(num_cells_width - 1)
+        print(num_cells - 1)
                 
-        self.num_cells_width = num_cells_width
-        self.cell_size = [self.scene.screen_size[0] // num_cells_width, 
-                          self.scene.screen_size[0] // num_cells_width]
+        self.num_cells = num_cells
+        self.cell_size = [self.scene.screen_size[0] // num_cells, 
+                          self.scene.screen_size[0] // num_cells]
         self.position = [-self.cell_size[0] // 2, -self.cell_size[1] // 2]
 
         print(self.position)
 
-    def ground(self, color = [0, 0, 255], physics_layer = 0):
-        self.level = parentNode(self.scene, physics_layer = physics_layer, position = self.position)
+    def groundInit(self, color = [0, 0, 255], physics_layer = 0):
+        level = parentNode(self.scene, physics_layer = physics_layer, position = self.position)
 
-        self.children.append(self.level)
+        self.children.append(level)
 
-        for i in range((self.num_cells_width + 1) * 2):
-            self.level.collisionBlock(self.cell_size, color = color, offset = [i // 2 * self.cell_size[0], self.scene.screen_size[1] * (i % 2)], can_leave_window = True)
+        for i in range((self.num_cells + 1) * 2):
+            level.collisionBlock(self.cell_size, color = color, offset = [i // 2 * self.cell_size[0], self.scene.screen_size[1] * (i % 2)], can_leave_window = True)
         
         for i in range((self.scene.screen_size[1] // self.cell_size[0] + 1) * 2):
-            self.level.collisionBlock(self.cell_size, color = color, offset = [self.scene.screen_size[0] * (i % 2), i // 2 * self.cell_size[0]], can_leave_window = True)
+            level.collisionBlock(self.cell_size, color = color, offset = [self.scene.screen_size[0] * (i % 2), i // 2 * self.cell_size[0]], can_leave_window = True)
+        
+        return level
+
+    def player(self, color = [140, 0, 0], position = [0, 0], physics_layer = 5, physics_check = 0):
+        player = parentNode(self.scene, physics_layer = physics_layer, position = [position[0] * self.cell_size[0] - self.position[0], position[1] * self.cell_size[1] - self.position[1]])
+        print(player.position)
+        self.children.append(player)
+
+        player.collisionBlock(self.cell_size, color = color)
+
+        playerMove(player, physics_check, 
+                    speed = self.cell_size[0] / 14,      
+                    jump_strength = self.cell_size[1] / 6, 
+                    gravity = self.cell_size[1] / 300)
+
+        return player
 
         
     
@@ -164,7 +180,7 @@ class parentNode:
 class label:
     def __init__(self, parentNode, text, font, 
                 padding = 0, position_str = None, offset = (0, 0),
-                fg = [255, 255, 255], bg = [0, 0, 0]):
+                fg = [255, 255, 255], bg = None):
         self.parentNode = parentNode
         self.parentNode.children.append(self)
 
@@ -173,26 +189,32 @@ class label:
         self.background = bg
         self.font = font
         self.message = self.font.render(self.text, True, self.color)
+        
+        # KLÍČOVÁ ZMĚNA: Přidání pygame.SRCALPHA pro podporu průhlednosti
         self.surface = pygame.Surface((self.message.get_size()[0] + padding * 2, 
-                                       self.message.get_size()[1] + padding * 2))
+                                       self.message.get_size()[1] + padding * 2), 
+                                       pygame.SRCALPHA)
 
         self.size = self.surface.get_size()
-
         self.offset = offset
         if (position_str and position_str in possible_positions):
             position_str = position_str.lower()
-            self.offset = positionFromStr(position_str, self.size,
-                                        parentNode.size)
+            self.offset = positionFromStr(position_str, self.size, parentNode.size)
 
     def draw(self):
-        self.surface.fill(self.background)
+        # Pokud bg není definováno, surface vyčistíme úplnou průhledností
+        if self.background:
+            self.surface.fill(self.background)
+        else:
+            self.surface.fill((0, 0, 0, 0)) # Transparentní černá
 
         self.surface.blit(self.message, (
-        (self.surface.get_width() - self.message.get_width()) // 2, 
-        (self.surface.get_height() - self.message.get_height()) // 2))
+            (self.surface.get_width() - self.message.get_width()) // 2, 
+            (self.surface.get_height() - self.message.get_height()) // 2))
 
         self.parentNode.scene.screen.blit(self.surface, (
-        self.parentNode.position[0] + self.offset[0], self.parentNode.position[1] + self.offset[1]))
+            self.parentNode.position[0] + self.offset[0], 
+            self.parentNode.position[1] + self.offset[1]))
 
 class block:
     def __init__(self, parentNode, size, 
@@ -220,6 +242,8 @@ class hitBox:
         self.parentNode.children.append(self)
 
         self.size = size
+
+        self.show = False
 
         self.can_leave_window = can_leave_window
 
@@ -253,12 +277,10 @@ class hitBox:
         self.rect.topleft = (self.parentNode.position[0] + self.offset[0], 
         self.parentNode.position[1] + self.offset[1])
 
-        
-    
-    
-    
+
     def draw(self):
-        pygame.draw.rect(self.parentNode.scene.screen, [0, 255, 0], self.rect, 2)
+        if self.show:
+            pygame.draw.rect(self.parentNode.scene.screen, [0, 255, 0], self.rect, 2)
 
 
 # ----- Modifiers ----- #
@@ -278,8 +300,9 @@ class moveMouse:
 
         self.clicked = False
     
-    def draw(self):
+    def update(self):
         if self.clicked:
+            self.parentNode.velocity[1] = 0
             self.parentNode.position[0] -= (self.mouse_pos_last[0] - pygame.mouse.get_pos()[0])
             self.parentNode.position[1] -= (self.mouse_pos_last[1] - pygame.mouse.get_pos()[1])
             self.mouse_pos_last = pygame.mouse.get_pos()
