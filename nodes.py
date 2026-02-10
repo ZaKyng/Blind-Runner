@@ -47,6 +47,18 @@ class levelGrid:
 
         self.physics_layer = 0
         
+        num_cells_width += 1
+        changer = -1
+        while self.scene.screen_size[0] % num_cells_width != 0:
+            num_cells_width += changer
+
+            changer *= -1
+            changer += 1
+            if changer < 0:
+                changer += -2
+        
+        print(num_cells_width - 1)
+                
         self.num_cells_width = num_cells_width
         self.cell_size = [self.scene.screen_size[0] // num_cells_width, 
                           self.scene.screen_size[0] // num_cells_width]
@@ -64,11 +76,6 @@ class levelGrid:
         
         for i in range((self.scene.screen_size[1] // self.cell_size[0] + 1) * 2):
             self.level.collisionBlock(self.cell_size, color = color, offset = [self.scene.screen_size[0] * (i % 2), i // 2 * self.cell_size[0]], can_leave_window = True)
-
-        """block(self.level, self.cell_size, color = [0, 0, 255])
-        hitBox(self.level, self.cell_size, can_leave_window = True)
-        block(self.level, self.cell_size, color = [0, 0, 255], offset=(self.cell_size[0], self.cell_size[1]))
-        hitBox(self.level, self.cell_size, offset=(self.cell_size[0], self.cell_size[1]), can_leave_window = True)"""
 
         
     
@@ -250,8 +257,8 @@ class hitBox:
     
     
     
-    #def draw(self):
-    #    pygame.draw.rect(self.parentNode.scene.screen, [0, 255, 0], self.rect, 2)
+    def draw(self):
+        pygame.draw.rect(self.parentNode.scene.screen, [0, 255, 0], self.rect, 2)
 
 
 # ----- Modifiers ----- #
