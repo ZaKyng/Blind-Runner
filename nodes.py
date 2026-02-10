@@ -18,7 +18,9 @@ possible_positions = [
     "left", "right", "top", "bottom", "center"
 ]
 
-# ---- Nodes ----- #
+
+
+
 class scene:
     def __init__(self, screen, screen_size):
         self.rootNodes = []
@@ -36,6 +38,47 @@ class scene:
     def update(self):
         for node in self.rootNodes:
             node.update()
+
+class levelGrid:
+    def __init__(self, scene, num_cells_width):
+        self.scene = scene
+
+        self.children = []
+
+        self.physics_layer = 0
+
+        self.cell_size = [self.scene.screen_size[0] // num_cells_width, 
+                          self.scene.screen_size[0] // num_cells_width]
+        self.position = [-self.cell_size[0] // 2, -self.cell_size[1] // 2]
+
+        print(self.position)
+
+        self.level = parentNode(self.scene, physics_layer = 1, position = self.position)
+        print(self.level.position)
+
+        block(self.level, self.cell_size, color = [0, 0, 255])
+        hitBox(self.level, self.cell_size, can_leave_window = True)
+        block(self.level, self.cell_size, color = [0, 0, 255], offset=(self.cell_size[0], self.cell_size[1]))
+        hitBox(self.level, self.cell_size, offset=(self.cell_size[0], self.cell_size[1]), can_leave_window = True)
+
+        self.children.append(self.level)
+    
+    def draw(self):
+        for child in self.children:
+            if hasattr(child, 'draw'):
+                child.draw()
+
+    def event(self, event):
+        for child in self.children:
+            if hasattr(child, 'event'):
+                child.event(event)    
+
+    def update(self):
+        for child in self.children:
+            if hasattr(child, 'update'):
+                child.update()
+
+# ---- Nodes ----- #
 
 class parentNode:
     def __init__(self, _scene, physics_layer = 0, position_str = None, position = [0, 0]):
