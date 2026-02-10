@@ -92,23 +92,11 @@ class levelGrid:
                     gravity = self.cell_size[1] / 300)
 
         return player
-
-        
     
-    def draw(self):
-        for child in self.children:
-            if hasattr(child, 'draw'):
-                child.draw()
+    def gridCoordinates(self, relative_position = [0, 0]):
+        new_coordinate = [(self.cell_size[0] * relative_position[0]) - (self.position[0]), (self.cell_size[1] * relative_position[1]) - (self.position[1])]
+        return new_coordinate
 
-    def event(self, event):
-        for child in self.children:
-            if hasattr(child, 'event'):
-                child.event(event)    
-
-    def update(self):
-        for child in self.children:
-            if hasattr(child, 'update'):
-                child.update()
 
 # ---- Nodes ----- #
 
@@ -180,7 +168,7 @@ class parentNode:
 class label:
     def __init__(self, parentNode, text, font, 
                 padding = 0, position_str = None, offset = (0, 0),
-                fg = [255, 255, 255], bg = None):
+                fg = [255, 255, 255], bg = None, changable = False):
         self.parentNode = parentNode
         self.parentNode.children.append(self)
 
@@ -188,11 +176,14 @@ class label:
         self.color = fg
         self.background = bg
         self.font = font
+
+        self.changable = changable
         self.message = self.font.render(self.text, True, self.color)
         
+        self.padding = padding
         # KLÍČOVÁ ZMĚNA: Přidání pygame.SRCALPHA pro podporu průhlednosti
-        self.surface = pygame.Surface((self.message.get_size()[0] + padding * 2, 
-                                       self.message.get_size()[1] + padding * 2), 
+        self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
+                                       self.message.get_size()[1] + self.padding * 2), 
                                        pygame.SRCALPHA)
 
         self.size = self.surface.get_size()
@@ -207,6 +198,13 @@ class label:
             self.surface.fill(self.background)
         else:
             self.surface.fill((0, 0, 0, 0)) # Transparentní černá
+        
+        if self.changable:
+            self.message = self.font.render(self.text, True, self.color)
+            self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
+                                       self.message.get_size()[1] + self.padding * 2), 
+                                       pygame.SRCALPHA)
+            self.size = self.surface.get_size()
 
         self.surface.blit(self.message, (
             (self.surface.get_width() - self.message.get_width()) // 2, 
@@ -237,13 +235,13 @@ class block:
         self.parentNode.position[1] + self.offset[1], self.size[0], self.size[1]))
 
 class hitBox:
-    def __init__(self, parentNode, size, position_str = None, offset = (0, 0), can_leave_window = False):
+    def __init__(self, parentNode, size, position_str = None, offset = (0, 0), can_leave_window = False, show = False):
         self.parentNode = parentNode
         self.parentNode.children.append(self)
 
         self.size = size
 
-        self.show = False
+        self.show = show
 
         self.can_leave_window = can_leave_window
 
@@ -433,3 +431,24 @@ class playerMove:
         self.parentNode.position[1] += self.parentNode.velocity[1]
         self.collision_y()
     
+class enterCheck:
+    def __init__(self, parentNode, physics_check, func):
+       self.parentNode = parentNode
+       self.parentNode.children.append(self)
+
+       self.physics_check = physics_check
+       self.func = func
+
+       self.last_frame = False
+    
+    def update(self):
+        for node in self.parentNode.scene.rootNodes:
+            if node.physics_layer == self.physics_check:
+                for ownHitBox in self.parentNode.hitBoxes:
+                    for targetHB in node.hitBoxes:
+                        if ownHitBox.rect.colliderect(targetHB.rect):
+                            if not self.last_frame:
+                                self.last_frame = True
+                                self.func()
+                            return ""
+        self.last_frame = False
