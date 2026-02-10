@@ -25,7 +25,7 @@ grid = nodes.levelGrid(scene, 40)
 
 grid.ground(physics_layer = 1)
 
-grid_modifier = nodes.moveMouse(grid)
+grid_modifier = nodes.moveMouse(grid.level)
 
 """level_ground = nodes.parentNode(scene, physics_layer = 1, position=(4, 4))
 level_blocks = []

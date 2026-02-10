@@ -59,10 +59,10 @@ class levelGrid:
 
         self.children.append(self.level)
 
-        for i in range((self.num_cells_width + 2) * 2):
+        for i in range((self.num_cells_width + 1) * 2):
             self.level.collisionBlock(self.cell_size, color = color, offset = [i // 2 * self.cell_size[0], self.scene.screen_size[1] * (i % 2)], can_leave_window = True)
         
-        for i in range((self.scene.screen_size[1] // self.cell_size[0] + 2) * 2):
+        for i in range((self.scene.screen_size[1] // self.cell_size[0] + 1) * 2):
             self.level.collisionBlock(self.cell_size, color = color, offset = [self.scene.screen_size[0] * (i % 2), i // 2 * self.cell_size[0]], can_leave_window = True)
 
         """block(self.level, self.cell_size, color = [0, 0, 255])
