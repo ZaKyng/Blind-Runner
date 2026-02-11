@@ -57,14 +57,12 @@ class levelGrid:
             if changer < 0:
                 changer += -2
         
-        print(num_cells - 1)
+        #print(num_cells - 1)
                 
         self.num_cells = num_cells
         self.cell_size = [self.scene.screen_size[0] // num_cells, 
                           self.scene.screen_size[0] // num_cells]
-        self.position = [-self.cell_size[0] // 2, -self.cell_size[1] // 2]
-
-        print(self.position)
+        self.position = -pygame.Vector2(self.cell_size) // 2
 
     def groundInit(self, color = [0, 0, 255], physics_layer = 0):
         level = parentNode(self.scene, physics_layer = physics_layer, position = self.position)
@@ -79,9 +77,16 @@ class levelGrid:
         
         return level
 
+    def addGround(self, parentNode, coords, color = [0, 0, 255]):
+        for oneCoord in coords:
+            parentNode.collisionBlock(self.cell_size, color = color, offset = [(oneCoord[0] + 1) * self.cell_size[0], (oneCoord[1] + 1) * self.cell_size[0]], can_leave_window = True)
+    
+    def removeGround(self, parentNode, coords):
+        for oneCoord in coords:
+            parentNode.removeCollisionBlock([(oneCoord[0] + 1) * self.cell_size[0], (oneCoord[1] + 1) * self.cell_size[0]])
+
     def player(self, color = [140, 0, 0], position = [0, 0], physics_layer = 5, physics_check = 0):
         player = parentNode(self.scene, physics_layer = physics_layer, position = [position[0] * self.cell_size[0] - self.position[0], position[1] * self.cell_size[1] - self.position[1]])
-        print(player.position)
         self.children.append(player)
 
         player.collisionBlock(self.cell_size, color = color)
@@ -149,7 +154,12 @@ class parentNode:
         block(self, size, color, position_str = position_str, offset = offset)
         hitBox(self, size, position_str = position_str, offset = offset, can_leave_window = can_leave_window)
 
-        
+    def removeCollisionBlock(self, offset):
+        for child in self.children[:]:
+            if hasattr(child, 'offset') and child.offset == offset:
+                if hasattr(child, 'remove'):
+                    child.remove()
+
     def draw(self):
         for child in self.children:
             if hasattr(child, 'draw'):
@@ -213,6 +223,9 @@ class label:
         self.parentNode.scene.screen.blit(self.surface, (
             self.parentNode.position[0] + self.offset[0], 
             self.parentNode.position[1] + self.offset[1]))
+    
+    def remove(self):
+        self.parentNode.children.remove(self)
 
 class block:
     def __init__(self, parentNode, size, 
@@ -233,6 +246,9 @@ class block:
         pygame.draw.rect(self.parentNode.scene.screen, self.color, 
         (self.parentNode.position[0] + self.offset[0], 
         self.parentNode.position[1] + self.offset[1], self.size[0], self.size[1]))
+
+    def remove(self):
+        self.parentNode.children.remove(self)
 
 class hitBox:
     def __init__(self, parentNode, size, position_str = None, offset = (0, 0), can_leave_window = False, show = False):
@@ -279,6 +295,10 @@ class hitBox:
     def draw(self):
         if self.show:
             pygame.draw.rect(self.parentNode.scene.screen, [0, 255, 0], self.rect, 2)
+    
+    def remove(self):
+        self.parentNode.children.remove(self)
+        self.parentNode.hitBoxes.remove(self)
 
 
 # ----- Modifiers ----- #
@@ -344,6 +364,37 @@ class moveInput:
                 self.move[1] += -speed
             elif event.key == pygame.K_DOWN:
                 self.move[1] += speed
+
+class enterCheck:
+    def __init__(self, parentNode, physics_check, entry_func = None, colide_func = None):
+        self.parentNode = parentNode
+        self.parentNode.children.append(self)
+
+        self.physics_check = physics_check
+
+        self.entry_func = entry_func
+        self.colide_func = colide_func
+
+        self.colide_last_frame = False
+    
+    def update(self):
+        for node in self.parentNode.scene.rootNodes:
+            if node.physics_layer == self.physics_check:
+                for ownHitBox in self.parentNode.hitBoxes:
+                    for targetHB in node.hitBoxes:
+                        if ownHitBox.rect.colliderect(targetHB.rect):
+                            if (self.colide_func):
+                                self.colide_func()
+                            if not self.colide_last_frame:
+                                self.colide_last_frame = True
+                                if (self.entry_func):
+                                    self.entry_func()
+                            return ""
+        self.colide_last_frame = False
+    
+    def none(self):
+        return ""
+
 
 
 class playerMove:
@@ -449,25 +500,3 @@ class playerMove:
         self.parentNode.position[0] += self.parentNode.velocity[0]
         self.collision_x()
       
-    
-class enterCheck:
-    def __init__(self, parentNode, physics_check, func):
-       self.parentNode = parentNode
-       self.parentNode.children.append(self)
-
-       self.physics_check = physics_check
-       self.func = func
-
-       self.last_frame = False
-    
-    def update(self):
-        for node in self.parentNode.scene.rootNodes:
-            if node.physics_layer == self.physics_check:
-                for ownHitBox in self.parentNode.hitBoxes:
-                    for targetHB in node.hitBoxes:
-                        if ownHitBox.rect.colliderect(targetHB.rect):
-                            if not self.last_frame:
-                                self.last_frame = True
-                                self.func()
-                            return ""
-        self.last_frame = False
