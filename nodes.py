@@ -151,8 +151,9 @@ class parentNode:
         self.scene.rootNodes.append(self)
     
     def collisionBlock(self, size, color = [0, 0, 0], position_str = None, offset = [0, 0], can_leave_window = False):
-        block(self, size, color, position_str = position_str, offset = offset)
-        hitBox(self, size, position_str = position_str, offset = offset, can_leave_window = can_leave_window)
+        newBlock = block(self, size, color, position_str = position_str, offset = offset)
+        newHitBox = hitBox(self, size, position_str = position_str, offset = offset, can_leave_window = can_leave_window, show = True)
+        return newBlock, newHitBox
 
     def removeCollisionBlock(self, offset):
         for child in self.children[:]:
@@ -303,6 +304,8 @@ class hitBox:
 
 # ----- Modifiers ----- #
 
+# --- User Input --- #
+
 class clickMouse:
     def __init__(self, parentNode):
         self.parentNode = parentNode
@@ -364,38 +367,6 @@ class moveInput:
                 self.move[1] += -speed
             elif event.key == pygame.K_DOWN:
                 self.move[1] += speed
-
-class enterCheck:
-    def __init__(self, parentNode, physics_check, entry_func = None, colide_func = None):
-        self.parentNode = parentNode
-        self.parentNode.children.append(self)
-
-        self.physics_check = physics_check
-
-        self.entry_func = entry_func
-        self.colide_func = colide_func
-
-        self.colide_last_frame = False
-    
-    def update(self):
-        for node in self.parentNode.scene.rootNodes:
-            if node.physics_layer == self.physics_check:
-                for ownHitBox in self.parentNode.hitBoxes:
-                    for targetHB in node.hitBoxes:
-                        if ownHitBox.rect.colliderect(targetHB.rect):
-                            if (self.colide_func):
-                                self.colide_func()
-                            if not self.colide_last_frame:
-                                self.colide_last_frame = True
-                                if (self.entry_func):
-                                    self.entry_func()
-                            return ""
-        self.colide_last_frame = False
-    
-    def none(self):
-        return ""
-
-
 
 class playerMove:
     def __init__(self, parentNode, physics_check, speed = 5, jump_strength = 11.5 , gravity = 0.5):
@@ -499,4 +470,86 @@ class playerMove:
         # 4. Horizontální pohyb a kolize
         self.parentNode.position[0] += self.parentNode.velocity[0]
         self.collision_x()
-      
+
+
+
+# --- Interactive --- #
+
+class enterCheck:
+    def __init__(self, parentNode, physics_check, entry_func = None, colide_func = None):
+        self.parentNode = parentNode
+        self.parentNode.children.append(self)
+
+        self.physics_check = physics_check
+
+        self.entry_func = entry_func
+        self.colide_func = colide_func
+
+        self.colide_last_frame = False
+    
+    def update(self):
+        for node in self.parentNode.scene.rootNodes:
+            if node.physics_layer == self.physics_check:
+                for ownHitBox in self.parentNode.hitBoxes:
+                    for targetHB in node.hitBoxes:
+                        if ownHitBox.rect.colliderect(targetHB.rect):
+                            if (self.colide_func):
+                                self.colide_func()
+                            if not self.colide_last_frame:
+                                self.colide_last_frame = True
+                                if (self.entry_func):
+                                    self.entry_func()
+                            return ""
+        self.colide_last_frame = False
+    
+    def none(self):
+        return ""
+
+
+
+# --- Looping --- #
+
+axis_to_num = {
+    "x": 0,
+    "y": 1
+}
+
+class translate:
+    def __init__(self, parentNode, axis, end, velocity, start = None):
+        self.parentNode = parentNode
+        #self.parentNode.children.append(self)
+
+        if axis.lower() in ["x", "y"]:
+            self.axis = axis.lower()
+        else:
+            self.axis = "x"
+        
+        self.velocity = velocity
+        
+        if start:
+            self.start = start
+        else:
+            self.start = self.parentNode.offset[axis_to_num[self.axis]]
+
+        self.end = end
+
+    
+    def update(self):
+        self.parentNode.offset[axis_to_num[self.axis]] += self.velocity
+        if self.parentNode.offset[axis_to_num[self.axis]] > self.end:
+            self.parentNode.offset[axis_to_num[self.axis]] = self.end
+            self.velocity *= -1
+        elif self.parentNode.offset[axis_to_num[self.axis]] < self.start:
+            self.parentNode.offset[axis_to_num[self.axis]] = self.start
+            self.velocity *= -1
+
+
+class rotate:
+    def __init__(self, parentNode, origin, clockWise = True):
+        self.parentNode = parentNode
+        self.parentNode.children.append(self)
+
+        self.origin = origin
+
+        self.radious = 5
+

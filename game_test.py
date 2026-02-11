@@ -73,6 +73,8 @@ grid.addGround(ground, coords1)
 
 player_defautl_pos = [1, 18]
 player = grid.player(position = player_defautl_pos, physics_check = 1)
+
+player.collisionBlock(grid.cell_size, offset = [grid.cell_size[0] * 2, 0])
 nodes.moveMouse(player)
 
 
@@ -86,10 +88,13 @@ def win():
     if win_count % 2 == 1:
         grid.removeGround(ground, coords1)
         grid.addGround(ground, coords2)
+        player.removeCollisionBlock([grid.cell_size[0] * 2, 0])
     else:
+        player.collisionBlock(grid.cell_size, offset = [grid.cell_size[0] * 2, 0])
         grid.removeGround(ground, coords2)
         grid.addGround(ground, coords1)
     player.position = grid.gridCoordinates(player_defautl_pos)
+    
     player.velocity = [0, 0]
 
 win_area_parent = nodes.parentNode(scene, position = grid.gridCoordinates([17, 1]))
@@ -97,6 +102,11 @@ win_area_hitbox = nodes.hitBox(win_area_parent, [grid.cell_size[0], grid.cell_si
 
 win_area_modifier = nodes.enterCheck(win_area_parent, 5, win)
 
+
+translate_test_parent = nodes.parentNode(scene, position = grid.gridCoordinates([1, 8]), physics_layer = 1)
+translate_block, translate_hitBox = translate_test_parent.collisionBlock(grid.cell_size)
+
+translate_test = nodes.translate(translate_block, "x", grid.gridCoordinates([8, 1])[0], 2)
 
 while running:
     for event in pygame.event.get():
@@ -108,6 +118,7 @@ while running:
 
     label.text = "You won "+str(win_count)+" times"
 
+    #translate_test.update()
     scene.update()
     scene.draw()
    
