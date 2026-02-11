@@ -58,6 +58,8 @@ while running:
     scene.update()
     scene.draw()
 
+    print(player.onGround)
+
    
 
     clock.tick(120)

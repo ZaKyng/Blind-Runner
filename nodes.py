@@ -410,9 +410,7 @@ class playerMove:
                 self.right = False
     
     def update(self):
-        if self.parentNode.velocity[1] > 0:
-            self.parentNode.onGround = False
-
+        # 1. Horizontální pohyb
         if self.left and not self.right:
             self.parentNode.velocity[0] = -self.speed
         elif self.right and not self.left:
@@ -420,16 +418,37 @@ class playerMove:
         else:
             self.parentNode.velocity[0] = 0
 
-
+        # 2. Aplikace gravitace
         self.parentNode.velocity[1] += self.gravity
 
-        # Move X
+        # 3. Vertikální pohyb a kolize
+        self.parentNode.position[1] += self.parentNode.velocity[1]
+        
+        # Reset onGround před kontrolou, ale s "bufferem"
+        self.parentNode.onGround = False
+        self.collision_y()
+
+        # FIX: Dodatečná kontrola pro stabilitu (pohled 1 pixel pod sebe)
+        # Pokud postava právě nepadá/neskáče, zkontrolujeme, zda je stále na zemi
+        if not self.parentNode.onGround:
+            for node in self.parentNode.scene.rootNodes:
+                if node is self.parentNode or node.physics_layer != self.physics_check:
+                    continue
+                for ownHB in self.parentNode.hitBoxes:
+                    # Vytvoříme testovací obdélník posunutý o 1px dolů
+                    test_rect = ownHB.rect.move(0, 1)
+                    for targetHB in node.hitBoxes:
+                        if test_rect.colliderect(targetHB.rect):
+                            self.parentNode.onGround = True
+                            # Volitelně: vynulovat drobný nárůst gravitace
+                            if self.parentNode.velocity[1] > 0:
+                                self.parentNode.velocity[1] = 0
+                            break
+
+        # 4. Horizontální pohyb a kolize
         self.parentNode.position[0] += self.parentNode.velocity[0]
         self.collision_x()
-
-        # Move Y
-        self.parentNode.position[1] += self.parentNode.velocity[1]
-        self.collision_y()
+      
     
 class enterCheck:
     def __init__(self, parentNode, physics_check, func):
