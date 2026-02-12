@@ -1,3 +1,4 @@
+import math
 import pygame
 
 def positionFromStr(string, size, screen_size):
@@ -368,6 +369,7 @@ class moveInput:
             elif event.key == pygame.K_DOWN:
                 self.move[1] += speed
 
+
 class playerMove:
     def __init__(self, parentNode, physics_check, speed = 5, jump_strength = 11.5 , gravity = 0.5):
         self.parentNode = parentNode
@@ -514,10 +516,10 @@ axis_to_num = {
     "y": 1
 }
 
-class translate:
-    def __init__(self, parentNode, axis, end, velocity, start = None):
+class translateLinear:
+    def __init__(self, parentNode, axis, end, velocity, start = None, mode = "linear"):
         self.parentNode = parentNode
-        #self.parentNode.children.append(self)
+        self.parentNode.children.append(self)
 
         if axis.lower() in ["x", "y"]:
             self.axis = axis.lower()
@@ -526,30 +528,80 @@ class translate:
         
         self.velocity = velocity
         
-        if start:
+        if start is not None:
             self.start = start
         else:
-            self.start = self.parentNode.offset[axis_to_num[self.axis]]
+            self.start = self.parentNode.position[axis_to_num[self.axis]]
 
         self.end = end
 
+        if self.start > self.end:
+            start = self.start
+            self.start = self.end
+            self.end = start
+
+        if mode.lower() == "linear":
+            self.mode = self.linear
+        else:
+            self.mode = self.linear
+        
+    def linear(self):
+        self.parentNode.position[axis_to_num[self.axis]] += self.velocity
+        if self.parentNode.position[axis_to_num[self.axis]] > self.end:
+            self.parentNode.position[axis_to_num[self.axis]] = self.end
+            self.velocity *= -1
+        elif self.parentNode.position[axis_to_num[self.axis]] < self.start:
+            self.parentNode.position[axis_to_num[self.axis]] = self.start
+            self.velocity *= -1
     
     def update(self):
-        self.parentNode.offset[axis_to_num[self.axis]] += self.velocity
-        if self.parentNode.offset[axis_to_num[self.axis]] > self.end:
-            self.parentNode.offset[axis_to_num[self.axis]] = self.end
-            self.velocity *= -1
-        elif self.parentNode.offset[axis_to_num[self.axis]] < self.start:
-            self.parentNode.offset[axis_to_num[self.axis]] = self.start
-            self.velocity *= -1
+        self.mode()
 
-
-class rotate:
-    def __init__(self, parentNode, origin, clockWise = True):
+class translateGlobal:
+    def __init__(self, parentNode, start_pos, end_pos, velocity, mode = "linear"):
         self.parentNode = parentNode
         self.parentNode.children.append(self)
 
-        self.origin = origin
+        self.start = list(start_pos)
+        self.end = list(end_pos)
+        
+        self.parentNode.position = list(self.start)
 
-        self.radious = 5
+        self.velocity = velocity
 
+        self.diff = [self.end[0] - self.start[0], self.end[1] - self.start[1]]
+        self.path_len = math.sqrt(self.diff[0] ** 2 + self.diff[1] ** 2)
+
+        # Ošetření dělení nulou, pokud start == end
+        if self.path_len > 0:
+            self.step = [self.diff[0] / self.path_len, self.diff[1] / self.path_len]
+        else:
+            self.step = [0, 0]
+
+        self.mode = self.linear
+
+    def linear(self):
+        # Pohyb
+        self.parentNode.position[0] += self.step[0] * self.velocity
+        self.parentNode.position[1] += self.step[1] * self.velocity
+
+        hit_boundary = False
+        
+        for i in [0, 1]:
+            # Nyní jsou self.start a self.end fixní hodnoty
+            low, high = min(self.start[i], self.end[i]), max(self.start[i], self.end[i])
+            
+            if self.parentNode.position[i] > high:
+                self.parentNode.position[i] = high
+                hit_boundary = True
+            elif self.parentNode.position[i] < low:
+                self.parentNode.position[i] = low
+                hit_boundary = True
+                
+        if hit_boundary:
+            self.velocity *= -1
+    
+    def update(self):
+        self.mode()
+
+ 

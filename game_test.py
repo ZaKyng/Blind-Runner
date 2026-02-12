@@ -103,10 +103,21 @@ win_area_hitbox = nodes.hitBox(win_area_parent, [grid.cell_size[0], grid.cell_si
 win_area_modifier = nodes.enterCheck(win_area_parent, 5, win)
 
 
-translate_test_parent = nodes.parentNode(scene, position = grid.gridCoordinates([1, 8]), physics_layer = 1)
-translate_block, translate_hitBox = translate_test_parent.collisionBlock(grid.cell_size)
+translate_test_parent = nodes.parentNode(scene, position = grid.gridCoordinates([5, 7]), physics_layer = 1)
+translate_block = []
+translate_hitBox = []
 
-translate_test = nodes.translate(translate_block, "x", grid.gridCoordinates([8, 1])[0], 2)
+for i in range(4):
+    output = translate_test_parent.collisionBlock(grid.cell_size, offset = [i * grid.cell_size[0], 0])
+    translate_block.append(output[0])
+    translate_hitBox.append(output[1])
+
+
+#translate_test1 = nodes.translate(translate_test_parent, "x", grid.gridCoordinates([5, 1])[0], 2)
+#translate_test2 = nodes.translateLinear(translate_test_parent, "y", grid.gridCoordinates([1, 1])[1], 2)
+
+tranlsate_test3 = nodes.translateGlobal(translate_test_parent, grid.gridCoordinates([6, 8]), grid.gridCoordinates([2, 2]), 1)
+
 
 while running:
     for event in pygame.event.get():
