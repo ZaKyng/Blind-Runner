@@ -1,5 +1,18 @@
 import pygame
-import nodes
+import nodes1 as nodes
+
+
+"""
+    The game works for now, but in the furure it would be almost imposible to add new modifiers and other nodes.
+    I need to rethink the node file structure and need to add z-index.
+    I want to be able to add anything to anything (any modifier to any node, any node to parentNode and even to any node,
+        nodes (block, hitBox) need to work more like parentNode).¨
+    Now that I think about it, parentNode shouldn't have velocity, just position and modifiers and other nodes should 
+        have velocity and on update just should change position. IDK
+    Just need to rewrite the whole nodes.py again.
+"""
+
+
 
 pygame.init()
 pygame.font.init()

@@ -42,6 +42,10 @@ acceleration = 0.3
 last_time = pygame.time.get_ticks()
 delta_time = 0
 
+
+
+
+
 running = True
 while running:
     delta_time = pygame.time.get_ticks() - last_time
@@ -145,3 +149,4 @@ while running:
     clock.tick(120)
 
 pygame.quit()
+exit()
