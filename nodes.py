@@ -2,23 +2,25 @@ import math
 import pygame
 
 def positionFromStr(string, size, screen_size):
-    width, height = screen_size
+    w, h = screen_size
+    sw, sh = size
+    min_x, max_x = 0, w - sw
+    min_y, max_y = 0, h - sh
+    mid_x, mid_y = max_x // 2, max_y // 2
 
-    if (string == "left"):
-        return [0, height // 2 - (size[1] // 2)]
-    elif (string == "right"):
-        return [width - size[0], height // 2 - (size[1] // 2)]
-    elif (string == "top"):
-        return [width // 2 - (size[0] // 2), 0]
-    elif (string == "bottom"):
-        return [width // 2 - (size[0] // 2), height - size[1]]
-    elif (string == "center"):
-        return [width // 2 - (size[0] // 2), height // 2 - (size[1] // 2)]
-
-possible_positions = [
-    "left", "right", "top", "bottom", "center"
-]
-
+    pos = {
+        "top-left": [min_x, min_y],
+        "left": [min_x, mid_y],
+        "bottom-left": [min_x, max_y],
+        "top-right": [max_x, min_y],
+        "right": [max_x, mid_y],
+        "bottom-right":  [max_x, max_y],
+        "top": [mid_x, min_y],
+        "bottom": [mid_x, max_y],
+        "center": [mid_x, mid_y]
+    }
+    
+    return pos.get(string)
 
 
 
@@ -121,10 +123,7 @@ class parentNode:
         self.position = list(position)
         
         if (position_str):
-            position_str = position_str.lower()
-            if (position_str in possible_positions):
-                self.position = positionFromStr(position_str, self.size, 
-                                                self.scene.screen_size)
+            self.position = positionFromStr(position_str.lower(), self.size, self.scene.screen_size)
         
         for otherNode in self.scene.rootNodes:
             change_x = 0
@@ -204,9 +203,8 @@ class label:
 
         self.size = self.surface.get_size()
         self.offset = offset
-        if (position_str and position_str in possible_positions):
-            position_str = position_str.lower()
-            self.offset = positionFromStr(position_str, self.size, parentNode.size)
+        if (position_str ):
+            self.offset = positionFromStr(position_str.lower(), self.size, parentNode.size)
 
     def draw(self):
         # Pokud bg není definováno, surface vyčistíme úplnou průhledností
@@ -243,10 +241,8 @@ class block:
         self.color = color
 
         self.offset = offset
-        if (position_str and position_str in possible_positions):
-            position_str = position_str.lower()
-            self.offset = positionFromStr(position_str, self.size,
-                                        parentNode.size)
+        if (position_str):
+            self.offset = positionFromStr(position_str.lower(), self.size,parentNode.size)
 
     def draw(self):
         pygame.draw.rect(self.parentNode.scene.screen, self.color, 
@@ -268,10 +264,8 @@ class hitBox:
         self.can_leave_window = can_leave_window
 
         self.offset = offset
-        if (position_str and position_str in possible_positions):
-            position_str = position_str.lower()
-            self.offset = positionFromStr(position_str, self.size,
-                                        parentNode.size)
+        if (position_str):
+            self.offset = positionFromStr(position_str.lower(), self.size, parentNode.size)
         
         self.rect = pygame.Rect((self.parentNode.position[0] + self.offset[0], 
         self.parentNode.position[1] + self.offset[1]), size)
