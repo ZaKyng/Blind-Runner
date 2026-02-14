@@ -1,5 +1,5 @@
 import pygame
-import nodes
+import nodes1 as nodes
 
 pygame.init()
 pygame.font.init()
@@ -21,10 +21,12 @@ clock = pygame.time.Clock()
 
 scene = nodes.scene(screen, screen_size)
 
-parent = nodes.parentNode(scene, position_str="bottom-left")
+parent = nodes.parentNode(scene, position_str="bottom")
 print(parent.position)
-label = nodes.label(parent, "Hello world", main_font, position_str="bottom-left")
+label = nodes.label(parent, "Hello world", main_font, position_str="bottom")
 print(label.offset)
+
+nodes.clickMouse(parent)
 
 while running:
     for event in pygame.event.get():
@@ -37,7 +39,7 @@ while running:
     #translate_test.update()
     scene.update()
     scene.draw()
-   
+    
 
     clock.tick(120)
     pygame.display.flip()

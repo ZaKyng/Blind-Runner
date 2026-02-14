@@ -1,25 +1,27 @@
 import math
 import pygame
+from pygame import Vector2
 
 def positionFromStr(string, size, screen_size):
-    width, height = screen_size
+    sw, sh = Vector2(size)
+    w, h = Vector2(screen_size)
+    
+    max_x, max_y = w - sw, h - sh
+    mid_x, mid_y = max_x / 2, max_y / 2
 
-    if (string == "left"):
-        return [0, height // 2 - (size[1] // 2)]
-    elif (string == "right"):
-        return [width - size[0], height // 2 - (size[1] // 2)]
-    elif (string == "top"):
-        return [width // 2 - (size[0] // 2), 0]
-    elif (string == "bottom"):
-        return [width // 2 - (size[0] // 2), height - size[1]]
-    elif (string == "center"):
-        return [width // 2 - (size[0] // 2), height // 2 - (size[1] // 2)]
-
-possible_positions = [
-    "left", "right", "top", "bottom", "center"
-]
-
-
+    pos = {
+        "top-left":     Vector2(0, 0),
+        "left":         Vector2(0, mid_y),
+        "bottom-left":  Vector2(0, max_y),
+        "top-right":    Vector2(max_x, 0),
+        "right":        Vector2(max_x, mid_y),
+        "bottom-right": Vector2(max_x, max_y),
+        "top":          Vector2(mid_x, 0),
+        "bottom":       Vector2(mid_x, max_y),
+        "center":       Vector2(mid_x, mid_y)
+    }
+    
+    return pos.get(string)
 
 
 class scene:
@@ -63,7 +65,7 @@ class levelGrid:
         self.num_cells = num_cells
         self.cell_size = [self.scene.screen_size[0] // num_cells, 
                           self.scene.screen_size[0] // num_cells]
-        self.position = -pygame.Vector2(self.cell_size) // 2
+        self.position = -Vector2(self.cell_size) // 2
 
     def groundInit(self, color = [0, 0, 255], physics_layer = 0):
         level = parentNode(self.scene, physics_layer = physics_layer, position = self.position)
@@ -118,12 +120,10 @@ class parentNode:
         self.children = []
         self.hitBoxes = []
 
-        self.position = list(position)
+        self.position = position
         
         if (position_str):
-            position_str = position_str.lower()
-            if (position_str in possible_positions):
-                self.position = positionFromStr(position_str, self.size, 
+            self.position = positionFromStr(position_str.lower(), self.size, 
                                                 self.scene.screen_size)
         
         for otherNode in self.scene.rootNodes:
@@ -204,9 +204,9 @@ class label:
 
         self.size = self.surface.get_size()
         self.offset = offset
-        if (position_str and position_str in possible_positions):
-            position_str = position_str.lower()
-            self.offset = positionFromStr(position_str, self.size, parentNode.size)
+        if (position_str):
+            self.offset = positionFromStr(position_str.lower(), self.size, 
+                                                self.parentNode.size)
 
     def draw(self):
         # Pokud bg není definováno, surface vyčistíme úplnou průhledností
@@ -243,10 +243,9 @@ class block:
         self.color = color
 
         self.offset = offset
-        if (position_str and position_str in possible_positions):
-            position_str = position_str.lower()
-            self.offset = positionFromStr(position_str, self.size,
-                                        parentNode.size)
+        if (position_str):
+            self.offset = positionFromStr(position_str.lower(), self.size, 
+                                                self.parentNode.size)
 
     def draw(self):
         pygame.draw.rect(self.parentNode.scene.screen, self.color, 
@@ -268,10 +267,9 @@ class hitBox:
         self.can_leave_window = can_leave_window
 
         self.offset = offset
-        if (position_str and position_str in possible_positions):
-            position_str = position_str.lower()
-            self.offset = positionFromStr(position_str, self.size,
-                                        parentNode.size)
+        if (position_str):
+            self.offset = positionFromStr(position_str.lower(), self.size, 
+                                                self.parentNode.size)
         
         self.rect = pygame.Rect((self.parentNode.position[0] + self.offset[0], 
         self.parentNode.position[1] + self.offset[1]), size)
@@ -314,6 +312,7 @@ class hitBox:
 class clickMouse:
     def __init__(self, parentNode):
         self.parentNode = parentNode
+        self.parentNode.children.append(self)
 
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:

@@ -1,34 +1,51 @@
 import math
 import pygame
+from pygame import Vector2
 
 def positionFromStr(string, size, screen_size):
-    w, h = screen_size
-    sw, sh = size
-    min_x, max_x = 0, w - sw
-    min_y, max_y = 0, h - sh
-    mid_x, mid_y = max_x // 2, max_y // 2
+    sw, sh = Vector2(size)
+    w, h = Vector2(screen_size)
+    
+    max_x, max_y = w - sw, h - sh
+    mid_x, mid_y = max_x / 2, max_y / 2
 
     pos = {
-        "top-left": [min_x, min_y],
-        "left": [min_x, mid_y],
-        "bottom-left": [min_x, max_y],
-        "top-right": [max_x, min_y],
-        "right": [max_x, mid_y],
-        "bottom-right":  [max_x, max_y],
-        "top": [mid_x, min_y],
-        "bottom": [mid_x, max_y],
-        "center": [mid_x, mid_y]
+        "top-left":     Vector2(0, 0),
+        "left":         Vector2(0, mid_y),
+        "bottom-left":  Vector2(0, max_y),
+        "top-right":    Vector2(max_x, 0),
+        "right":        Vector2(max_x, mid_y),
+        "bottom-right": Vector2(max_x, max_y),
+        "top":          Vector2(mid_x, 0),
+        "bottom":       Vector2(mid_x, max_y),
+        "center":       Vector2(mid_x, mid_y)
     }
     
     return pos.get(string)
 
 
+class node:
+    def __init__(self, parentNode, size = [0, 0], offset_str = None, offset = [0, 0]):
+        self.parentNode = parentNode
+        self.parentNode.children.append(self)
+
+        self.screen = self.parentNode.screen
+        self.screen_size = self.parentNode.screen_size
+
+        self.size = Vector2(size)
+
+        self.offset = Vector2(offset)
+        if (offset_str):
+            self.offset = positionFromStr(offset_str.lower(), self.size, self.scene.screen_size)
+
+        self.position = self.parentNode.position + self.offset
 
 class scene:
     def __init__(self, screen, screen_size):
-        self.rootNodes = []
+        self.children = [] # Seznam root nodů
         self.screen = screen
-        self.screen_size = screen_size
+        self.screen_size = Vector2(screen_size)
+        self.position = Vector2(0, 0)
 
     def draw(self):
         for node in self.rootNodes:
@@ -308,6 +325,7 @@ class hitBox:
 class clickMouse:
     def __init__(self, parentNode):
         self.parentNode = parentNode
+        self.parentNode.children.append(self)
 
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
