@@ -1,0 +1,36 @@
+[project]
+name = "BlindRunner"
+version = "0.0.1"
+authors = [
+  { name="Olievr Jan Pohl", email="zakyng32@gmail.com" },
+]
+
+description = "Jumping 2D game"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+
+# zde muzete zadefinovat spustitelne skripty (tj. pokud pisete knihovnu, tak zde muzete definovat jak spustit nejaky priklad pouziti knihovny)
+[project.scripts]
+cgui-example = "src.new_game"
+
+
+[project.urls]
+Homepage = "https://github.com/ZaKyng/Blind-Runner"
+Issues = "https://github.com/ZaKyng/Blind-Runner/issues"
+
+
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+

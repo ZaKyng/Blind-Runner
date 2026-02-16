@@ -23,7 +23,7 @@ scene = nodes.Scene(screen, screen_size)
 
 parent = nodes.BaseNode(scene, offset_str="center")
 colorBlock = nodes.ColorBlock(parent, [80, 200], color = [255, 0, 0], offset_str="center")
-colorBlock2 = nodes.ColorBlock(colorBlock, [20, 100], color = [0, 255, 0], offset_str="left")
+colorBlock2 = nodes.ColorBlock(colorBlock, [20, 100], color = [0, 255, 0, 20], offset_str="left", alpha_chanel = True)
 colorBlock3 = nodes.ColorBlock(colorBlock2, [10, 40], color = [0, 0, 255], offset_str="center")
 colorBlock4 = nodes.ColorBlock(colorBlock3, [5, 5], color = [255, 0, 255], offset_str="top")
 
@@ -34,6 +34,8 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            colorBlock2.kill()
         scene.event(event)
 
     screen.fill((20, 70, 40))
@@ -41,7 +43,6 @@ while running:
     #translate_test.update()
     scene.update()
     scene.draw()
-    
 
     clock.tick(120)
     pygame.display.flip()

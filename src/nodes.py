@@ -29,6 +29,9 @@ def positionFromStr(string, size, parentNode_size):
     return [output, None]
 
 
+# ----- Base of nodes ----- #
+
+
 class Backbone:
     def __init__(self):
         self.children = []
@@ -97,8 +100,7 @@ class Node(Modifiers):
         self.parentNode.children.remove(self)
 
 
-
-
+# ----- Nodes ----- #
 
 class Scene(Backbone):
     def __init__(self, screen, screen_size):
@@ -116,7 +118,6 @@ class Scene(Backbone):
 
     def draw(self):
         super().draw()
-
 
 class BaseNode(Node):
     def __init__(self, parentNode, physics_layer = None, offset_str = None, offset = Vector2(0, 0)):
@@ -139,8 +140,6 @@ class BaseNode(Node):
 
     def kill(self):
         super().kill()
-
-
 
 class ColorBlock(Node):
     def __init__(self, parentNode, size, color = Color(255, 255, 255), offset_str=None, offset=Vector2(0, 0), alpha_chanel = False):
@@ -189,7 +188,6 @@ class MouseClick(Modifiers):
 
     def kill(self):
         super().kill()
-
 
 class KeayboardMove(Modifiers):
     def __init__(self, parentNode, speed = 20):
