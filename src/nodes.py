@@ -1,4 +1,5 @@
 import math
+import os
 import pygame
 from pygame import Vector2
 from pygame import Color
@@ -142,29 +143,67 @@ class BaseNode(Node):
         super().kill()
 
 class ColorBlock(Node):
-    def __init__(self, parentNode, size, color = Color(255, 255, 255), offset_str=None, offset=Vector2(0, 0), alpha_chanel = False):
+    def __init__(self, parentNode, size, color = Color(255, 255, 255, 255), 
+                offset_str = None, offset = Vector2(0, 0), alpha_chanel = False, changable = False):
         super().__init__(parentNode, size, offset_str, offset)
-        self.color = Color(color)
+        self.color = pygame.Color(color)
+        
         if not alpha_chanel:
             self.color.a = 255
+        
+        self.alpha_chanel = alpha_chanel
+        self.changable = changable
 
-        print(self.color)
+        if self.alpha_chanel:
+            self.image = pygame.Surface(self.size, pygame.SRCALPHA)
+        else:
+            self.image = pygame.Surface(self.size)
+        self.image.fill(self.color)
 
     def event(self, event):
         super().event(event)
     
     def update(self):
         self.rect = pygame.Rect(self.position, self.size)
+        if self.changable:
+            if self.alpha_chanel:
+                self.image = pygame.Surface(self.size, pygame.SRCALPHA)
+            else:
+                self.image = pygame.Surface(self.size)
+
+            self.image.fill(self.color)
         super().update()
 
     def draw(self):
-        pygame.draw.rect(self.scene.screen, self.color, self.rect)
+        # Místo přímého kreslení obdélníku vykreslíme připravený Surface
+        self.scene.screen.blit(self.image, self.rect)
         super().draw()
 
     def kill(self):
         super().kill()
 
+class SpriteBlock(Node):
+    def __init__(self, parentNode, size, src, offset_str=None, offset=pygame.Vector2(0, 0), 
+                alpha_chanel = False, changable = False):
+        super().__init__(parentNode, size, offset_str, offset)
+        self.src = src
 
+        self.alpha_chanel = alpha_chanel
+        self.changable = changable
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        
+        super().update()
+
+    def draw(self):
+        
+        super().draw()
+
+    def kill(self):
+        super().kill()
 
 
 
