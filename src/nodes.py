@@ -182,40 +182,77 @@ class ColorBlock(Node):
     def kill(self):
         super().kill()
 
+
+
+class LoadImage:
+    def __init__(self, src):
+        self.src = src
+        self.rawImage = pygame.image.load(src)
+
+        self.image = pygame.Surface(self.rawImage.get_size(), pygame.SRCALPHA)
+        self.image.blit(self.rawImage, Vector2(0, 0))
+
+class LoadImageGrid:
+    def __init__(self, src, oneFrameSize):
+        self.rawImage = pygame.image.load(src)
+
+        self.tiles = []
+        self.tileCount = [self.rawImage.get_size()[0] // max(oneFrameSize[0], 1), self.rawImage.get_size()[1] // max(oneFrameSize[1], 1)]
+        for x in range(int(self.tileCount[0])):
+            self.tiles.append([])
+            for y in range(int(self.tileCount[1])):
+                oneTile = pygame.Surface(oneFrameSize, pygame.SRCALPHA)
+                oneTile.blit(self.rawImage, Vector2(0, 0), 
+                    (oneFrameSize[0] * x, oneFrameSize[1] * y, oneFrameSize[0], oneFrameSize[1]))
+                self.tiles[x].append(oneTile)
+
+
 class SpriteBlock(Node):
-    def __init__(self, parentNode, size, src, offset_str=None, offset=pygame.Vector2(0, 0), 
+    def __init__(self, parentNode, size, image, offset_str=None, offset=pygame.Vector2(0, 0), 
                 alpha_chanel = False, changable = False):
         super().__init__(parentNode, size, offset_str, offset)
-        self.src = src
-        self.image = pygame.image.load(src).convert_alpha()
 
         self.alpha_chanel = alpha_chanel
         self.changable = changable
 
-        self.surface = pygame.Surface(self.image.get_size()).convert_alpha()
-        self.surface.blit(self.image, Vector2(0, 0))
-        self.surface = pygame.transform.scale(self.surface, size)
+        self.size = size
+
+        self.surface = pygame.transform.scale(image, self.size)
 
     def event(self, event):
         super().event(event)
     
     def update(self):
-        
         super().update()
 
     def draw(self):
         self.scene.screen.blit(self.surface, self.position)
         super().draw()
+    
+    def change(self, image):
+        self.surface = pygame.transform.scale(image, self.size)
 
     def kill(self):
         super().kill()
 
+class Animation:
+    def __init__(self, imageGrid, start, end):
+        if start > end:
+            temp = end
+            end = start
+            start = temp
+
+        self.frames = []
+        for i in range(end - start + 1):
+            frame = i + start
+            x = frame % imageGrid.tileCount[0]
+            y = frame // imageGrid.tileCount[1]
+            self.frames.append(imageGrid.tiles[int(x)][int(y)])
+
 class AnimatedSpriteBlock(Node):
-    def __init__(self, parentNode, size, src, oneFrameSize, start, end, frameLen, offset_str=None, offset = pygame.Vector2(0, 0), 
+    def __init__(self, parentNode, size, framesArr, frameLen, offset_str=None, offset = pygame.Vector2(0, 0), 
                 alpha_chanel = False, changable = False):
         super().__init__(parentNode, size, offset_str, offset)
-        self.src = src
-        self.image = pygame.image.load(src).convert_alpha()
 
         self.alpha_chanel = alpha_chanel
         self.changable = changable
@@ -224,19 +261,14 @@ class AnimatedSpriteBlock(Node):
         self.count = 0
         self.index = 0
 
-        if start > end:
-            temp = end
-            end = start
-            start = temp
+        self.siez = size
 
-        tileCount = Vector2(self.image.get_size()[0] / oneFrameSize[0], self.image.get_size()[1] / oneFrameSize[1])
         self.frames = []
-        for i in range(end - start + 1):
-            frame = pygame.Surface(oneFrameSize).convert_alpha()
-            frame.blit(self.image, Vector2(0, 0), 
-                (oneFrameSize[0] * (i % tileCount[0]), oneFrameSize[1] * (i // tileCount[0]), oneFrameSize[0], oneFrameSize[1]))
-            frame = pygame.transform.scale(frame, size)
+        for i in range(len(framesArr)):
+            frame = pygame.transform.scale(framesArr[i], self.size)
             self.frames.append(frame)
+
+        self.frame = self.frames[0]
 
     def event(self, event):
         super().event(event)
@@ -248,29 +280,39 @@ class AnimatedSpriteBlock(Node):
             self.index += 1
             if self.index >= len(self.frames):
                 self.index = 0
+        
+        self.frame = self.frames[self.index]
         super().update()
 
     def draw(self):
-        self.scene.screen.blit(self.frames[self.index], self.position)
+        self.scene.screen.blit(self.frame, self.position)
         super().draw()
+
+    def change(self, framesArr):
+        self.frames = []
+        for i in range(len(framesArr)):
+            frame = pygame.transform.scale(framesArr[i], self.size)
+            self.frames.append(frame)
+        self.count = 0
+        self.index = 0
 
     def kill(self):
         super().kill()
 
-class TilemapBlock(Node):
-    def __init__(self, parentNode, size, src, oneFrameSize, coords, offset_str=None, offset = pygame.Vector2(0, 0), 
+class TileMapBlock(Node):
+    def __init__(self, parentNode, size, imageGrid, coords, offset_str=None, offset = pygame.Vector2(0, 0), 
                 alpha_chanel = False, changable = False):
         super().__init__(parentNode, size, offset_str, offset)
-        self.src = src
-        self.image = pygame.image.load(src).convert_alpha()
-
         self.alpha_chanel = alpha_chanel
         self.changable = changable
 
-        self.surface = pygame.Surface(oneFrameSize).convert_alpha()
-        self.surface.blit(self.image, Vector2(0, 0), 
-            (oneFrameSize[0] * coords[0], oneFrameSize[1] * coords[1], oneFrameSize[0], oneFrameSize[1]))
-        self.surface = pygame.transform.scale(self.surface, size)
+        self.size = size
+
+        self.tileMap = imageGrid
+
+
+        self.surface = self.tileMap[coords[0]][coords[1]]
+        self.surface = pygame.transform.scale(self.surface, self.size)
 
     def event(self, event):
         super().event(event)
@@ -282,6 +324,10 @@ class TilemapBlock(Node):
     def draw(self):
         self.scene.screen.blit(self.surface, self.position)
         super().draw()
+
+    def change(self, newCoords):
+        self.surface = self.tileMap.tiles[newCoords[0]][newCoords[1]]
+        self.surface = pygame.transform.scale(self.surface, self.size)
 
     def kill(self):
         super().kill()
