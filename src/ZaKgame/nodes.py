@@ -45,6 +45,9 @@ class BaseNode(Node):
     def kill(self):
         super().kill()
 
+
+# --- Visuals --- #
+
 class ColorBlock(Node):
     def __init__(self, parentNode, size, color = Color(255, 255, 255, 255), 
                 offset_str = None, offset = Vector2(0, 0), alpha_chanel = False, changable = False):
@@ -85,31 +88,6 @@ class ColorBlock(Node):
     def kill(self):
         super().kill()
 
-
-
-class LoadImage:
-    def __init__(self, src):
-        self.src = src
-        self.rawImage = pygame.image.load(src)
-
-        self.image = pygame.Surface(self.rawImage.get_size(), pygame.SRCALPHA)
-        self.image.blit(self.rawImage, Vector2(0, 0))
-
-class LoadImageGrid:
-    def __init__(self, src, oneFrameSize):
-        self.rawImage = pygame.image.load(src)
-
-        self.tiles = []
-        self.tileCount = [self.rawImage.get_size()[0] // max(oneFrameSize[0], 1), self.rawImage.get_size()[1] // max(oneFrameSize[1], 1)]
-        for x in range(int(self.tileCount[0])):
-            self.tiles.append([])
-            for y in range(int(self.tileCount[1])):
-                oneTile = pygame.Surface(oneFrameSize, pygame.SRCALPHA)
-                oneTile.blit(self.rawImage, Vector2(0, 0), 
-                    (oneFrameSize[0] * x, oneFrameSize[1] * y, oneFrameSize[0], oneFrameSize[1]))
-                self.tiles[x].append(oneTile)
-
-
 class SpriteBlock(Node):
     def __init__(self, parentNode, size, image, offset_str=None, offset=pygame.Vector2(0, 0), 
                 alpha_chanel = False, changable = False):
@@ -137,20 +115,6 @@ class SpriteBlock(Node):
 
     def kill(self):
         super().kill()
-
-class Animation:
-    def __init__(self, imageGrid, start, end):
-        if start > end:
-            temp = end
-            end = start
-            start = temp
-
-        self.frames = []
-        for i in range(end - start + 1):
-            frame = i + start
-            x = frame % imageGrid.tileCount[0]
-            y = frame // imageGrid.tileCount[1]
-            self.frames.append(imageGrid.tiles[int(x)][int(y)])
 
 class AnimatedSpriteBlock(Node):
     def __init__(self, parentNode, size, framesArr, frameLen, offset_str=None, offset = pygame.Vector2(0, 0), 

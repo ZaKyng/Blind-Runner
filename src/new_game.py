@@ -27,6 +27,12 @@ parent = nodes.BaseNode(scene)
 
 block = nodes.ColorBlock(parent, Vector2(200, 200))
 
+imageGrid = resources.LoadImageGrid("src/img/bonsai.png", Vector2(32, 32))
+
+animation = resources.Animation(imageGrid.grid, 0, 5)
+
+sprite = nodes.AnimatedSpriteBlock(parent, Vector2(200, 200), animation.frames, 40, offset = Vector2(0, 200))
+
 move = modifiers.MouseClick(parent)
 
 while running:
