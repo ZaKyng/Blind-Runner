@@ -1,6 +1,7 @@
 import pygame
-import nodes
+#import new_nodes
 from pygame import Vector2
+from ZaKgame import *
 
 pygame.init()
 pygame.font.init()
@@ -21,6 +22,12 @@ clock = pygame.time.Clock()
 # --- Level-- #
 
 scene = nodes.Scene(screen, screen_size)
+
+parent = nodes.BaseNode(scene)
+
+block = nodes.ColorBlock(parent, Vector2(200, 200))
+
+move = modifiers.MouseClick(parent)
 
 while running:
     for event in pygame.event.get():

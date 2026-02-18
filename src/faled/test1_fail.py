@@ -2,6 +2,7 @@ import pygame
 import nodes1 as nodes
 
 
+
 """
     The game works for now, but in the furure it would be almost imposible to add new modifiers and other nodes.
     I need to rethink the node file structure and need to add z-index.
