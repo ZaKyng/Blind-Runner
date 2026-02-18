@@ -187,9 +187,14 @@ class SpriteBlock(Node):
                 alpha_chanel = False, changable = False):
         super().__init__(parentNode, size, offset_str, offset)
         self.src = src
+        self.image = pygame.image.load(src).convert_alpha()
 
         self.alpha_chanel = alpha_chanel
         self.changable = changable
+
+        self.surface = pygame.Surface(self.image.get_size()).convert_alpha()
+        self.surface.blit(self.image, Vector2(0, 0))
+        self.surface = pygame.transform.scale(self.surface, size)
 
     def event(self, event):
         super().event(event)
@@ -199,12 +204,87 @@ class SpriteBlock(Node):
         super().update()
 
     def draw(self):
-        
+        self.scene.screen.blit(self.surface, self.position)
         super().draw()
 
     def kill(self):
         super().kill()
 
+class AnimatedSpriteBlock(Node):
+    def __init__(self, parentNode, size, src, oneFrameSize, start, end, frameLen, offset_str=None, offset = pygame.Vector2(0, 0), 
+                alpha_chanel = False, changable = False):
+        super().__init__(parentNode, size, offset_str, offset)
+        self.src = src
+        self.image = pygame.image.load(src).convert_alpha()
+
+        self.alpha_chanel = alpha_chanel
+        self.changable = changable
+
+        self.frameLen = frameLen
+        self.count = 0
+        self.index = 0
+
+        if start > end:
+            temp = end
+            end = start
+            start = temp
+
+        tileCount = Vector2(self.image.get_size()[0] / oneFrameSize[0], self.image.get_size()[1] / oneFrameSize[1])
+        self.frames = []
+        for i in range(end - start + 1):
+            frame = pygame.Surface(oneFrameSize).convert_alpha()
+            frame.blit(self.image, Vector2(0, 0), 
+                (oneFrameSize[0] * (i % tileCount[0]), oneFrameSize[1] * (i // tileCount[0]), oneFrameSize[0], oneFrameSize[1]))
+            frame = pygame.transform.scale(frame, size)
+            self.frames.append(frame)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        self.count += 1
+        if self.count >= self.frameLen:
+            self.count = 0
+            self.index += 1
+            if self.index >= len(self.frames):
+                self.index = 0
+        super().update()
+
+    def draw(self):
+        self.scene.screen.blit(self.frames[self.index], self.position)
+        super().draw()
+
+    def kill(self):
+        super().kill()
+
+class TilemapBlock(Node):
+    def __init__(self, parentNode, size, src, oneFrameSize, coords, offset_str=None, offset = pygame.Vector2(0, 0), 
+                alpha_chanel = False, changable = False):
+        super().__init__(parentNode, size, offset_str, offset)
+        self.src = src
+        self.image = pygame.image.load(src).convert_alpha()
+
+        self.alpha_chanel = alpha_chanel
+        self.changable = changable
+
+        self.surface = pygame.Surface(oneFrameSize).convert_alpha()
+        self.surface.blit(self.image, Vector2(0, 0), 
+            (oneFrameSize[0] * coords[0], oneFrameSize[1] * coords[1], oneFrameSize[0], oneFrameSize[1]))
+        self.surface = pygame.transform.scale(self.surface, size)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        
+        super().update()
+
+    def draw(self):
+        self.scene.screen.blit(self.surface, self.position)
+        super().draw()
+
+    def kill(self):
+        super().kill()
 
 
 # ----- Modifiers ----- #
