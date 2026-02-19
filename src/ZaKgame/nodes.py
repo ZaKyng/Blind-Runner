@@ -6,6 +6,10 @@ from .base import *
 
 # ----- Nodes ----- #
 
+class Game:
+    def __init__(self, screen_size):
+        pass
+
 class Scene(Default):
     def __init__(self, screen, screen_size, bg_color = Color(0, 0, 0)):
         super().__init__()
