@@ -6,13 +6,15 @@ from .base import *
 
 # ----- Nodes ----- #
 
-class Scene(Backbone):
-    def __init__(self, screen, screen_size):
+class Scene(Default):
+    def __init__(self, screen, screen_size, bg_color = Color(0, 0, 0)):
         super().__init__()
         self.scene = self
         self.screen = screen    #Pygame - surface
         self.size = Vector2(screen_size)
         self.position = Vector2(0, 0)
+
+        self.bg_color = Color(bg_color)
 
     def event(self, event):
         super().event(event)
@@ -22,10 +24,13 @@ class Scene(Backbone):
 
     def draw(self):
         super().draw()
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
 
 class BaseNode(Node):
-    def __init__(self, parentNode, physics_layer = None, offset_str = None, offset = Vector2(0, 0)):
-        super().__init__(parentNode, Vector2(0, 0), offset_str, offset)
+    def __init__(self, parentNode, physics_layer = None, zindex = 0, offset_str = None, offset = Vector2(0, 0)):
+        super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset)
 
         self.physics_layer = 0
         if (physics_layer and isinstance(physics_layer, int)):
@@ -41,6 +46,9 @@ class BaseNode(Node):
 
     def draw(self):
         super().draw()
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
 
     def kill(self):
         super().kill()
@@ -49,9 +57,9 @@ class BaseNode(Node):
 # --- Visuals --- #
 
 class ColorBlock(Node):
-    def __init__(self, parentNode, size, color = Color(255, 255, 255, 255), 
+    def __init__(self, parentNode, size, color = Color(255, 255, 255, 255), zindex = 0, 
                 offset_str = None, offset = Vector2(0, 0), alpha_chanel = False, changable = False):
-        super().__init__(parentNode, size, offset_str, offset)
+        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
         self.color = pygame.Color(color)
         
         if not alpha_chanel:
@@ -89,9 +97,9 @@ class ColorBlock(Node):
         super().kill()
 
 class SpriteBlock(Node):
-    def __init__(self, parentNode, size, image, offset_str=None, offset=pygame.Vector2(0, 0), 
+    def __init__(self, parentNode, size, image, zindex = 0, offset_str=None, offset=pygame.Vector2(0, 0), 
                 alpha_chanel = False, changable = False):
-        super().__init__(parentNode, size, offset_str, offset)
+        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
 
         self.alpha_chanel = alpha_chanel
         self.changable = changable
@@ -109,17 +117,23 @@ class SpriteBlock(Node):
     def draw(self):
         self.scene.screen.blit(self.surface, self.position)
         super().draw()
+
+    def addChild(self, newChild):
+        super().addChild(newChild)
     
+    def kill(self):
+        super().kill()
+    
+
+
     def change(self, image):
         self.surface = pygame.transform.scale(image, self.size)
 
-    def kill(self):
-        super().kill()
 
 class AnimatedSpriteBlock(Node):
-    def __init__(self, parentNode, size, framesArr, frameLen, offset_str=None, offset = pygame.Vector2(0, 0), 
+    def __init__(self, parentNode, size, framesArr, frameLen, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0), 
                 alpha_chanel = False, changable = False):
-        super().__init__(parentNode, size, offset_str, offset)
+        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
 
         self.alpha_chanel = alpha_chanel
         self.changable = changable
@@ -155,6 +169,14 @@ class AnimatedSpriteBlock(Node):
         self.scene.screen.blit(self.frame, self.position)
         super().draw()
 
+    def addChild(self, newChild):
+        super().addChild(newChild)
+
+    def kill(self):
+        super().kill()
+
+
+
     def change(self, framesArr):
         self.frames = []
         for i in range(len(framesArr)):
@@ -163,19 +185,16 @@ class AnimatedSpriteBlock(Node):
         self.count = 0
         self.index = 0
 
-    def kill(self):
-        super().kill()
-
 class TileMapBlock(Node):
-    def __init__(self, parentNode, size, imageGrid, coords, offset_str=None, offset = pygame.Vector2(0, 0), 
+    def __init__(self, parentNode, size, image_grid, coords, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0), 
                 alpha_chanel = False, changable = False):
-        super().__init__(parentNode, size, offset_str, offset)
+        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
         self.alpha_chanel = alpha_chanel
         self.changable = changable
 
         self.size = size
 
-        self.tileMap = imageGrid
+        self.tileMap = image_grid
 
 
         self.surface = self.tileMap[coords[0]][coords[1]]
@@ -192,9 +211,14 @@ class TileMapBlock(Node):
         self.scene.screen.blit(self.surface, self.position)
         super().draw()
 
-    def change(self, newCoords):
-        self.surface = self.tileMap.tiles[newCoords[0]][newCoords[1]]
-        self.surface = pygame.transform.scale(self.surface, self.size)
+    def addChild(self, newChild):
+        super().addChild(newChild)
 
     def kill(self):
         super().kill()
+    
+    
+    
+    def change(self, newCoords):
+        self.surface = self.tileMap.tiles[newCoords[0]][newCoords[1]]
+        self.surface = pygame.transform.scale(self.surface, self.size)

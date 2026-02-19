@@ -1,7 +1,7 @@
 import pygame
 from pygame import Vector2
 
-__all__ = ["Backbone", "Modifier", "Node"]
+__all__ = ["Default", "Modifier", "Node"]
 
 def positionFromStr(string, size, parentNode_size):
     sw, sh = Vector2(size)
@@ -32,7 +32,7 @@ def positionFromStr(string, size, parentNode_size):
 # ----- Base of nodes ----- #
 
 
-class Backbone:
+class Default:
     def __init__(self):
         self.children = []
     
@@ -47,12 +47,21 @@ class Backbone:
     def draw(self):
         for node in self.children:
             node.draw()
+    
+    def addChild(self, newChild):
+        for i in range(len(self.children)):
+            if self.children[i].zindex >= newChild.zindex:
+                self.children.insert(i, newChild)
+                return
+        self.children.append(newChild)
 
-class Modifier(Backbone):
-    def __init__(self, parentNode):
+class Modifier(Default):
+    def __init__(self, parentNode, zindex = -10):
         super().__init__()
+        self.zindex = zindex
+
         self.parentNode = parentNode
-        self.parentNode.children.append(self)
+        self.parentNode.addChild(self)
 
         self.scene = self.parentNode.scene
     
@@ -64,14 +73,16 @@ class Modifier(Backbone):
 
     def draw(self):
         super().draw()
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
 
 class Node(Modifier):
-    def __init__(self, parentNode, size = Vector2(0, 0), offset_str = None, offset = Vector2(0, 0)):
-        super().__init__(parentNode)
+    def __init__(self, parentNode, size = Vector2(0, 0), zindex = 0, offset_str = None, offset = Vector2(0, 0)):
+        super().__init__(parentNode, zindex = zindex)
 
         self.size = Vector2(size)
 
-        
         if (offset_str):
             self.offset, offset_str = positionFromStr(offset_str.lower(), self.size, self.parentNode.size)
         
@@ -95,6 +106,9 @@ class Node(Modifier):
 
     def draw(self):
         super().draw()
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
     
     def kill(self):
         self.parentNode.children.remove(self)
