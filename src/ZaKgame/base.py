@@ -1,9 +1,11 @@
 import pygame
 from pygame import Vector2
+from typing import List
 
-__all__ = ["Default", "Modifier", "Node"]
+__all__ = ["Parent", "Modifier", "Node", "positionFromStr"]
 
-def positionFromStr(string, size, parentNode_size):
+
+def positionFromStr(string: str, size, parentNode_size) -> tuple:
     sw, sh = Vector2(size)
     w, h = Vector2(parentNode_size)
     
@@ -32,9 +34,10 @@ def positionFromStr(string, size, parentNode_size):
 # ----- Base of nodes ----- #
 
 
-class Default:
-    def __init__(self):
-        self.children = []
+class Parent:
+    def __init__(self, parentNode: 'Parent'):
+        self.children: List['Parent'] = []
+        self.game = parentNode.game
     
     def event(self, event):
         for node in self.children:
@@ -55,31 +58,39 @@ class Default:
                 return
         self.children.append(newChild)
 
-class Modifier(Default):
+class Modifier:
     def __init__(self, parentNode, zindex = -10):
-        super().__init__()
         self.zindex = zindex
 
         self.parentNode = parentNode
         self.parentNode.addChild(self)
 
-        self.scene = self.parentNode.scene
+        self.game = self.parentNode.game
     
     def event(self, event):
-        super().event(event)
+        pass
     
     def update(self):
-        super().update()
+        pass
 
     def draw(self):
-        super().draw()
+        pass
     
-    def addChild(self, newChild):
-        super().addChild(newChild)
+    def kill(self) -> None:
+        """Remove this modifier from its parent's children list."""
+        if self in self.parentNode.children:
+            self.parentNode.children.remove(self)
 
-class Node(Modifier):
+class Node(Parent):
     def __init__(self, parentNode, size = Vector2(0, 0), zindex = 0, offset_str = None, offset = Vector2(0, 0)):
-        super().__init__(parentNode, zindex = zindex)
+        super().__init__(parentNode)
+
+        self.zindex = zindex
+
+        self.parentNode = parentNode
+        self.parentNode.addChild(self)
+
+        self.game = self.parentNode.game
 
         self.size = Vector2(size)
 
@@ -110,6 +121,8 @@ class Node(Modifier):
     def addChild(self, newChild):
         super().addChild(newChild)
     
-    def kill(self):
-        self.parentNode.children.remove(self)
+    def kill(self) -> None:
+        """Remove this node from its parent's children list."""
+        if self in self.parentNode.children:
+            self.parentNode.children.remove(self)
 

@@ -7,15 +7,73 @@ from .base import *
 # ----- Nodes ----- #
 
 class Game:
-    def __init__(self, screen_size):
-        pass
+    def __init__(self, screen_size, tick_speed = 120):
+        self.game = self
 
-class Scene(Default):
-    def __init__(self, screen, screen_size, bg_color = Color(0, 0, 0)):
-        super().__init__()
-        self.scene = self
-        self.screen = screen    #Pygame - surface
-        self.size = Vector2(screen_size)
+        self.running = True
+        self.screen_size = tuple(screen_size)
+
+        self.scenes = {}
+        self.current_scene = None
+        Scene("", self)
+        
+
+        pygame.display.set_caption("Level test")
+
+        self.fonts = {}
+        self.fonts["main"] = pygame.font.SysFont('Arial', 50)
+        self.fonts["secondary"] = pygame.font.SysFont('Arial', 30)
+
+        self.screen = pygame.display.set_mode(self.screen_size) #pygame surface
+        self.clock = pygame.time.Clock()
+
+        self.tick_speed = tick_speed
+    
+    def run(self):
+        while self.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        scene_names = list(self.scenes.keys())
+                        index = scene_names.index(self.current_scene)
+                        index += 1
+                        if index >= len(scene_names):
+                            index = 0
+                        self.current_scene = scene_names[index]
+
+                self.scenes[self.current_scene].event(event)
+
+            self.screen.fill(self.scenes[self.current_scene].bg_color)
+
+            self.scenes[self.current_scene].update()
+            self.scenes[self.current_scene].draw()
+
+            self.clock.tick(self.tick_speed)
+            pygame.display.flip()
+        pygame.quit()
+        exit()
+    
+    def addScene(self, name, scene):
+        self.scenes[name] = scene
+        if not self.current_scene:
+            self.current_scene = name
+        if self.current_scene == "":
+            self.current_scene = name
+            self.scenes.pop("")
+        
+    
+    def changeScene(self, name):
+        self.current_scene = name
+
+class Scene(Parent):
+    def __init__(self, name : str, game, bg_color = Color(0, 0, 0)):
+        super().__init__(game)
+        self.game = game
+
+        self.game.addScene(name, self)
+
         self.position = Vector2(0, 0)
 
         self.bg_color = Color(bg_color)
@@ -93,8 +151,8 @@ class ColorBlock(Node):
         super().update()
 
     def draw(self):
-        # Místo přímého kreslení obdélníku vykreslíme připravený Surface
-        self.scene.screen.blit(self.image, self.rect)
+        # Draw the pre-rendered Surface instead of drawing a rectangle directly
+        self.game.screen.blit(self.image, self.rect)
         super().draw()
 
     def kill(self):
@@ -119,7 +177,7 @@ class SpriteBlock(Node):
         super().update()
 
     def draw(self):
-        self.scene.screen.blit(self.surface, self.position)
+        self.game.screen.blit(self.surface, self.position)
         super().draw()
 
     def addChild(self, newChild):
@@ -135,14 +193,14 @@ class SpriteBlock(Node):
 
 
 class AnimatedSpriteBlock(Node):
-    def __init__(self, parentNode, size, framesArr, frameLen, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0), 
+    def __init__(self, parentNode, size, framesArr, fps, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0), 
                 alpha_chanel = False, changable = False):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
 
         self.alpha_chanel = alpha_chanel
         self.changable = changable
 
-        self.frameLen = frameLen
+        self.frameLen = self.game.tick_speed // fps
         self.count = 0
         self.index = 0
 
@@ -170,7 +228,7 @@ class AnimatedSpriteBlock(Node):
         super().update()
 
     def draw(self):
-        self.scene.screen.blit(self.frame, self.position)
+        self.game.screen.blit(self.frame, self.position)
         super().draw()
 
     def addChild(self, newChild):
@@ -212,7 +270,7 @@ class TileMapBlock(Node):
         super().update()
 
     def draw(self):
-        self.scene.screen.blit(self.surface, self.position)
+        self.game.screen.blit(self.surface, self.position)
         super().draw()
 
     def addChild(self, newChild):
@@ -224,5 +282,5 @@ class TileMapBlock(Node):
     
     
     def change(self, newCoords):
-        self.surface = self.tileMap.tiles[newCoords[0]][newCoords[1]]
+        self.surface = self.tileMap[newCoords[0]][newCoords[1]]
         self.surface = pygame.transform.scale(self.surface, self.size)

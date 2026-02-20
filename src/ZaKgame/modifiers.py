@@ -24,7 +24,7 @@ class MouseClick(Modifier):
     def kill(self):
         super().kill()
 
-class KeayboardMove(Modifier):
+class KeyboardMove(Modifier):
     def __init__(self, parentNode, speed = 20):
         super().__init__(parentNode)
 
@@ -37,13 +37,13 @@ class KeayboardMove(Modifier):
             i = 1 if event.type == pygame.KEYDOWN else -1
             speed = self.speed * i
             if event.key == pygame.K_LEFT:
-                self.velocity[0] += -speed
+                self.velocity.x += -speed
             elif event.key == pygame.K_RIGHT:
-                self.velocity[0] += speed
+                self.velocity.x += speed
             elif event.key == pygame.K_UP:
-                self.velocity[1] += -speed
+                self.velocity.y += -speed
             elif event.key == pygame.K_DOWN:
-                self.velocity[1] += speed
+                self.velocity.y += speed
         super().event(event)
     
     def update(self):

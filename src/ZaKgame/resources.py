@@ -3,7 +3,7 @@ from pygame import Vector2
 
 
 
-# ----- Recources ----- #
+# ----- Resources ----- #
 
 
 
