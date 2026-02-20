@@ -7,7 +7,10 @@ from .base import *
 # ----- Nodes ----- #
 
 class Game:
-    def __init__(self, screen_size, tick_speed = 120):
+    def __init__(self, screen_size, name = "ZaKgame window", tick_speed = 120):
+        pygame.init()
+        pygame.font.init()
+
         self.game = self
 
         self.running = True
@@ -15,10 +18,10 @@ class Game:
 
         self.scenes = {}
         self.current_scene = None
-        Scene("", self)
+        Scene("my", self)
         
 
-        pygame.display.set_caption("Level test")
+        pygame.display.set_caption(name)
 
         self.fonts = {}
         self.fonts["main"] = pygame.font.SysFont('Arial', 50)
@@ -30,6 +33,9 @@ class Game:
         self.tick_speed = tick_speed
     
     def run(self):
+        pygame.init()
+        pygame.font.init()
+
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -52,16 +58,14 @@ class Game:
 
             self.clock.tick(self.tick_speed)
             pygame.display.flip()
-        pygame.quit()
-        exit()
     
     def addScene(self, name, scene):
         self.scenes[name] = scene
         if not self.current_scene:
             self.current_scene = name
-        if self.current_scene == "":
+        elif self.current_scene == "my" and name != "my":
             self.current_scene = name
-            self.scenes.pop("")
+            self.scenes.pop("my")
         
     
     def changeScene(self, name):
@@ -74,7 +78,9 @@ class Scene(Parent):
 
         self.game.addScene(name, self)
 
-        self.position = Vector2(0, 0)
+        self.offset = Vector2(0, 0)
+
+        self.position = self.offset
 
         self.bg_color = Color(bg_color)
 

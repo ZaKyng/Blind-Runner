@@ -13,6 +13,7 @@ class MouseClick(Modifier):
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self.parentNode.offset = pygame.mouse.get_pos()
+            print(pygame.mouse.get_pos())
         super().event(event)
     
     def update(self):

@@ -3,21 +3,20 @@ import pygame
 from pygame import Vector2
 from ZaKgame import *
 
-pygame.init()
-pygame.font.init()
 
 # ----- Pygame setup ----- #
 
 screen_size = (1080, 1080)
-my_game = nodes.Game(screen_size)
+my_game = nodes.Game(screen_size, name = "Test1", tick_speed = 60)
+
+mygame2 = nodes.Game(screen_size, name = "Test2", tick_speed = 60)
 
 # --- Level-- #
 
 scene1 = nodes.Scene("scene1", my_game, bg_color = (200, 100, 20))
-
 scene2 = nodes.Scene("scene2", my_game, bg_color = (120, 0, 120))
-
 scene3 = nodes.Scene("scene3", my_game, bg_color = (0, 120, 120))
+
 
 
 parent4 = nodes.BaseNode(scene1, zindex = 2, offset = Vector2(1, 0))
@@ -67,3 +66,7 @@ move2 = modifiers.KeyboardMove(parent3)
 
 
 my_game.run()
+
+
+pygame.quit()
+exit()
