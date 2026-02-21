@@ -13,13 +13,17 @@ my_game = nodes.Game(screen_size, name = "Test1", fps = 1000)
 
 scene1 = nodes.Scene("scene1", my_game, bg_color = (200, 100, 20))
 
-parent = nodes.BaseNode(scene1, offset = Vector2(200, 540))
+parent = nodes.BaseNode(scene1)
 
-block = nodes.ColorBlock(parent, (120, 400), offset_str = "center")
+block = nodes.ColorBlock(parent, (200, 60))
 
-modifier = modifiers.AxisMove(block, -100, 100, axis = "x")
+modifier = modifiers.AxisMove(parent, 880, axis = "x", speed = 300)
+modifiery = modifiers.AxisMove(parent, 1020, axis = "y", speed = 300)
 
-my_game.run()
+def test():
+    print(parent.offset)
+
+my_game.run(test)
 
 
 pygame.quit()

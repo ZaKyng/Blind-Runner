@@ -38,11 +38,11 @@ class Game:
 
         self.delta = 1 / fps
     
-    def run(self):
+    def run(self, func = None):
         while self.running:
             dt_ms = self.clock.tick(self.tick_speed)
             self.delta = dt_ms / 1000.0
-            
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -54,8 +54,11 @@ class Game:
                         if index >= len(scene_names):
                             index = 0
                         self.current_scene = scene_names[index]
-
+            
                 self.scenes[self.current_scene].event(event)
+
+            if func:
+                func()
 
             self.screen.fill(self.scenes[self.current_scene].bg_color)
 
