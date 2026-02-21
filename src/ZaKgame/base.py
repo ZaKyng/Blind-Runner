@@ -1,11 +1,10 @@
 import pygame
 from pygame import Vector2
-from typing import List
 
-__all__ = ["Parent", "Modifier", "Node", "positionFromStr"]
+__all__ = ["Parent", "Modifier", "Node"]
 
 
-def positionFromStr(string: str, size, parentNode_size) -> tuple:
+def positionFromStr(string: str, size, parentNode_size, offset):
     sw, sh = Vector2(size)
     w, h = Vector2(parentNode_size)
     
@@ -24,19 +23,18 @@ def positionFromStr(string: str, size, parentNode_size) -> tuple:
         "center":       Vector2(mid_x, mid_y)
     }
 
-    output = pos.get(string)
+    output = pos.get(string, offset)
     
-    if output:
-        return [output, string]
-    return [output, None]
+    return Vector2(output)
 
 
 # ----- Base of nodes ----- #
 
 
 class Parent:
-    def __init__(self, parentNode: 'Parent'):
-        self.children: List['Parent'] = []
+    def __init__(self, parentNode):
+        self.children = []
+        self.collision = []
         self.game = parentNode.game
     
     def event(self, event):
@@ -57,15 +55,29 @@ class Parent:
                 self.children.insert(i, newChild)
                 return
         self.children.append(newChild)
-
-class Modifier:
-    def __init__(self, parentNode, zindex = -10):
+    
+    def addCollision(self, newCollision):
+        self.collision.append(newCollision)
+    
+    def child(self, parentNode, zindex):
         self.zindex = zindex
 
         self.parentNode = parentNode
         self.parentNode.addChild(self)
 
         self.game = self.parentNode.game
+    
+    def kill(self):
+        """Remove self from its parent children list."""
+        if self in self.parentNode.children:
+            self.parentNode.children.remove(self)
+
+
+
+class Modifier(Parent):
+    def __init__(self, parentNode, zindex = -10):
+        super().child(parentNode, zindex)
+        self.game = parentNode.game
     
     def event(self, event):
         pass
@@ -77,27 +89,19 @@ class Modifier:
         pass
     
     def kill(self) -> None:
-        """Remove this modifier from its parent's children list."""
-        if self in self.parentNode.children:
-            self.parentNode.children.remove(self)
+        super().kill()
+        
 
 class Node(Parent):
     def __init__(self, parentNode, size = Vector2(0, 0), zindex = 0, offset_str = None, offset = Vector2(0, 0)):
         super().__init__(parentNode)
-
-        self.zindex = zindex
-
-        self.parentNode = parentNode
-        self.parentNode.addChild(self)
-
-        self.game = self.parentNode.game
+        super().child(parentNode, zindex)
 
         self.size = Vector2(size)
 
         if (offset_str):
-            self.offset, offset_str = positionFromStr(offset_str.lower(), self.size, self.parentNode.size)
-        
-        if offset_str is None:
+            self.offset = positionFromStr(offset_str.lower(), self.size, self.parentNode.size, offset)
+        else:
             self.offset = Vector2(offset)
 
         self.position = self.parentNode.position + self.offset
@@ -121,8 +125,10 @@ class Node(Parent):
     def addChild(self, newChild):
         super().addChild(newChild)
     
-    def kill(self) -> None:
-        """Remove this node from its parent's children list."""
-        if self in self.parentNode.children:
-            self.parentNode.children.remove(self)
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
+        self.parentNode.addCollision(newCollision)
+    
+    def kill(self):
+        super().kill()
 

@@ -4,10 +4,12 @@ from pygame import Color
 
 from .base import *
 
-# ----- Nodes ----- #
+# ----------- Nodes ------------ #
+
+# -- Primary -- #
 
 class Game:
-    def __init__(self, screen_size, name = "ZaKgame window", tick_speed = 120):
+    def __init__(self, screen_size, name = "ZaKgame window", fps = 120):
         pygame.init()
         pygame.font.init()
 
@@ -16,9 +18,11 @@ class Game:
         self.running = True
         self.screen_size = tuple(screen_size)
 
+        self.default_scene_name = "empty"
+
         self.scenes = {}
         self.current_scene = None
-        Scene("my", self)
+        Scene(self.default_scene_name, self)
         
 
         pygame.display.set_caption(name)
@@ -30,13 +34,15 @@ class Game:
         self.screen = pygame.display.set_mode(self.screen_size) #pygame surface
         self.clock = pygame.time.Clock()
 
-        self.tick_speed = tick_speed
+        self.tick_speed = fps
+
+        self.delta = 1 / fps
     
     def run(self):
-        pygame.init()
-        pygame.font.init()
-
         while self.running:
+            dt_ms = self.clock.tick(self.tick_speed)
+            self.delta = dt_ms / 1000.0
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -56,27 +62,34 @@ class Game:
             self.scenes[self.current_scene].update()
             self.scenes[self.current_scene].draw()
 
-            self.clock.tick(self.tick_speed)
             pygame.display.flip()
     
+
     def addScene(self, name, scene):
         self.scenes[name] = scene
         if not self.current_scene:
             self.current_scene = name
-        elif self.current_scene == "my" and name != "my":
+        elif self.current_scene == self.default_scene_name and name != self.default_scene_name:
             self.current_scene = name
-            self.scenes.pop("my")
+            self.scenes.pop(self.default_scene_name)
         
     
     def changeScene(self, name):
         self.current_scene = name
 
+    
+    def removeScene(self, name):
+        self.scenes.pop(name)
+
 class Scene(Parent):
     def __init__(self, name : str, game, bg_color = Color(0, 0, 0)):
         super().__init__(game)
         self.game = game
+        
+        self.name = name
+        self.game.addScene(self.name, self)
 
-        self.game.addScene(name, self)
+        self.size = self.game.screen_size
 
         self.offset = Vector2(0, 0)
 
@@ -93,18 +106,19 @@ class Scene(Parent):
     def draw(self):
         super().draw()
     
+    def kill(self):
+        self.game.removeScene(self.name)
+    
     def addChild(self, newChild):
         super().addChild(newChild)
+    
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
 
 class BaseNode(Node):
-    def __init__(self, parentNode, physics_layer = None, zindex = 0, offset_str = None, offset = Vector2(0, 0)):
+    def __init__(self, parentNode,  zindex = 0, offset_str = None, offset = Vector2(0, 0), show_hitboxes = False):
         super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset)
-
-        self.physics_layer = 0
-        if (physics_layer and isinstance(physics_layer, int)):
-            self.physics_layer = physics_layer
         
-        self.hitBoxes = []
     
     def event(self, event):
         super().event(event)
@@ -117,16 +131,53 @@ class BaseNode(Node):
     
     def addChild(self, newChild):
         super().addChild(newChild)
+    
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
 
     def kill(self):
         super().kill()
 
 
-# --- Visuals --- #
+
+# -- Logic -- #
+
+class CollisionArea(Node):
+    def __init__(self, parentNode, physics_layer = 0, show = False):
+        super().__init__(parentNode, size = Vector2(0, 0), zindex = -10, offset_str = None, offset = Vector2(0, 0))
+        self.physics_layer = physics_layer
+        self.show = show
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self):
+        super().draw()
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
+    
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
+
+    def kill(self):
+        super().kill()
+
+
+class CollisionBlock(Node):
+    def __init__(self, parentNode, size, zindex = 0, 
+                offset_str = None, offset = Vector2(0, 0)):
+        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
+
+
+# -- Visuals -- #
 
 class ColorBlock(Node):
     def __init__(self, parentNode, size, color = Color(255, 255, 255, 255), zindex = 0, 
-                offset_str = None, offset = Vector2(0, 0), alpha_chanel = False, changable = False):
+                offset_str = None, offset = Vector2(0, 0), alpha_chanel = True, changable = False):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
         self.color = pygame.Color(color)
         
@@ -141,6 +192,7 @@ class ColorBlock(Node):
         else:
             self.image = pygame.Surface(self.size)
         self.image.fill(self.color)
+
 
     def event(self, event):
         super().event(event)
@@ -160,6 +212,12 @@ class ColorBlock(Node):
         # Draw the pre-rendered Surface instead of drawing a rectangle directly
         self.game.screen.blit(self.image, self.rect)
         super().draw()
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
+    
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
 
     def kill(self):
         super().kill()
@@ -176,6 +234,7 @@ class SpriteBlock(Node):
 
         self.surface = pygame.transform.scale(image, self.size)
 
+
     def event(self, event):
         super().event(event)
     
@@ -189,14 +248,15 @@ class SpriteBlock(Node):
     def addChild(self, newChild):
         super().addChild(newChild)
     
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
+    
     def kill(self):
         super().kill()
     
 
-
     def change(self, image):
         self.surface = pygame.transform.scale(image, self.size)
-
 
 class AnimatedSpriteBlock(Node):
     def __init__(self, parentNode, size, framesArr, fps, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0), 
@@ -219,6 +279,7 @@ class AnimatedSpriteBlock(Node):
 
         self.frame = self.frames[0]
 
+
     def event(self, event):
         super().event(event)
     
@@ -239,10 +300,12 @@ class AnimatedSpriteBlock(Node):
 
     def addChild(self, newChild):
         super().addChild(newChild)
+    
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
 
     def kill(self):
         super().kill()
-
 
 
     def change(self, framesArr):
@@ -268,6 +331,7 @@ class TileMapBlock(Node):
         self.surface = self.tileMap[coords[0]][coords[1]]
         self.surface = pygame.transform.scale(self.surface, self.size)
 
+
     def event(self, event):
         super().event(event)
     
@@ -281,10 +345,12 @@ class TileMapBlock(Node):
 
     def addChild(self, newChild):
         super().addChild(newChild)
+    
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
 
     def kill(self):
         super().kill()
-    
     
     
     def change(self, newCoords):
