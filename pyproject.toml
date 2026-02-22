@@ -25,7 +25,7 @@ dependencies = {file = ["requirements.txt"]}
 "*" = ["img/*"]
 
 [project.scripts]
-game = "blindrunner.new_game:run"
+game = "blindrunner.__main__:run"
 lib = "ZaKnode.__main__:run"
 
 

@@ -12,7 +12,7 @@ def run():
     screen_size = (1080, 1080)
     my_game = nodes.Game(screen_size, name = "Library showcase", fps = 120)
 
-    image_dir = directory("test_img/bonsai.png")
+    image_dir = directory("img/bonsai.png")
 
     bonsai = resources.LoadImage(image_dir)
 

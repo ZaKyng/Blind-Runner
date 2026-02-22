@@ -23,7 +23,6 @@ Zaknode/modifiers.py
 Zaknode/nodes.py
 Zaknode/resources.py
 Zaknode/img/bonsai.png
-blindrunner/new_game.py
-blindrunner/new_nodes.py
+blindrunner/__main__.py
 blindrunner/img/bonsai.png
 blindrunner/img/sikula_smurf.jpg
