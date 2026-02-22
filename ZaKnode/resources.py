@@ -5,19 +5,18 @@ from pygame import Vector2
 
 # ----- Resources ----- #
 
-
-
 class LoadImage:
-    def __init__(self, src):
-        self.src = src
-        self.rawImage = pygame.image.load(src)
+    def __init__(self, path):
+        self.path = path
+        self.rawImage = pygame.image.load(path)
 
         self.image = pygame.Surface(self.rawImage.get_size(), pygame.SRCALPHA)
         self.image.blit(self.rawImage, Vector2(0, 0))
 
 class LoadImageGrid:
-    def __init__(self, src, oneFrameSize):
-        self.rawImage = pygame.image.load(src)
+    def __init__(self, path, oneFrameSize):
+        self.path = path
+        self.rawImage = pygame.image.load(path)
 
         self.grid = []
         self.tileCount = [self.rawImage.get_size()[0] // max(oneFrameSize[0], 1), self.rawImage.get_size()[1] // max(oneFrameSize[1], 1)]

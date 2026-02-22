@@ -1,13 +1,13 @@
 [project]
 name = "BlindRunner"
-version = "0.0.1"
+version = "0.1"
 authors = [
   { name="Olievr Jan Pohl", email="zakyng32@gmail.com" },
 ]
 
 description = "Jumping 2D game"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -15,13 +15,18 @@ classifiers = [
 
 dynamic = ["dependencies"]
 
+[tool.setuptools]
+packages = ["blindrunner", "ZaKnode"]
+
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 
+[tool.setuptools.package-data]
+"*" = ["img/*"]
 
-# zde muzete zadefinovat spustitelne skripty (tj. pokud pisete knihovnu, tak zde muzete definovat jak spustit nejaky priklad pouziti knihovny)
 [project.scripts]
-cgui-example = "src.new_game"
+game = "blindrunner.new_game:run"
+lib = "ZaKnode.__main__:run"
 
 
 [project.urls]
@@ -30,7 +35,6 @@ Issues = "https://github.com/ZaKyng/Blind-Runner/issues"
 
 
 [build-system]
-# Minimum requirements for the build system to execute.
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
