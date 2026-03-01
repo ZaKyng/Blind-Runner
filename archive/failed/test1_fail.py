@@ -1,5 +1,5 @@
 import pygame
-import nodes1 as nodes
+from . import nodes1 as nodes
 
 
 

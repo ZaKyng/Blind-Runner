@@ -32,4 +32,4 @@ Run:
 
 # Updated developer comment (1. 3. 26)
 
-ZaKnode library showcase is the same as the game, because I am in process of redoing the node logic. You can explore my progress in the archive folder, and mainly in failed folder inside. If you run "python -m archive/failed/test1_fail", you will see how far with the node system I came before starting over.
+ZaKnode library showcase is the same as the game, because I am in process of redoing the node logic. You can explore my progress in the archive folder, and mainly in failed folder inside. If you run "python -m archive.failed.test1_fail", you will see how far with the node system I came before starting over.
