@@ -3,7 +3,7 @@
 # Jumping 2D game
 
 2D jumping game. When you are moving, the screen excluding player goes black and when stopped (not moving) you see.
-You just have to memorise the level ahead. Thats the main idea.
+You just have to memorise the level ahead. That's the main idea.
 Contains a 2D game library for easier use in pygame (I have created special class nodes that depend on each other and work together in a lot of ways).
 
 
@@ -11,7 +11,7 @@ Contains a 2D game library for easier use in pygame (I have created special clas
 
 Requirements
 
-- python 3.13
+- Python 3.13
 - pip
 
 1. Install latest .whl file in /dist folder.
@@ -29,3 +29,7 @@ Run:
         (for ZaKnode library showcase)
     python -m blindrunner
         (for the game itself)
+
+# Updated developer comment (1. 3. 26)
+
+ZaKnode library showcase is the same as the game, because I am in process of redoing the node logic. You can explore my progress in the archive folder, and mainly in failed folder inside. If you run "python -m archive/failed/test1_fail", you will see how far with the node system I came before starting over.
