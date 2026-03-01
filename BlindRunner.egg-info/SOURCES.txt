@@ -16,13 +16,6 @@ ZaKnode/modifiers.py
 ZaKnode/nodes.py
 ZaKnode/resources.py
 ZaKnode/img/bonsai.png
-Zaknode/__init__.py
-Zaknode/__main__.py
-Zaknode/base.py
-Zaknode/modifiers.py
-Zaknode/nodes.py
-Zaknode/resources.py
-Zaknode/img/bonsai.png
 blindrunner/__main__.py
 blindrunner/img/bonsai.png
 blindrunner/img/sikula_smurf.jpg
