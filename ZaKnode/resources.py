@@ -13,6 +13,8 @@ class LoadImage:
         self.image = pygame.Surface(self.rawImage.get_size(), pygame.SRCALPHA)
         self.image.blit(self.rawImage, Vector2(0, 0))
 
+        self.rawImage = None
+
 class LoadImageGrid:
     def __init__(self, path, oneFrameSize):
         self.path = path
@@ -27,6 +29,8 @@ class LoadImageGrid:
                 oneTile.blit(self.rawImage, Vector2(0, 0), 
                     (oneFrameSize[0] * x, oneFrameSize[1] * y, oneFrameSize[0], oneFrameSize[1]))
                 self.grid[x].append(oneTile)
+        
+        self.rawImage = None
 
 class Animation:
     def __init__(self, framesArr, start, end):

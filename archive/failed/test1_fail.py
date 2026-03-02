@@ -7,7 +7,7 @@ from . import nodes1 as nodes
     The game works for now, but in the furure it would be almost imposible to add new modifiers and other nodes.
     I need to rethink the node file structure and need to add z-index.
     I want to be able to add anything to anything (any modifier to any node, any node to parentNode and even to any node,
-        nodes (block, hitBox) need to work more like parentNode).¨
+        nodes (block, hitBox) need to work more like parentNode).
     Now that I think about it, parentNode shouldn't have velocity, just position and modifiers and other nodes should 
         have velocity and on update just should change position. IDK
     Just need to rewrite the whole nodes.py again.
@@ -85,38 +85,6 @@ coords2 = [
 
 grid.addGround(ground, coords1)
 
-player_defautl_pos = [1, 18]
-player = grid.player(position = player_defautl_pos, physics_check = 1)
-
-player.collisionBlock(grid.cell_size, offset = [grid.cell_size[0] * 2, 0])
-nodes.moveMouse(player)
-
-
-label_parent = nodes.parentNode(scene, position = grid.gridCoordinates([5, 2]))
-label = nodes.label(label_parent, "", secondary_font, position_str = "center", changable = "true")
-
-win_count = 0
-def win():
-    global win_count, running
-    win_count += 1
-    if win_count % 2 == 1:
-        grid.removeGround(ground, coords1)
-        grid.addGround(ground, coords2)
-        player.removeCollisionBlock([grid.cell_size[0] * 2, 0])
-    else:
-        player.collisionBlock(grid.cell_size, offset = [grid.cell_size[0] * 2, 0])
-        grid.removeGround(ground, coords2)
-        grid.addGround(ground, coords1)
-    player.position = grid.gridCoordinates(player_defautl_pos)
-    
-    player.velocity = [0, 0]
-
-win_area_parent = nodes.parentNode(scene, position = grid.gridCoordinates([17, 1]))
-win_area_hitbox = nodes.hitBox(win_area_parent, [grid.cell_size[0], grid.cell_size[1]], show = True, can_leave_window = True)
-
-win_area_modifier = nodes.enterCheck(win_area_parent, 5, win)
-win_area_modifier2 = nodes.moveMouse(win_area_parent)
-
 
 translate_test_parent = nodes.parentNode(scene, position = grid.gridCoordinates([5, 7]), physics_layer = 1)
 translate_block = []
@@ -133,6 +101,49 @@ for i in range(4):
 
 tranlsate_test3 = nodes.translateGlobal(translate_test_parent, grid.gridCoordinates([6, 8]), grid.gridCoordinates([2, 2]), 1)
 
+win_area_parent = nodes.parentNode(scene, position = grid.gridCoordinates([17, 1]))
+win_area_hitbox = nodes.hitBox(win_area_parent, [grid.cell_size[0], grid.cell_size[1]], show = True, can_leave_window = True)
+
+def win():
+    global win_count, running
+    win_count += 1
+    if win_count % 2 == 1:
+        grid.removeGround(ground, coords1)
+        grid.addGround(ground, coords2)
+        player.removeCollisionBlock([grid.cell_size[0] * 2, 0])
+    else:
+        player.collisionBlock(grid.cell_size, offset = [grid.cell_size[0] * 2, 0])
+        grid.removeGround(ground, coords2)
+        grid.addGround(ground, coords1)
+    player.position = grid.gridCoordinates(player_defautl_pos)
+    
+    player.velocity = [0, 0]
+
+win_area_modifier = nodes.enterCheck(win_area_parent, 5, win)
+win_area_modifier2 = nodes.moveMouse(win_area_parent)
+
+
+blind_part = nodes.parentNode(scene)
+blind_box = nodes.block(blind_part, screen_size, color = [0, 0, 0])
+
+player_defautl_pos = [1, 18]
+player = grid.player(position = player_defautl_pos, physics_check = 1)
+
+player.collisionBlock(grid.cell_size, offset = [grid.cell_size[0] * 2, 0])
+nodes.moveMouse(player)
+
+
+label_parent = nodes.parentNode(scene, position = grid.gridCoordinates([5, 2]))
+label = nodes.label(label_parent, "", secondary_font, position_str = "center", changable = "true")
+
+win_count = 0
+
+
+
+
+
+
+
 
 while running:
     for event in pygame.event.get():
@@ -141,6 +152,11 @@ while running:
         scene.event(event)
 
     screen.fill((20, 70, 40))
+
+    if player.velocity == [0, 0]:
+        blind_box.display = False
+    else:
+        blind_box.display = True
 
     label.text = "You won "+str(win_count)+" times"
 

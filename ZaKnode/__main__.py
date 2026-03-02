@@ -24,7 +24,15 @@ def run():
     # --- Level-- #
 
     scene1 = nodes.Scene("scene1", my_game, bg_color = (200, 100, 20))
-    scene2 = nodes.Scene("scene2", my_game, bg_color = (20, 200, 100))
+    parent1 = nodes.BaseNode(scene1)
+    block1 = nodes.ColorBlock(parent1, (80, 80))
+    collision = nodes.CollisionArea(parent1, 8, True)
+    collision.addRect(Vector2(20, 200), offset = Vector2(100, 100))
+    modifier1_1 = modifiers.AxisMove(parent1, 180, 900, speed = 57, mode = "linear", strength = 6)
+    modifier1_2 = modifiers.AxisMove(parent1, 180, 900, speed = 300, mode = "ease-in", axis = "y", strength = 2)
+    modifier1_3 = modifiers.KeyboardArrowsMove(collision, leave_window = True)
+
+    """scene2 = nodes.Scene("scene2", my_game, bg_color = (20, 200, 100))
     scene3 = nodes.Scene("scene3", my_game, bg_color = (100, 20, 200))
     scene4 = nodes.Scene("scene4", my_game, bg_color = (200, 20, 100))
 
@@ -44,8 +52,8 @@ def run():
     block4 = nodes.AnimatedSpriteBlock(parent4, (250, 250), bonsai_color_anim.frames, 3, offset_str = "center")
 
     parent5 = nodes.BaseNode(scene4)
-    block5 = nodes.TileMapBlock(parent5, (250, 250), bonsai_grid.grid, [1, 1], offset_str = "center")
-    modifier5 = modifiers.LinearMove(parent5, Vector2(100, 100), Vector2(800, 540))
+    block5 = nodes.TileMapBlock(parent5, (250, 250), bonsai_grid.grid, [1, 1])
+    modifier5 = modifiers.LinearMove(parent5, Vector2(200, 100), end = Vector2(600, 700))"""
 
 
 

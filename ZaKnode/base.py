@@ -69,6 +69,13 @@ class Parent:
     
     def kill(self):
         """Remove self from its parent children list."""
+        if hasattr(self, "children"):
+            for child in self.children[:]:
+                child.kill()
+
+            self.children.clear()
+            self.collision.clear()
+
         if self in self.parentNode.children:
             self.parentNode.children.remove(self)
 
@@ -107,10 +114,10 @@ class Node(Parent):
         self.position = self.parentNode.position + self.offset
 
         for otherNode in self.parentNode.children:
-            if otherNode.position == self.position and otherNode is not self:
+            """if otherNode.position == self.position and otherNode is not self:
                 print("Too many nodes at the same position, could not find a free spot")
                 pygame.quit()
-                exit()
+                exit()"""
     
     def event(self, event):
         super().event(event)
@@ -127,7 +134,6 @@ class Node(Parent):
     
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
-        self.parentNode.addCollision(newCollision)
     
     def kill(self):
         super().kill()

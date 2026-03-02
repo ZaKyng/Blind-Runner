@@ -119,6 +119,7 @@ class LinearMove(Modifier):
             end = self.parentNode.offset
         
         self.start = Vector2(start)
+        self.parentNode.offset = self.start
         self.end = Vector2(end)
 
         self.speed = abs(speed)
@@ -132,7 +133,7 @@ class LinearMove(Modifier):
         
         self.direction = 1
 
-        self.last_offset = self.parentNode.offset
+        self.last_offset = Vector2(0, 0)
 
         modes = {
             "linear" : self.linear,
@@ -163,10 +164,9 @@ class LinearMove(Modifier):
 
         self.new_offset = self.difference * partition
 
-
         step = self.new_offset - self.last_offset
         
-        self.parentNode.offset -= step
+        self.parentNode.offset += step
         self.last_offset = self.new_offset
 
         super().update()

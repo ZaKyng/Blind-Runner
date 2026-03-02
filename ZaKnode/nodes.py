@@ -146,10 +146,14 @@ class BaseNode(Node):
 # -- Logic -- #
 
 class CollisionArea(Node):
-    def __init__(self, parentNode, physics_layer = 0, show = False):
+    def __init__(self, parentNode, physics_layer = 0, show = True):
         super().__init__(parentNode, size = Vector2(0, 0), zindex = -10, offset_str = None, offset = Vector2(0, 0))
         self.physics_layer = physics_layer
         self.show = show
+
+        self.parentNode.addCollision(self)
+
+        self.collision_blocks = []
 
     def event(self, event):
         super().event(event)
@@ -168,12 +172,42 @@ class CollisionArea(Node):
 
     def kill(self):
         super().kill()
+    
 
+    def addRect(self, size, offset_str = None, offset = Vector2(0, 0)):
+        CollisionBlock(self, size, offset_str = offset_str, offset = offset)
 
 class CollisionBlock(Node):
-    def __init__(self, parentNode, size, zindex = 0, 
-                offset_str = None, offset = Vector2(0, 0)):
+    def __init__(self, parentNode, size, zindex = -5, offset_str = None, offset = Vector2(0, 0)):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
+        self.parentNode.collision_blocks.append(self)
+
+        self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
+    
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        super().update()
+        self.rect = None
+        self.rect = pygame.Rect(self.position, self.size)
+        
+    def draw(self):
+        if self.parentNode.show:
+            surface = pygame.Surface(self.size)
+            surface.fill("#00ff00")
+            self.game.screen.blit(surface, self.rect)
+        super().draw()
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
+    
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
+
+    def kill(self):
+        self.parentNode.collision_blocks.remove(self)
+        super().kill()
 
 
 # -- Visuals -- #
@@ -201,15 +235,9 @@ class ColorBlock(Node):
         super().event(event)
     
     def update(self):
-        self.rect = pygame.Rect(self.position, self.size)
-        if self.changable:
-            if self.alpha_chanel:
-                self.image = pygame.Surface(self.size, pygame.SRCALPHA)
-            else:
-                self.image = pygame.Surface(self.size)
-
-            self.image.fill(self.color)
         super().update()
+        self.rect = pygame.Rect(self.position, self.size)
+        
 
     def draw(self):
         # Draw the pre-rendered Surface instead of drawing a rectangle directly
@@ -221,6 +249,25 @@ class ColorBlock(Node):
     
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
+    
+    def change(self, newSize = None, newColor = None):
+        if newSize is None:
+            newSize = self.size
+        
+        if newColor is None:
+            newColor = self.color
+
+        self.size = newSize
+        self.color = newColor
+
+        if self.changable:
+            if self.alpha_chanel:
+                self.image = pygame.Surface(self.size, pygame.SRCALPHA)
+            else:
+                self.image = pygame.Surface(self.size)
+            self.image.fill(self.color)
+        else:
+            print("Cant change")
 
     def kill(self):
         super().kill()
@@ -312,10 +359,11 @@ class AnimatedSpriteBlock(Node):
 
 
     def change(self, framesArr):
-        self.frames = []
+        self.frames.clean()
         for i in range(len(framesArr)):
             frame = pygame.transform.scale(framesArr[i], self.size)
             self.frames.append(frame)
+
         self.count = 0
         self.index = 0
 
