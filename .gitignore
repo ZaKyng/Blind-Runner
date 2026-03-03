@@ -5,7 +5,7 @@ __pycache__/
 *.pyd
 
 # Build / dist
-dist/
+*.tar.gz
 *.egg-info/
 
 # Virtual env (if any)
