@@ -1,3 +1,0 @@
-[console_scripts]
-game = blindrunner.__main__:run
-lib = ZaKnode.__main__:run
