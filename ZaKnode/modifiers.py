@@ -577,6 +577,7 @@ class MouseDragMove(Modifier):
     def kill(self):
         super().kill()
 
+
 ### - Keyboard - ###
 
 class KeyboardMove(Modifier):
@@ -659,4 +660,29 @@ class KeyboardWASDMove(KeyboardMove):
     def kill(self):
         super().kill()
     
-        
+class KeyPress(Modifier):
+    def __init__(self, parentNode, key, function, keydown = True):
+        super().__init__(parentNode)
+        self.key = key
+        self.func = function
+
+        if keydown:
+            self.event_type = pygame.KEYDOWN
+        else:
+            self.event_type = pygame.KEYUP
+
+    def event(self, event):
+        if event.type == self.event_type:
+            if event.key == self.key:
+                self.func()
+
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()

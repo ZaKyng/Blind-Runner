@@ -5,6 +5,8 @@ from pygame import Vector2
 
 # ----- Resources ----- #
 
+## ----- Visual ----- ##
+
 class LoadImage:
     def __init__(self, path):
         self.path = path
@@ -45,3 +47,4 @@ class Animation:
             x = frame % max(len(framesArr), 1)
             y = frame // max(len(framesArr[0]), 1)
             self.frames.append(framesArr[int(x)][int(y)])
+

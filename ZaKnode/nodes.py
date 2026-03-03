@@ -212,6 +212,135 @@ class CollisionBlock(Node):
 
 # -- Visuals -- #
 
+class Label(Node):
+    def __init__(self, parentNode, text : str, font, color = Color(255, 255, 255), zindex = 0, 
+                offset_str = None, offset = Vector2(0, 0), changable = False):
+        
+        
+        self.text = text
+        self.color = Color(color)
+        self.font = font
+        self.message = self.font.render(self.text, True, self.color)
+        self.surface = pygame.Surface(self.message.get_size(), pygame.SRCALPHA)
+        self.surface.blit(self.message)
+        
+        size = Vector2(self.surface.get_size())
+
+        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
+
+        self.rect = pygame.Rect(self.position, self.size)
+
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        super().update()
+        self.rect = pygame.Rect(self.position, self.size)
+        
+
+    def draw(self):
+        self.game.screen.blit(self.surface, self.rect)
+        super().draw()
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
+    
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
+    
+    def change(self, newText = None, newFont = None, newColor = None):
+        if newText is not None:
+            self.text = newText
+        
+        if newFont is not None:
+            self.font = newFont
+
+        if newColor is not None:
+            self.color = Color(newColor)
+
+        self.message = self.font.render(self.text, True, self.color)
+        self.surface = pygame.Surface(self.message.get_size(), pygame.SRCALPHA)
+        self.surface.blit(self.message)
+
+        self.size = Vector2(self.surface.get_size())
+
+
+    def kill(self):
+        super().kill()
+
+class TextBlock(Node):
+    def __init__(self, parentNode, text : str, font, txt_color = Color(255, 255, 255), bg_color = Color(0, 0, 0), padding = 0, zindex = 0, 
+                offset_str = None, offset = Vector2(0, 0)):
+        
+        self.text = text
+        self.color = Color(txt_color)
+        self.background = Color(bg_color)
+        self.font = font
+
+        self.message = self.font.render(self.text, True, self.color)
+        
+        self.padding = padding
+
+        self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
+                                       self.message.get_size()[1] + self.padding * 2), pygame.SRCALPHA)
+        self.surface.fill(self.background)
+        self.surface.blit(self.message, (self.padding, self.padding))
+
+        size = Vector2(self.surface.get_size())
+        
+        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
+
+        self.rect = pygame.Rect(self.position, self.size)
+
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        super().update()
+        self.rect = pygame.Rect(self.position, self.size)
+        
+
+    def draw(self):
+        self.game.screen.blit(self.surface, self.rect)
+        super().draw()
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
+    
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
+    
+    def change(self, text = None, font = None, txt_color = None, bg_color = None, padding = None):
+        if text is not None:
+            self.text = text
+        
+        if font is None:
+            self.font = font
+
+        if txt_color is None:
+            self.color = Color(txt_color)
+        
+        if bg_color is None:
+            self.background = Color(bg_color)
+        
+        if padding is None:
+            self.padding = padding
+
+
+        self.message = self.font.render(self.text, True, self.color)
+        self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
+                                       self.message.get_size()[1] + self.padding * 2), pygame.SRCALPHA)
+        self.surface.fill(self.background)
+        self.surface.blit(self.message, (self.padding, self.padding))
+
+        self.size = self.surface.get_size()
+
+
+    def kill(self):
+        super().kill()
+
 class ColorBlock(Node):
     def __init__(self, parentNode, size, color = Color(255, 255, 255, 255), zindex = 0, 
                 offset_str = None, offset = Vector2(0, 0), alpha_chanel = True, changable = False):
