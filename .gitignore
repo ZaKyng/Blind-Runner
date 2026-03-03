@@ -1,0 +1,12 @@
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Build / dist
+dist/
+*.egg-info/
+
+# Virtual env (if any)
+.venv/

@@ -1,0 +1,40 @@
+[project]
+name = "BlindRunner"
+version = "0.1"
+authors = [
+  { name="Olievr Jan Pohl", email="zakyng32@gmail.com" },
+]
+
+description = "Jumping 2D game"
+readme = "README.md"
+requires-python = ">=3.13"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+dynamic = ["dependencies"]
+
+[tool.setuptools]
+packages = ["blindrunner", "ZaKnode"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.package-data]
+"*" = ["img/*"]
+
+[project.scripts]
+game = "blindrunner.__main__:run"
+lib = "ZaKnode.__main__:run"
+
+
+[project.urls]
+Homepage = "https://github.com/ZaKyng/Blind-Runner"
+Issues = "https://github.com/ZaKyng/Blind-Runner/issues"
+
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+

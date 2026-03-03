@@ -1,0 +1,662 @@
+import math
+import pygame
+from pygame import Vector2
+
+from .base import *
+
+
+default_speed = 200
+
+
+
+# ----------- Modifiers ------------ #
+
+## -- Position changers -- ##
+
+
+### - Constant - ###
+
+class AxisMove(Modifier):
+    def __init__(self, parentNode, start, end = None, axis = "x", mode = "linear", speed = default_speed, strength = 3):
+        super().__init__(parentNode)
+
+        axis_arr = {"x" : 0, "y" : 1}
+
+        self.axis = axis_arr.get(axis.lower(), 0)
+        
+
+        if end is None:
+            end = self.parentNode.offset[self.axis]
+        
+        if start > end:
+            self.start = end
+            self.end = start
+        else:
+            self.start = start
+            self.end = end
+        
+        self.speed = speed
+        self.strength = abs(strength)
+
+        self.path_len = self.end - self.start
+        self.duration = self.path_len / self.speed
+
+        self.elapsed = 0.0
+        
+        self.direction = 1
+
+        self.last_offset = self.parentNode.offset[self.axis]
+
+        modes = {
+            "linear" : self.linear,
+            "ease-in" : self.easeIn,
+            "ease-out" : self.easeOut,
+            "ease-both" : self.easeBoth
+        }
+
+        self.mode = modes.get(mode, self.linear)
+
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        self.elapsed += self.direction * self.game.delta
+
+        
+
+        if self.elapsed >= self.duration:
+            self.elapsed = self.duration
+            self.direction = -1
+        elif self.elapsed <= 0:
+            self.elapsed = 0
+            self.direction = 1
+        
+        percents = self.elapsed / self.duration
+
+        partition = self.mode(percents, self.strength)
+
+        self.new_offset = self.start + self.path_len * partition
+
+        #print([self.new_offset, self.last_offset, percents, partition])
+
+        step = self.new_offset - self.last_offset
+        
+        self.parentNode.offset[self.axis] += step
+        self.last_offset = self.new_offset
+
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+    
+    
+    def linear(self, p, s):
+        return p
+
+    def easeIn(self, p, s):
+        return pow(p, s)
+    
+    def easeOut(self, p, s):
+        return 1 - pow(1 - p, s)
+    
+    def easeBoth(self, p, s):
+        if p < 0.5:
+            return pow(2, s - 1) * pow(p, s)
+        else:
+            return 1 - pow(-2 * p + 2, s) / 2
+
+class LinearMove(Modifier):
+    def __init__(self, parentNode, start : Vector2, end = None, mode = "linear", speed = default_speed, strength = 3):
+        super().__init__(parentNode)
+
+        self.direction = 1
+
+        if end is None:
+            end = self.parentNode.offset
+        
+        self.start = Vector2(start)
+        self.parentNode.offset = self.start
+        self.end = Vector2(end)
+
+        self.speed = abs(speed)
+        self.strength = abs(strength)
+        
+        self.difference = self.end - self.start
+        self.path_len = math.sqrt(self.difference.x ** 2 + self.difference.y ** 2)
+
+        self.duration = self.path_len / self.speed
+        self.elapsed = 0.0
+        
+        self.direction = 1
+
+        self.last_offset = Vector2(0, 0)
+
+        modes = {
+            "linear" : self.linear,
+            "ease-in" : self.easeIn,
+            "ease-out" : self.easeOut,
+            "ease-both" : self.easeBoth
+        }
+
+        self.mode = modes.get(mode, self.linear)
+
+    
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        self.elapsed += self.direction * self.game.delta
+
+        if self.elapsed >= self.duration:
+            self.elapsed = self.duration
+            self.direction = -1
+        elif self.elapsed <= 0:
+            self.elapsed = 0
+            self.direction = 1
+        
+        percents = self.elapsed / self.duration
+
+        partition = self.mode(percents, self.strength)
+
+        self.new_offset = self.difference * partition
+
+        step = self.new_offset - self.last_offset
+        
+        self.parentNode.offset += step
+        self.last_offset = self.new_offset
+
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+    
+    
+    def linear(self, p, s):
+        return p
+
+    def easeIn(self, p, s):
+        return pow(p, s)
+    
+    def easeOut(self, p, s):
+        return 1 - pow(1 - p, s)
+    
+    def easeBoth(self, p, s):
+        if p < 0.5:
+            return pow(2, s - 1) * pow(p, s)
+        else:
+            return 1 - pow(-2 * p + 2, s) / 2
+
+class CircularMove(Modifier):
+    def __init__(self, parentNode, center, radius = None, clockwise = True, speed = default_speed):
+        super().__init__(parentNode)
+
+        self.speed = speed
+
+        self.center = Vector2(center)
+        if radius is None:
+            difference = self.parentNode.offset - self.center
+            self.radius = math.sqrt(abs(difference.x ** 2 + difference.y ** 2))
+        else:
+            self.radius = radius
+
+        self.path_len = 2 * math.pi * self.radius
+        self.duration = self.path_len / self.speed
+
+        self.elapsed = 0.0
+        
+
+    
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        self.elapsed += self.direction * self.game.delta
+
+        if self.elapsed >= self.duration or self.elapsed <= 0:
+            self.elapsed = self.elapsed % self.duration
+        
+        percents = self.elapsed / self.duration
+
+        partition = self.mode(percents, self.strength)
+
+        self.new_offset = self.difference * partition
+
+
+        step = self.new_offset - self.last_offset
+        
+        self.parentNode.offset += step
+
+        self.last_offset = self.new_offset
+
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+
+
+### - Mouse - ###
+
+class MouseClickMove(Modifier):
+    def __init__(self, parentNode):
+        super().__init__(parentNode)
+    
+
+    def event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = Vector2(pygame.mouse.get_pos())
+            self.parentNode.offset = mouse_pos - self.parentNode.parentNode.position
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+
+class MouseDragMove(Modifier):
+    import math
+import pygame
+from pygame import Vector2
+
+from .base import *
+
+
+default_speed = 200
+
+
+
+# ----------- Modifiers ------------ #
+
+## -- Position changers -- ##
+
+
+### - Constant - ###
+
+class AxisMove(Modifier):
+    def __init__(self, parentNode, start, end = None, axis = "x", mode = "linear", speed = default_speed, strength = 3):
+        super().__init__(parentNode)
+
+        axis_arr = {"x" : 0, "y" : 1}
+
+        self.axis = axis_arr.get(axis.lower(), 0)
+        
+
+        if end is None:
+            end = self.parentNode.offset[self.axis]
+        
+        if start > end:
+            self.start = end
+            self.end = start
+        else:
+            self.start = start
+            self.end = end
+        
+        self.speed = speed
+        self.strength = abs(strength)
+
+        self.path_len = self.end - self.start
+        self.duration = self.path_len / self.speed
+
+        self.elapsed = 0.0
+        
+        self.direction = 1
+
+        self.last_offset = self.parentNode.offset[self.axis]
+
+        modes = {
+            "linear" : self.linear,
+            "ease-in" : self.easeIn,
+            "ease-out" : self.easeOut,
+            "ease-both" : self.easeBoth
+        }
+
+        self.mode = modes.get(mode, self.linear)
+
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        self.elapsed += self.direction * self.game.delta
+
+        
+
+        if self.elapsed >= self.duration:
+            self.elapsed = self.duration
+            self.direction = -1
+        elif self.elapsed <= 0:
+            self.elapsed = 0
+            self.direction = 1
+        
+        percents = self.elapsed / self.duration
+
+        partition = self.mode(percents, self.strength)
+
+        self.new_offset = self.start + self.path_len * partition
+
+        #print([self.new_offset, self.last_offset, percents, partition])
+
+        step = self.new_offset - self.last_offset
+        
+        self.parentNode.offset[self.axis] += step
+        self.last_offset = self.new_offset
+
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+    
+    
+    def linear(self, p, s):
+        return p
+
+    def easeIn(self, p, s):
+        return pow(p, s)
+    
+    def easeOut(self, p, s):
+        return 1 - pow(1 - p, s)
+    
+    def easeBoth(self, p, s):
+        if p < 0.5:
+            return pow(2, s - 1) * pow(p, s)
+        else:
+            return 1 - pow(-2 * p + 2, s) / 2
+
+class LinearMove(Modifier):
+    def __init__(self, parentNode, start : Vector2, end = None, mode = "linear", speed = default_speed, strength = 3):
+        super().__init__(parentNode)
+
+        self.direction = 1
+
+        if end is None:
+            end = self.parentNode.offset
+        
+        self.start = Vector2(start)
+        self.parentNode.offset = self.start
+        self.end = Vector2(end)
+
+        self.speed = abs(speed)
+        self.strength = abs(strength)
+        
+        self.difference = self.end - self.start
+        self.path_len = math.sqrt(self.difference.x ** 2 + self.difference.y ** 2)
+
+        self.duration = self.path_len / self.speed
+        self.elapsed = 0.0
+        
+        self.direction = 1
+
+        self.last_offset = Vector2(0, 0)
+
+        modes = {
+            "linear" : self.linear,
+            "ease-in" : self.easeIn,
+            "ease-out" : self.easeOut,
+            "ease-both" : self.easeBoth
+        }
+
+        self.mode = modes.get(mode, self.linear)
+
+    
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        self.elapsed += self.direction * self.game.delta
+
+        if self.elapsed >= self.duration:
+            self.elapsed = self.duration
+            self.direction = -1
+        elif self.elapsed <= 0:
+            self.elapsed = 0
+            self.direction = 1
+        
+        percents = self.elapsed / self.duration
+
+        partition = self.mode(percents, self.strength)
+
+        self.new_offset = self.difference * partition
+
+        step = self.new_offset - self.last_offset
+        
+        self.parentNode.offset += step
+        self.last_offset = self.new_offset
+
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+    
+    
+    def linear(self, p, s):
+        return p
+
+    def easeIn(self, p, s):
+        return pow(p, s)
+    
+    def easeOut(self, p, s):
+        return 1 - pow(1 - p, s)
+    
+    def easeBoth(self, p, s):
+        if p < 0.5:
+            return pow(2, s - 1) * pow(p, s)
+        else:
+            return 1 - pow(-2 * p + 2, s) / 2
+
+class CircularMove(Modifier):
+    def __init__(self, parentNode, center, radius = None, clockwise = True, speed = default_speed):
+        super().__init__(parentNode)
+
+        self.speed = speed
+
+        self.center = Vector2(center)
+        if radius is None:
+            difference = self.parentNode.offset - self.center
+            self.radius = math.sqrt(abs(difference.x ** 2 + difference.y ** 2))
+        else:
+            self.radius = radius
+
+        self.path_len = 2 * math.pi * self.radius
+        self.duration = self.path_len / self.speed
+
+        self.elapsed = 0.0
+        
+
+    
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        self.elapsed += self.direction * self.game.delta
+
+        if self.elapsed >= self.duration or self.elapsed <= 0:
+            self.elapsed = self.elapsed % self.duration
+        
+        percents = self.elapsed / self.duration
+
+        partition = self.mode(percents, self.strength)
+
+        self.new_offset = self.difference * partition
+
+
+        step = self.new_offset - self.last_offset
+        
+        self.parentNode.offset += step
+
+        self.last_offset = self.new_offset
+
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+
+
+### - Mouse - ###
+
+class MouseClickMove(Modifier):
+    def __init__(self, parentNode):
+        super().__init__(parentNode)
+    
+
+    def event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = Vector2(pygame.mouse.get_pos())
+            self.parentNode.offset = mouse_pos - self.parentNode.parentNode.position
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+
+class MouseDragMove(Modifier):
+    def __init__(self, parentNode, physics_layer = 1):
+        super().__init__(parentNode)
+        self.physics_check = physics_layer
+
+        self.mouse_offset = Vector2(0, 0)
+        self.mouse_clicked = False
+
+    def event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse = Vector2(pygame.mouse.get_pos())
+            inside = False
+            for collision_area in self.parentNode.collision:
+                if collision_area.physics_layer == self.physics_check:
+                    for rect in collision_area.collision_blocks:
+                        if rect.rect.collidepoint(mouse):
+                            inside = True
+                            break
+                if inside:
+                    break
+            
+            if inside:
+                self.mouse_offset = self.parentNode.position - mouse
+                self.mouse_clicked = True
+        
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self.mouse_clicked = 0
+        super().event(event)
+    
+    def update(self):
+        if self.mouse_clicked:
+            mouse = Vector2(pygame.mouse.get_pos())
+            self.parentNode.position = mouse + self.mouse_offset
+
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+
+### - Keyboard - ###
+
+class KeyboardMove(Modifier):
+    def __init__(self, parentNode, speed, leave_window):
+        super().__init__(parentNode)
+
+        self.speed = speed
+
+        self.leave_window = leave_window
+
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self, direction):
+        if direction.length_squared() > 0:
+            direction = direction.normalize()
+
+        velocity = direction * self.speed * self.game.delta
+        self.parentNode.offset += velocity
+
+        if not self.leave_window:
+            max_x = self.game.screen_size[0] - self.parentNode.size.x
+            max_y = self.game.screen_size[1] - self.parentNode.size.y
+
+            self.parentNode.offset.x = max(0, min(max_x, self.parentNode.offset.x))
+            self.parentNode.offset.y = max(0, min(max_y, self.parentNode.offset.y))
+
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+
+class KeyboardArrowsMove(KeyboardMove):
+    def __init__(self, parentNode, speed = default_speed, leave_window = False):
+        super().__init__(parentNode, speed = speed, leave_window = leave_window)
+
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        keys = pygame.key.get_pressed()
+        
+        direction = Vector2(0, 0)
+        direction.x = keys[pygame.K_RIGHT] - keys[pygame.K_LEFT]
+        direction.y = keys[pygame.K_DOWN] - keys[pygame.K_UP]
+
+        super().update(direction)
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+
+class KeyboardWASDMove(KeyboardMove):
+    def __init__(self, parentNode, speed = default_speed, leave_window = False):
+        super().__init__(parentNode, speed = speed, leave_window = leave_window)
+
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        keys = pygame.key.get_pressed()
+        
+        direction = Vector2(0, 0)
+        direction.x = keys[pygame.K_d] - keys[pygame.K_a]
+        direction.y = keys[pygame.K_s] - keys[pygame.K_w]
+
+        super().update(direction)
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+    
+        
