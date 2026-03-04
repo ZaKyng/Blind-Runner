@@ -158,7 +158,7 @@ class BaseNode(Node):
 
 class CollisionArea(Node):
     def __init__(self, parentNode, physics_layer = 0, show = False):
-        super().__init__(parentNode, size = Vector2(0, 0), zindex = -10, offset_str = None, offset = Vector2(0, 0))
+        super().__init__(parentNode, size = parentNode.size, zindex = -10, offset_str = None, offset = Vector2(0, 0))
         self.physics_layer = physics_layer
         self.show = show
 
@@ -225,14 +225,14 @@ class CollisionBlock(Node):
 
 class Label(Node):
     def __init__(self, parentNode, text : str, font, color = Color(255, 255, 255), zindex = 0, 
-                offset_str = None, offset = Vector2(0, 0), changable = False):
-        
-        
+                offset_str = None, offset = Vector2(0, 0)):
         self.text = text
         self.color = Color(color)
         self.font = font
         self.message = self.font.render(self.text, True, self.color)
+
         self.surface = pygame.Surface(self.message.get_size(), pygame.SRCALPHA)
+
         self.surface.blit(self.message)
         
         size = Vector2(self.surface.get_size())
@@ -271,7 +271,9 @@ class Label(Node):
             self.color = Color(newColor)
 
         self.message = self.font.render(self.text, True, self.color)
+
         self.surface = pygame.Surface(self.message.get_size(), pygame.SRCALPHA)
+
         self.surface.blit(self.message)
 
         self.size = Vector2(self.surface.get_size())
@@ -282,7 +284,7 @@ class Label(Node):
 
 class TextBlock(Node):
     def __init__(self, parentNode, text : str, font, txt_color = Color(255, 255, 255), bg_color = Color(0, 0, 0), padding = 0, zindex = 0, 
-                offset_str = None, offset = Vector2(0, 0)):
+                offset_str = None, offset = Vector2(0, 0), alpha_chanel = False):
         
         self.text = text
         self.color = Color(txt_color)
@@ -293,8 +295,14 @@ class TextBlock(Node):
         
         self.padding = padding
 
-        self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
+        self.alpha = alpha_chanel
+        if self.alpha:
+            self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
                                        self.message.get_size()[1] + self.padding * 2), pygame.SRCALPHA)
+        else:
+            self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
+                                       self.message.get_size()[1] + self.padding * 2))
+        
         self.surface.fill(self.background)
         self.surface.blit(self.message, (self.padding, self.padding))
 
@@ -341,8 +349,13 @@ class TextBlock(Node):
 
 
         self.message = self.font.render(self.text, True, self.color)
-        self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
+        if self.alpha:
+            self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
                                        self.message.get_size()[1] + self.padding * 2), pygame.SRCALPHA)
+        else:
+            self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
+                                       self.message.get_size()[1] + self.padding * 2))
+            
         self.surface.fill(self.background)
         self.surface.blit(self.message, (self.padding, self.padding))
 
@@ -396,25 +409,18 @@ class ColorBlock(Node):
         self.size = newSize
         self.color = newColor
 
-        if self.changable:
-            if self.alpha_chanel:
-                self.image = pygame.Surface(self.size, pygame.SRCALPHA)
-            else:
-                self.image = pygame.Surface(self.size)
-            self.image.fill(self.color)
+        if self.alpha_chanel:
+            self.image = pygame.Surface(self.size, pygame.SRCALPHA)
         else:
-            print("Cant change")
+            self.image = pygame.Surface(self.size)
 
+        self.image.fill(self.color)
     def kill(self):
         super().kill()
 
 class SpriteBlock(Node):
-    def __init__(self, parentNode, size, image, zindex = 0, offset_str=None, offset=pygame.Vector2(0, 0), 
-                alpha_chanel = False, changable = False):
+    def __init__(self, parentNode, size, image, zindex = 0, offset_str=None, offset=pygame.Vector2(0, 0)):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
-
-        self.alpha_chanel = alpha_chanel
-        self.changable = changable
 
         self.size = size
 
@@ -445,12 +451,9 @@ class SpriteBlock(Node):
         self.surface = pygame.transform.scale(image, self.size)
 
 class AnimatedSpriteBlock(Node):
-    def __init__(self, parentNode, size, framesArr, fps, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0), 
-                alpha_chanel = False, changable = False):
+    def __init__(self, parentNode, size, framesArr, fps, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0)):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
 
-        self.alpha_chanel = alpha_chanel
-        self.changable = changable
 
         self.frameLen = self.game.tick_speed // fps
         self.count = 0
@@ -543,7 +546,13 @@ class TileMapBlock(Node):
         if coords is None:
             if changer is None:
                 return
-            self.coords = [int((self.coords[0] + changer[0]) % self.tileNode.tileCount[0]), int((self.coords[1] + changer[1]) % self.tileNode.tileCount[1])]
+            elif isinstance(changer, int):
+                new_x = int((self.coords[0] + changer) % self.tileNode.tileCount[0])
+                new_y = int((self.coords[1] + (self.coords[0] + changer) // self.tileNode.tileCount[0]) % self.tileNode.tileCount[1])
+            else:
+                new_x = int((self.coords[0] + changer[0]) % self.tileNode.tileCount[0])
+                new_y = int((self.coords[1] + changer[1]) % self.tileNode.tileCount[1])
+            self.coords = [new_x, new_y]
         else:
             self.coords = [int(coords[0] % self.tileNode.tileCount[0]), int(coords[1] % self.tileNode.tileCount[1])]
         

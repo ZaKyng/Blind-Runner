@@ -8,17 +8,21 @@ from pygame import Vector2
 ## ----- Visual ----- ##
 
 class LoadImage:
-    def __init__(self, path):
+    def __init__(self, path, alpha_chanel = False):
         self.path = path
         self.rawImage = pygame.image.load(path)
 
-        self.image = pygame.Surface(self.rawImage.get_size(), pygame.SRCALPHA)
+        if alpha_chanel:
+            self.image = pygame.Surface(self.rawImage.get_size(), pygame.SRCALPHA)
+        else:
+            self.image = pygame.Surface(self.rawImage.get_size())
+
         self.image.blit(self.rawImage, Vector2(0, 0))
 
         self.rawImage = None
 
 class LoadImageGrid:
-    def __init__(self, path, oneFrameSize):
+    def __init__(self, path, oneFrameSize, alpha_chanel = False):
         self.path = path
         self.rawImage = pygame.image.load(path)
 
@@ -27,7 +31,11 @@ class LoadImageGrid:
         for x in range(int(self.tileCount[0])):
             self.grid.append([])
             for y in range(int(self.tileCount[1])):
-                oneTile = pygame.Surface(oneFrameSize, pygame.SRCALPHA)
+                if alpha_chanel:
+                    oneTile = pygame.Surface(oneFrameSize, pygame.SRCALPHA)
+                else:
+                    oneTile = pygame.Surface(oneFrameSize)
+                
                 oneTile.blit(self.rawImage, Vector2(0, 0), 
                     (oneFrameSize[0] * x, oneFrameSize[1] * y, oneFrameSize[0], oneFrameSize[1]))
                 self.grid[x].append(oneTile)

@@ -17,8 +17,9 @@ default_speed = 200
 ### - Constant - ###
 
 class AxisMove(Modifier):
-    def __init__(self, parentNode, start, end = None, axis = "x", mode = "linear", speed = default_speed, strength = 3):
+    def __init__(self, parentNode, start, end = None, axis = "x", mode = "linear", speed = default_speed, strength = 3, show_path = False):
         super().__init__(parentNode)
+        self.show = show_path
 
         axis_arr = {"x" : 0, "y" : 1}
 
@@ -63,8 +64,6 @@ class AxisMove(Modifier):
     def update(self):
         self.elapsed += self.direction * self.game.delta
 
-        
-
         if self.elapsed >= self.duration:
             self.elapsed = self.duration
             self.direction = -1
@@ -74,20 +73,32 @@ class AxisMove(Modifier):
         
         percents = self.elapsed / self.duration
 
-        partition = self.mode(percents, self.strength)
+        self.partition = self.mode(percents, self.strength)
 
-        self.new_offset = self.start + self.path_len * partition
+        new_offset = self.start + self.path_len * self.partition
 
         #print([self.new_offset, self.last_offset, percents, partition])
 
-        step = self.new_offset - self.last_offset
+        step = new_offset - self.last_offset
         
         self.parentNode.offset[self.axis] += step
-        self.last_offset = self.new_offset
+        self.last_offset = new_offset
 
         super().update()
 
     def draw(self):
+        if self.show:
+            center_x = self.parentNode.position.x + self.parentNode.size.x // 2
+            center_y = self.parentNode.position.y + self.parentNode.size.y // 2
+
+            if self.axis == 0:
+                start = (center_x - self.path_len * (self.partition), center_y)
+                end = (center_x + self.path_len * (1 - self.partition), center_y)
+            else:
+                start = (center_x, center_y - self.path_len * (self.partition))
+                end = (center_x, center_y + self.path_len * (1 - self.partition))
+
+            pygame.draw.line(self.game.screen, (255, 0, 0), start, end, width = 4)
         super().draw()
 
     def kill(self):
@@ -110,8 +121,9 @@ class AxisMove(Modifier):
             return 1 - pow(-2 * p + 2, s) / 2
 
 class LinearMove(Modifier):
-    def __init__(self, parentNode, start : Vector2, end = None, mode = "linear", speed = default_speed, strength = 3):
+    def __init__(self, parentNode, start : Vector2, end = None, mode = "linear", speed = default_speed, strength = 3, show_path = False):
         super().__init__(parentNode)
+        self.show = show_path
 
         self.direction = 1
 
@@ -160,9 +172,9 @@ class LinearMove(Modifier):
         
         percents = self.elapsed / self.duration
 
-        partition = self.mode(percents, self.strength)
+        self.partition = self.mode(percents, self.strength)
 
-        self.new_offset = self.difference * partition
+        self.new_offset = self.difference * self.partition
 
         step = self.new_offset - self.last_offset
         
@@ -172,6 +184,14 @@ class LinearMove(Modifier):
         super().update()
 
     def draw(self):
+        if self.show:
+            center_x = self.parentNode.position.x + self.parentNode.size.x // 2
+            center_y = self.parentNode.position.y + self.parentNode.size.y // 2
+
+            start = (center_x - self.difference.x * self.partition, center_y - self.difference.y * self.partition)
+            end = (center_x + self.difference.x * (1 - self.partition), center_y + self.difference.y * (1 - self.partition))
+                
+            pygame.draw.line(self.game.screen, (255, 0, 0), start, end, width = 4)
         super().draw()
 
     def kill(self):
@@ -276,7 +296,7 @@ class MouseDragMove(Modifier):
 
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mouse = Vector2(pygame.mouse.get_pos())
+            mouse = Vector2(event.pos)
             for collision_area in self.parentNode.collision:
                 if collision_area.physics_layer == self.physics_check:
                     for rect in collision_area.collision_blocks:
@@ -292,7 +312,8 @@ class MouseDragMove(Modifier):
     def update(self):
         if self.mouse_clicked:
             mouse = Vector2(pygame.mouse.get_pos())
-            self.parentNode.position = mouse + self.mouse_offset
+            global_pos = mouse + self.mouse_offset
+            self.parentNode.offset = global_pos - self.parentNode.parentNode.position
 
         super().update()
 

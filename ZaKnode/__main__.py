@@ -14,7 +14,7 @@ def run():
     screen_size = (1480, 1080)
     my_game = nodes.Game(screen_size, name = "Test1", fps = 120)
 
-    bonsai = resources.LoadImage(directory("img/bonsai.png"))
+    bonsai = resources.LoadImage(directory("img/bonsai.png"), alpha_chanel = True)
 
     bonsai_grid = resources.LoadImageGrid(directory("img/bonsai.png"), Vector2(32, 32))
 
@@ -37,16 +37,16 @@ def run():
     parent1 = nodes.BaseNode(scene1, offset=Vector2(150, 150))
     block1 = nodes.ColorBlock(parent1, (80, 80))
     block1_2 = nodes.ColorBlock(parent1, (80, 80))
-    modifier1_1 = modifiers.AxisMove(block1, 0, 700, speed = 57, mode = "linear", strength = 6)
+    modifier1_1 = modifiers.AxisMove(block1, 0, 700, speed = 100, mode = "linear", strength = 6, show_path = True)
     modifier1_2 = modifiers.AxisMove(block1_2, 0, 700, speed = 300, mode = "ease-in", axis = "y", strength = 2)
 
-    collision = nodes.CollisionArea(parent1, 8, True)
+    collision = nodes.CollisionArea(block1, 8, True)
     collision.addRect(Vector2(20, 200), offset = Vector2(100, 100))
-    modifier1_1 = modifiers.AxisMove(collision.collision_blocks[0], 0, 700, speed = 39, mode = "linear", strength = 6)
-    modifier1_3 = modifiers.MouseDragMove(parent1, 8)
+    modifier1_3 = modifiers.MouseDragMove(block1, 8)
 
-    desc = nodes.TextBlock(scene1, "Dragging the green hitbox moves parent node and all it's children", my_game.fonts["secondary"], offset_str="bottom")
-    desc1 = nodes.TextBlock(scene1, "Showcase of linear and gradual interpolation on block of color", my_game.fonts["secondary"], offset_str="top")
+    desc = nodes.TextBlock(scene1, "Dragging the green hitbox moves the block and all it's children", my_game.fonts["secondary"], offset_str="bottom", offset = Vector2(0, -120))
+    desc_1 = nodes.TextBlock(scene1, "Red line shows the path of AxisMove", my_game.fonts["secondary"], offset_str="bottom", offset = Vector2(0, -80))
+    desc1 = nodes.Label(scene1, "Showcase of linear and gradual interpolation on block of color", my_game.fonts["main"], offset_str="top")
     
 
     parent2 = nodes.BaseNode(scene2, offset_str = "CenTer")
@@ -68,20 +68,21 @@ def run():
 
     parent5 = nodes.BaseNode(scene4)
     block5 = nodes.TileMapBlock(parent5, (250, 250), bonsai_grid, [1, 1])
-    modifier5 = modifiers.LinearMove(parent5, Vector2(0, 0), Vector2(800, 540))
+    modifier5 = modifiers.LinearMove(parent5, Vector2(100, 130), Vector2(800, 540))
 
     press = modifiers.Press(scene4, pygame.K_a, lambda: block5.change(changer = [0, 1]))
     press = modifiers.Press(scene4, pygame.K_s, lambda: block5.change(changer = [1, 0]))
+    press = modifiers.Press(scene4, pygame.K_d, lambda: block5.change(changer = 1))
 
-    desc5_1 = nodes.TextBlock(scene4, "Press A or S to change", my_game.fonts["secondary"], (255, 200, 255), (25, 25, 25), padding = 18, offset = Vector2(130, 20))
+    desc5_1 = nodes.TextBlock(scene4, "Press A, S or D to change", my_game.fonts["secondary"], (255, 200, 255), (25, 25, 25), padding = 18, offset = Vector2(130, 20))
     desc5 = nodes.Label(scene4, "Translation of one tile of a tilemap \nfrom 1 point to another", my_game.fonts["main"], (220, 240, 190), offset = Vector2(130, 900))
 
 
     tile5 = nodes.TileMapBlock(scene5, Vector2(220, 280), bonsai_grid, [0, 0], offset_str = "center")
     collision_tile5 = nodes.CollisionArea(tile5, 2, show = True)
-    collision_tile5.addRect(tile5.size, offset_str = "center", offset = tile5.size // 2 + Vector2(110, 0))
-    modifiers.ClickOn(tile5, 2, lambda: tile5.change(changer = [1, 0]))
-    desc6 = nodes.Label(scene5, "Click to change", my_game.fonts["main"], (110, 100, 255), offset_str = "bottom")
+    collision_tile5.addRect(tile5.size, offset_str = "left")
+    modifiers.ClickOn(tile5, 2, lambda: tile5.change(changer = 1))
+    desc6 = nodes.Label(scene5, "Click on picture to change", my_game.fonts["main"], (110, 100, 255), offset_str = "bottom")
 
 
     press_global = []
