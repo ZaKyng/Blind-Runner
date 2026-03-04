@@ -38,7 +38,7 @@ class Game:
 
         self.delta = 1 / fps
     
-    def run(self, func = None):
+    def run(self, func = None, global_input : callable = None):
         while self.running:
             dt_ms = self.clock.tick(self.tick_speed)
             self.delta = dt_ms / 1000.0
@@ -46,6 +46,8 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                if global_input:
+                    global_input(event)
             
                 self.scenes[self.current_scene].event(event)
 
@@ -155,7 +157,7 @@ class BaseNode(Node):
 # -- Logic -- #
 
 class CollisionArea(Node):
-    def __init__(self, parentNode, physics_layer = 0, show = True):
+    def __init__(self, parentNode, physics_layer = 0, show = False):
         super().__init__(parentNode, size = Vector2(0, 0), zindex = -10, offset_str = None, offset = Vector2(0, 0))
         self.physics_layer = physics_layer
         self.show = show
@@ -203,8 +205,8 @@ class CollisionBlock(Node):
         
     def draw(self):
         if self.parentNode.show:
-            surface = pygame.Surface(self.size)
-            surface.fill("#00ff00")
+            surface = pygame.Surface(self.size, pygame.SRCALPHA)
+            surface.fill("#00ff0044")
             self.game.screen.blit(surface, self.rect)
         super().draw()
     
@@ -352,15 +354,11 @@ class TextBlock(Node):
 
 class ColorBlock(Node):
     def __init__(self, parentNode, size, color = Color(255, 255, 255, 255), zindex = 0, 
-                offset_str = None, offset = Vector2(0, 0), alpha_chanel = True, changable = False):
+                offset_str = None, offset = Vector2(0, 0), alpha_chanel = False):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
         self.color = pygame.Color(color)
         
-        if not alpha_chanel:
-            self.color.a = 255
-        
         self.alpha_chanel = alpha_chanel
-        self.changable = changable
 
         if self.alpha_chanel:
             self.image = pygame.Surface(self.size, pygame.SRCALPHA)

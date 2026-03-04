@@ -108,6 +108,7 @@ class Node(Parent):
 
         if (offset_str):
             self.offset = positionFromStr(offset_str.lower(), self.size, self.parentNode.size, offset)
+            self.offset += offset
         else:
             self.offset = Vector2(offset)
 
