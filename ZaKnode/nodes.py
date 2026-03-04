@@ -46,14 +46,6 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE:
-                        scene_names = list(self.scenes.keys())
-                        index = scene_names.index(self.current_scene)
-                        index += 1
-                        if index >= len(scene_names):
-                            index = 0
-                        self.current_scene = scene_names[index]
             
                 self.scenes[self.current_scene].event(event)
 
@@ -77,8 +69,25 @@ class Game:
             self.scenes.pop(self.default_scene_name)
         
     
-    def changeScene(self, name):
-        self.current_scene = name
+    def changeScene(self, changer = None):
+        if isinstance(changer, str):
+            last = self.current_scene
+
+            if changer in self.scenes:
+                self.current_scene = changer
+            else:
+                print("error")
+
+        elif isinstance(changer, int):
+            scene_names = list(self.scenes.keys())
+            index = scene_names.index(self.current_scene)
+            index += changer
+            
+            index = index % len(scene_names)
+
+            self.current_scene = scene_names[index]
+        else:
+            self.changeScene(1)
 
     
     def removeScene(self, name):
@@ -497,18 +506,17 @@ class AnimatedSpriteBlock(Node):
         self.index = 0
 
 class TileMapBlock(Node):
-    def __init__(self, parentNode, size, image_grid, coords, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0), 
-                alpha_chanel = False, changable = False):
+    def __init__(self, parentNode, size, tile_node, coords, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0)):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
-        self.alpha_chanel = alpha_chanel
-        self.changable = changable
-
+        
         self.size = size
 
-        self.tileMap = image_grid
+        self.tileNode = tile_node
+
+        self.coords = [int(coords[0] % self.tileNode.tileCount[0]), int(coords[1] % self.tileNode.tileCount[1])]
 
 
-        self.surface = self.tileMap[coords[0]][coords[1]]
+        self.surface = self.tileNode.grid[self.coords[0]][self.coords[1]]
         self.surface = pygame.transform.scale(self.surface, self.size)
 
 
@@ -533,6 +541,13 @@ class TileMapBlock(Node):
         super().kill()
     
     
-    def change(self, newCoords):
-        self.surface = self.tileMap[newCoords[0]][newCoords[1]]
+    def change(self, coords = None, changer = None):
+        if coords is None:
+            if changer is None:
+                return
+            self.coords = [int((self.coords[0] + changer[0]) % self.tileNode.tileCount[0]), int((self.coords[1] + changer[1]) % self.tileNode.tileCount[1])]
+        else:
+            self.coords = [int(coords[0] % self.tileNode.tileCount[0]), int(coords[1] % self.tileNode.tileCount[1])]
+        
+        self.surface = self.tileNode.grid[self.coords[0]][self.coords[1]]
         self.surface = pygame.transform.scale(self.surface, self.size)

@@ -14,7 +14,7 @@ Requirements
 - Python 3.13
 - pip
 
-1. Install latest .whl file in /dist folder.
+1. Install latest .whl file in /dist/ folder. (Last update: 4. 3. 2026)
 2. Put it in an empty folder anywhere on your device.
 3. Open Terminal in that folder.
    
@@ -30,6 +30,6 @@ Run:
     python -m blindrunner
         (for the game itself)
 
-# Updated developer comment (1. 3. 26)
+# Updated developer comment (4. 3. 26)
 
 ZaKnode library showcase is the same as the game, because I am in process of redoing the node logic. You can explore my progress in the archive folder, and mainly in failed folder inside. If you run "python -m archive.failed.test1_fail", you will see how far with the node system I came before starting over.
