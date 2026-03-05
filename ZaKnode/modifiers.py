@@ -52,7 +52,8 @@ class AxisMove(Modifier):
             "linear" : self.linear,
             "ease-in" : self.easeIn,
             "ease-out" : self.easeOut,
-            "ease-both" : self.easeBoth
+            "ease-both" : self.easeBoth,
+            "ease-in-out" : self.easeBoth
         }
 
         self.mode = modes.get(mode, self.linear)
@@ -214,12 +215,19 @@ class LinearMove(Modifier):
             return 1 - pow(-2 * p + 2, s) / 2
 
 class CircularMove(Modifier):
-    def __init__(self, parentNode, center, radius = None, clockwise = True, speed = default_speed):
+    def __init__(self, parentNode, relative_center, radius = None, clockwise = True, speed = default_speed, show_path = False):
         super().__init__(parentNode)
+
+        self.show = show_path
 
         self.speed = speed
 
-        self.center = Vector2(center)
+        if clockwise:
+            self.clockwise = 0
+        else:
+            self.clockwise = 1
+
+        self.center = self.parentNode.offset + Vector2(relative_center)
         if radius is None:
             difference = self.parentNode.offset - self.center
             self.radius = math.sqrt(abs(difference.x ** 2 + difference.y ** 2))
@@ -227,9 +235,11 @@ class CircularMove(Modifier):
             self.radius = radius
 
         self.path_len = 2 * math.pi * self.radius
-        self.duration = self.path_len / self.speed
+        self.duration = max(self.path_len / self.speed, 0.1)
 
         self.elapsed = 0.0
+
+        self.last_offset = self.parentNode.offset
         
 
     
@@ -237,16 +247,16 @@ class CircularMove(Modifier):
         super().event(event)
     
     def update(self):
-        self.elapsed += self.direction * self.game.delta
+        self.elapsed += self.game.delta
 
-        if self.elapsed >= self.duration or self.elapsed <= 0:
+        if self.elapsed >= self.duration:
             self.elapsed = self.elapsed % self.duration
         
         percents = self.elapsed / self.duration
 
-        partition = self.mode(percents, self.strength)
+        self.angle = 2 * math.pi * (abs(self.clockwise - percents))
 
-        self.new_offset = self.difference * partition
+        self.new_offset = Vector2(self.center.x + math.cos(self.angle) * self.radius, self.center.y + math.sin(self.angle) * self.radius)
 
 
         step = self.new_offset - self.last_offset
@@ -258,6 +268,9 @@ class CircularMove(Modifier):
         super().update()
 
     def draw(self):
+        if self.show:
+            center = self.parentNode.offset + Vector2(math.cos(self.angle) * self.radius, math.sin(self.angle) * self.radius) * -1
+            pygame.draw.circle(self.game.screen, (255, 0, 0), center, abs(self.radius), width = 4)
         super().draw()
 
     def kill(self):
@@ -287,8 +300,16 @@ class MouseClickMove(Modifier):
         super().kill()
 
 class MouseDragMove(Modifier):
-    def __init__(self, parentNode, physics_layer = 1):
+    def __init__(self, parentNode, physics_layer = 1, axis = None):
         super().__init__(parentNode)
+
+        axis_arr = {"x" : [0], "y" : [1]}
+
+        if axis is None:
+            self.axis = [0, 1]
+        else:
+            self.axis = axis_arr[axis]
+
         self.physics_check = physics_layer
 
         self.mouse_offset = Vector2(0, 0)
@@ -313,7 +334,8 @@ class MouseDragMove(Modifier):
         if self.mouse_clicked:
             mouse = Vector2(pygame.mouse.get_pos())
             global_pos = mouse + self.mouse_offset
-            self.parentNode.offset = global_pos - self.parentNode.parentNode.position
+            for i in self.axis:
+                self.parentNode.offset[i] = global_pos[i] - self.parentNode.parentNode.position[i]
 
         super().update()
 

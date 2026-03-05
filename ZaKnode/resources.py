@@ -1,3 +1,4 @@
+import os
 import pygame
 from pygame import Vector2
 
@@ -6,6 +7,9 @@ from pygame import Vector2
 # ----- Resources ----- #
 
 ## ----- Visual ----- ##
+
+def directory(src):
+    return os.path.join(os.path.dirname(__file__), src)
 
 class LoadImage:
     def __init__(self, path, alpha_chanel = False):

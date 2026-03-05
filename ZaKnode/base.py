@@ -1,10 +1,11 @@
 import pygame
 from pygame import Vector2
 
+
 __all__ = ["Parent", "Modifier", "Node"]
 
 
-def positionFromStr(string: str, size, parentNode_size, offset):
+def positionFromStr(string: str, size, parentNode_size):
     sw, sh = Vector2(size)
     w, h = Vector2(parentNode_size)
     
@@ -23,7 +24,7 @@ def positionFromStr(string: str, size, parentNode_size, offset):
         "center":       Vector2(mid_x, mid_y)
     }
 
-    output = pos.get(string, offset)
+    output = pos.get(string, Vector2(0, 0))
     
     return Vector2(output)
 
@@ -100,14 +101,14 @@ class Modifier(Parent):
         
 
 class Node(Parent):
-    def __init__(self, parentNode, size = Vector2(0, 0), zindex = 0, offset_str = None, offset = Vector2(0, 0)):
+    def __init__(self, parentNode, size = Vector2(0, 0), zindex = 0, offset_str = None, offset = Vector2(0, 0), show_axis = False):
         super().__init__(parentNode)
         super().child(parentNode, zindex)
 
         self.size = Vector2(size)
 
         if (offset_str):
-            self.offset = positionFromStr(offset_str.lower(), self.size, self.parentNode.size, offset)
+            self.offset = positionFromStr(offset_str.lower(), self.size, self.parentNode.size)
             self.offset += offset
         else:
             self.offset = Vector2(offset)
@@ -138,4 +139,11 @@ class Node(Parent):
     
     def kill(self):
         super().kill()
+
+    def changePos(self, offset_str = None, offset = Vector2(0, 0)):
+        if (offset_str):
+            self.offset = positionFromStr(offset_str.lower(), self.size, self.parentNode.size)
+            self.offset += offset
+        else:
+            self.offset = Vector2(offset)
 

@@ -5,18 +5,16 @@ from . import *
 
     
 
-def directory(src):
-    return os.path.join(os.path.dirname(__file__), src)
 
 
 # ----- Pygame setup ----- #
 def run():
     screen_size = (1480, 1080)
-    my_game = nodes.Game(screen_size, name = "Test1", fps = 120)
+    my_game = nodes.Game(screen_size, fps = 120)
 
-    bonsai = resources.LoadImage(directory("img/bonsai.png"), alpha_chanel = True)
+    bonsai = resources.LoadImage(resources.directory("img/bonsai.png"), alpha_chanel = True)
 
-    bonsai_grid = resources.LoadImageGrid(directory("img/bonsai.png"), Vector2(32, 32))
+    bonsai_grid = resources.LoadImageGrid(resources.directory("img/bonsai.png"), Vector2(32, 32))
 
     bonsai_grow_anim = resources.Animation(bonsai_grid.grid, 0, 5)
     bonsai_color_anim = resources.Animation(bonsai_grid.grid, 5, 7)
@@ -29,6 +27,7 @@ def run():
     scene3 = nodes.Scene("scene3", my_game, bg_color = (100, 20, 200))
     scene4 = nodes.Scene("scene4", my_game, bg_color = (200, 20, 100))
     scene5 = nodes.Scene("scene5", my_game, bg_color = (60, 50, 60))
+    scene6 = nodes.Scene("scene6", my_game, bg_color = (200, 190, 20))
 
     desc1 = nodes.Label(default, "Use <- / -> to switch scenes", my_game.fonts["main"], offset_str="center")
 
@@ -38,9 +37,9 @@ def run():
     block1 = nodes.ColorBlock(parent1, (80, 80))
     block1_2 = nodes.ColorBlock(parent1, (80, 80))
     modifier1_1 = modifiers.AxisMove(block1, 0, 700, speed = 100, mode = "linear", strength = 6, show_path = True)
-    modifier1_2 = modifiers.AxisMove(block1_2, 0, 700, speed = 300, mode = "ease-in", axis = "y", strength = 2)
+    modifier1_2 = modifiers.AxisMove(block1_2, 0, 700, speed = 300, mode = "ease-both", axis = "y", strength = 2)
 
-    collision = nodes.CollisionArea(block1, 8, True)
+    collision = nodes.CollisionArea(block1, 8)
     collision.addRect(Vector2(20, 200), offset = Vector2(100, 100))
     modifier1_3 = modifiers.MouseDragMove(block1, 8)
 
@@ -61,7 +60,7 @@ def run():
     modifier3 = modifiers.MouseClickMove(parent3)
 
     desc3 = nodes.TextBlock(scene3, "2 animations from once loaded tilemap image", my_game.fonts["secondary"], offset_str = "top", txt_color = (0, 0, 0), bg_color = (255, 255, 255), padding = 15)
-    desc4 = nodes.TextBlock(scene3, "Sorted by z-index and 1 moves on mouse click", my_game.fonts["secondary"], offset_str = "top", offset = Vector2(0, 120), txt_color = (200, 200, 240), bg_color = (12, 12, 12), padding = 25)
+    desc4 = nodes.TextBlock(scene3, "Sorted by z-index and 1 moves on mouse click", my_game.fonts["secondary"], offset_str = "top", offset = Vector2(0, 120), txt_color = (200, 200, 240), bg_color = (12, 12, 12), padding = 25, zindex = -1)
 
     parent4 = nodes.BaseNode(scene3, offset_str = "center", offset = Vector2(-250, 0))
     block4 = nodes.AnimatedSpriteBlock(parent4, (250, 250), bonsai_color_anim.frames, 3, offset_str = "center")
@@ -78,17 +77,32 @@ def run():
     desc5 = nodes.Label(scene4, "Translation of one tile of a tilemap \nfrom 1 point to another", my_game.fonts["main"], (220, 240, 190), offset = Vector2(130, 900))
 
 
-    tile5 = nodes.TileMapBlock(scene5, Vector2(220, 280), bonsai_grid, [0, 0], offset_str = "center")
-    collision_tile5 = nodes.CollisionArea(tile5, 2, show = True)
-    collision_tile5.addRect(tile5.size, offset_str = "left")
+    tile5 = nodes.TileMapBlock(scene5, Vector2(400, 500), bonsai_grid, [0, 0], offset_str = "center")
+    collision_tile5 = nodes.CollisionArea(tile5, 2, show_self = True)
+    collision_tile5.addRect(tile5.size, offset = Vector2(100, 200))
     modifiers.ClickOn(tile5, 2, lambda: tile5.change(changer = 1))
     desc6 = nodes.Label(scene5, "Click on picture to change", my_game.fonts["main"], (110, 100, 255), offset_str = "bottom")
 
+    parent6 = nodes.BaseNode(scene6)
+    nodes.ShowAxis(parent6)
+    nodes.ColorBlock(parent6, Vector2(100, 100), pygame.Color(0, 0, 240), offset_str = "center")
+    circle = modifiers.CircularMove(parent6, Vector2(my_game.screen_size) // 2, radius = 350, clockwise = False, show_path = True)
+
+    def chanageRadius(value):
+        circle.radius += value
+
+    modifiers.Press(scene6, pygame.K_g, lambda: chanageRadius(10))
+    modifiers.Press(scene6, pygame.K_h, lambda: chanageRadius(-10))
+
+    nodes.TextBlock(scene6, "Move block with axis and move its modifiesr with it", my_game.fonts["secondary"], txt_color = (210, 100, 255), padding = 20, offset_str = "Top")
+    nodes.Label(scene6, "Press G and H to change radius", my_game.fonts["main"], (10, 80, 55), offset_str = "bottom")
+    
 
     press_global = []
     for scene in list(my_game.scenes.values()):
         press_global.append(modifiers.Press(scene, pygame.K_RIGHT, lambda: my_game.changeScene()))
         press_global.append(modifiers.Press(scene, pygame.K_LEFT, lambda: my_game.changeScene(-1)))
+
 
     def scene_changing(event):
         if event.type == pygame.KEYDOWN:
@@ -98,7 +112,7 @@ def run():
                 my_game.changeScene()
 
     def test():
-        #print(parent.offset)
+        #print(circle.center)
         return
 
     my_game.run(test, global_input = scene_changing)

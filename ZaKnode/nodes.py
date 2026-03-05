@@ -3,6 +3,8 @@ from pygame import Vector2
 from pygame import Color
 
 from .base import *
+from . import modifiers
+from . import resources
 
 # ----------- Nodes ------------ #
 
@@ -129,11 +131,45 @@ class Scene(Parent):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
-class BaseNode(Node):
-    def __init__(self, parentNode,  zindex = 0, offset_str = None, offset = Vector2(0, 0), show_hitboxes = False):
-        super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset)
-        
+class ShowAxis():
+    def __init__(self, parentNode):
+        self.parentNode = parentNode
+        self.images = resources.LoadImageGrid(resources.directory("img/axis.png"), Vector2(15, 15), alpha_chanel = True)
+
+        size = Vector2(40, 40)
+        gap = 50
+
+        offsets = [Vector2(gap, size.x // -2), Vector2(size.x // -2, gap), Vector2(gap, gap)]
+        axis = ["x", "y", None]
+
+        self.tiles = []
+
+        self.tiles.append(TileMapBlock(self.parentNode, size, self.images, [0, 0], 600))
+
+        self.hitareas = []
+        self.modifiers = []
+
+        for i in range(3):
+            self.tiles.append(TileMapBlock(self.parentNode, size, self.images, [1 + i, 0], 600, offset = offsets[i]))
+            new_area = CollisionArea(self.parentNode, 98 + i)
+            new_area.addRect(size, offset = offsets[i])
+            self.hitareas.append(new_area)
+
+            self.modifiers.append(modifiers.MouseDragMove(self.parentNode, 98 + i, axis = axis[i]))
+
     
+    def hide(self):
+        for tile in self.tiles:
+            tile.kill()
+        
+        for hitarea in self.hitareas:
+            hitarea.kill()
+
+
+class BaseNode(Node):
+    def __init__(self, parentNode,  zindex = 0, offset_str = None, offset = Vector2(0, 0)):
+        super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset)
+
     def event(self, event):
         super().event(event)
     
@@ -157,10 +193,15 @@ class BaseNode(Node):
 # -- Logic -- #
 
 class CollisionArea(Node):
-    def __init__(self, parentNode, physics_layer = 0, show = False):
-        super().__init__(parentNode, size = parentNode.size, zindex = -10, offset_str = None, offset = Vector2(0, 0))
+    def __init__(self, parentNode, physics_layer = 0, show = False, show_self = False):
+        super().__init__(parentNode, size = parentNode.size, zindex = 100, offset_str = None, offset = Vector2(0, 0))
         self.physics_layer = physics_layer
         self.show = show
+
+        self.show_self = show_self
+        if self.show_self:
+            self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
+            self.surface.fill("#ff00ff44")
 
         self.parentNode.addCollision(self)
 
@@ -171,8 +212,11 @@ class CollisionArea(Node):
     
     def update(self):
         super().update()
+        self.rect = pygame.Rect(self.position, self.size)
 
     def draw(self):
+        if self.show_self:
+            self.game.screen.blit(self.surface, self.rect)
         super().draw()
     
     def addChild(self, newChild):
@@ -182,11 +226,13 @@ class CollisionArea(Node):
         super().addCollision(newCollision)
 
     def kill(self):
+        for block in self.collision_blocks:
+            block.kill()
         super().kill()
     
 
     def addRect(self, size, offset_str = None, offset = Vector2(0, 0)):
-        CollisionBlock(self, size, offset_str = offset_str, offset = offset)
+        return CollisionBlock(self, size, offset_str = offset_str, offset = offset)
 
 class CollisionBlock(Node):
     def __init__(self, parentNode, size, zindex = -5, offset_str = None, offset = Vector2(0, 0)):
@@ -194,20 +240,21 @@ class CollisionBlock(Node):
         self.parentNode.collision_blocks.append(self)
 
         self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
+
+        if self.parentNode.show:
+            self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
+            self.surface.fill("#00ff0044")
     
     def event(self, event):
         super().event(event)
     
     def update(self):
         super().update()
-        self.rect = None
         self.rect = pygame.Rect(self.position, self.size)
         
     def draw(self):
         if self.parentNode.show:
-            surface = pygame.Surface(self.size, pygame.SRCALPHA)
-            surface.fill("#00ff0044")
-            self.game.screen.blit(surface, self.rect)
+            self.game.screen.blit(self.surface, self.rect)
         super().draw()
     
     def addChild(self, newChild):
@@ -219,6 +266,14 @@ class CollisionBlock(Node):
     def kill(self):
         self.parentNode.collision_blocks.remove(self)
         super().kill()
+    
+    def change(self, size = None, offset_str = None, offset = None):
+        if size is not None:
+            self.size = Vector2(size)
+        if offset_str is None and offset is None:
+            offset = self.offset
+        super().changePos(offset_str, offset)
+
 
 
 # -- Visuals -- #
