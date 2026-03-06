@@ -11,7 +11,7 @@ from . import resources
 # -- Primary -- #
 
 class Game:
-    def __init__(self, screen_size, name = "ZaKgame window", fps = 120):
+    def __init__(self, screen_size, name : str = "ZaKgame window", fps : int = 120):
         pygame.init()
         pygame.font.init()
 
@@ -48,7 +48,10 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                if global_input:
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.running = False
+                elif global_input:
                     global_input(event)
             
                 self.scenes[self.current_scene].event(event)
@@ -131,8 +134,9 @@ class Scene(Parent):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
+
 class ShowAxis():
-    def __init__(self, parentNode):
+    def __init__(self, parentNode : Node):
         self.parentNode = parentNode
         self.images = resources.LoadImageGrid(resources.directory("img/axis.png"), Vector2(15, 15), alpha_chanel = True)
 
@@ -152,7 +156,7 @@ class ShowAxis():
         for i in range(3):
             self.tiles.append(TileMapBlock(self.parentNode, size, self.images, [1 + i, 0], 600, offset = offsets[i]))
             new_area = CollisionArea(self.parentNode, 98 + i)
-            new_area.addRect(size, offset = offsets[i])
+            new_area.addCollisionBlock(size, offset = offsets[i])
             self.hitareas.append(new_area)
 
             self.modifiers.append(modifiers.MouseDragMove(self.parentNode, 98 + i, axis = axis[i]))
@@ -167,7 +171,7 @@ class ShowAxis():
 
 
 class BaseNode(Node):
-    def __init__(self, parentNode,  zindex = 0, offset_str = None, offset = Vector2(0, 0)):
+    def __init__(self, parentNode,  zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
         super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset)
 
     def event(self, event):
@@ -193,7 +197,7 @@ class BaseNode(Node):
 # -- Logic -- #
 
 class CollisionArea(Node):
-    def __init__(self, parentNode, physics_layer = 0, show = False, show_self = False):
+    def __init__(self, parentNode, physics_layer : int = 0, show : bool = False, show_self : bool = False):
         super().__init__(parentNode, size = parentNode.size, zindex = 100, offset_str = None, offset = Vector2(0, 0))
         self.physics_layer = physics_layer
         self.show = show
@@ -231,11 +235,11 @@ class CollisionArea(Node):
         super().kill()
     
 
-    def addRect(self, size, offset_str = None, offset = Vector2(0, 0)):
+    def addCollisionBlock(self, size : Vector2, offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
         return CollisionBlock(self, size, offset_str = offset_str, offset = offset)
 
 class CollisionBlock(Node):
-    def __init__(self, parentNode, size, zindex = -5, offset_str = None, offset = Vector2(0, 0)):
+    def __init__(self, parentNode : CollisionArea, size : Vector2, zindex : float = -5, offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
         self.parentNode.collision_blocks.append(self)
 
@@ -279,8 +283,8 @@ class CollisionBlock(Node):
 # -- Visuals -- #
 
 class Label(Node):
-    def __init__(self, parentNode, text : str, font, color = Color(255, 255, 255), zindex = 0, 
-                offset_str = None, offset = Vector2(0, 0)):
+    def __init__(self, parentNode, text : str, font : pygame.font, color : Color = Color(255, 255, 255), zindex : float = 0, 
+                offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
         self.text = text
         self.color = Color(color)
         self.font = font
@@ -315,7 +319,7 @@ class Label(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
     
-    def change(self, newText = None, newFont = None, newColor = None):
+    def change(self, newText : str = None, newFont : pygame.font = None, newColor : Color = None):
         if newText is not None:
             self.text = newText
         

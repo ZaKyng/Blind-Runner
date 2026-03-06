@@ -17,7 +17,7 @@ default_speed = 200
 ### - Constant - ###
 
 class AxisMove(Modifier):
-    def __init__(self, parentNode, start, end = None, axis = "x", mode = "linear", speed = default_speed, strength = 3, show_path = False):
+    def __init__(self, parentNode : Node, start : Vector2, end : Vector2 = None, axis : str = "x", mode : str = "linear", speed : float = default_speed, strength : float = 3, show_path : bool = False):
         super().__init__(parentNode)
         self.show = show_path
 
@@ -122,7 +122,7 @@ class AxisMove(Modifier):
             return 1 - pow(-2 * p + 2, s) / 2
 
 class LinearMove(Modifier):
-    def __init__(self, parentNode, start : Vector2, end = None, mode = "linear", speed = default_speed, strength = 3, show_path = False):
+    def __init__(self, parentNode : Node, start : Vector2, end : Vector2 = None, mode : str = "linear", speed : float = default_speed, strength : float = 3, show_path : bool = False):
         super().__init__(parentNode)
         self.show = show_path
 
@@ -215,7 +215,7 @@ class LinearMove(Modifier):
             return 1 - pow(-2 * p + 2, s) / 2
 
 class CircularMove(Modifier):
-    def __init__(self, parentNode, relative_center, radius = None, clockwise = True, speed = default_speed, show_path = False):
+    def __init__(self, parentNode : Node, relative_center : Vector2, radius : float = None, clockwise : bool = True, speed : float = default_speed, show_path : bool = False):
         super().__init__(parentNode)
 
         self.show = show_path
@@ -275,12 +275,41 @@ class CircularMove(Modifier):
 
     def kill(self):
         super().kill()
+    
+
+    def change(self, relative_center : Vector2 = None, radius : float = None, clockwise : bool = None, speed : float = None, show_path : bool = None):
+        if show_path is not None:
+            self.show = show_path
+
+        if speed is not None:
+            self.speed = speed
+
+        if clockwise is not None:
+            if clockwise:
+                self.clockwise = 0
+            else:
+                self.clockwise = 1
+
+        if relative_center is not None:
+            self.center = self.parentNode.offset + Vector2(relative_center)
+            if radius is None:
+                difference = self.parentNode.offset - self.center
+                self.radius = math.sqrt(abs(difference.x ** 2 + difference.y ** 2))
+            else:
+                self.radius = radius
+
+        self.path_len = 2 * math.pi * self.radius
+        self.duration = max(self.path_len / self.speed, 0.1)
+
+        self.elapsed = 0.0
+
+        self.last_offset = self.parentNode.offset
 
 
 ### - Mouse - ###
 
 class MouseClickMove(Modifier):
-    def __init__(self, parentNode):
+    def __init__(self, parentNode : Node):
         super().__init__(parentNode)
     
 
@@ -300,7 +329,7 @@ class MouseClickMove(Modifier):
         super().kill()
 
 class MouseDragMove(Modifier):
-    def __init__(self, parentNode, physics_layer = 1, axis = None):
+    def __init__(self, parentNode : Node, physics_layer : int = 1, axis : str = None):
         super().__init__(parentNode)
 
         axis_arr = {"x" : [0], "y" : [1]}
@@ -383,7 +412,7 @@ class KeyboardMove(Modifier):
         super().kill()
 
 class KeyboardArrowsMove(KeyboardMove):
-    def __init__(self, parentNode, speed = default_speed, leave_window = False):
+    def __init__(self, parentNode : Node, speed : float = default_speed, leave_window : bool = False):
         super().__init__(parentNode, speed = speed, leave_window = leave_window)
 
 
@@ -406,7 +435,7 @@ class KeyboardArrowsMove(KeyboardMove):
         super().kill()
 
 class KeyboardWASDMove(KeyboardMove):
-    def __init__(self, parentNode, speed = default_speed, leave_window = False):
+    def __init__(self, parentNode : Node, speed : float = default_speed, leave_window : bool = False):
         super().__init__(parentNode, speed = speed, leave_window = leave_window)
 
 
@@ -432,7 +461,7 @@ class KeyboardWASDMove(KeyboardMove):
 ## -- User func -- ##
 
 class ClickOn(Modifier):
-    def __init__(self, parentNode : Node, physics_check, function : callable, buttondown : bool = True, button : int = None):
+    def __init__(self, parentNode : Node, physics_check : int, function : callable, buttondown : bool = True, button : int = None):
         super().__init__(parentNode)
         
         self.func = function
@@ -473,7 +502,7 @@ class ClickOn(Modifier):
         return event.button == self.button
 
 class Press(Modifier):
-    def __init__(self, parentNode, key, function, keydown = True, mouse = False):
+    def __init__(self, parentNode : Node, key, function : callable, keydown : bool = True, mouse : bool = False):
         super().__init__(parentNode)
         self.key = key
         self.func = function
