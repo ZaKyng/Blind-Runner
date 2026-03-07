@@ -9,7 +9,7 @@ from . import *
 
 # ----- Pygame setup ----- #
 def run():
-    screen_size = (1080, 1080)
+    screen_size = (1980, 1080)
     my_game = nodes.Game(screen_size, fps = 120)
 
     bonsai = resources.LoadImage(resources.directory("img/bonsai.png"), alpha_chanel = True)
@@ -30,13 +30,14 @@ def run():
     scene6 = nodes.Scene("scene6", my_game, bg_color = (200, 190, 20))
     scene7 = nodes.Scene("scene7", my_game, bg_color = (12, 5, 9))
 
-    desc1 = nodes.Label(default, "Use <- / -> to switch scenes", my_game.fonts["main"], offset_str="center")
-    desc1 = nodes.Label(default, "Press ESC to leave", my_game.fonts["secondary"], offset_str="bottom-right")
+    nodes.ShowAxis(default)
 
-    
+    desc1 = nodes.Label(default, "Use <- / -> to switch scenes", my_game.fonts["main"], offset_str="center")
+    press_esc = nodes.Label(default, "Press ESC to leave", my_game.fonts["secondary"], offset_str="bottom-right")
+
 
     parent1 = nodes.BaseNode(scene1, offset=Vector2(150, 150))
-    block1 = nodes.ColorBlock(parent1, (80, 80))
+    block1 = nodes.ColorBlock(parent1, (80, 80), alpha_chanel = True)
     block1_2 = nodes.ColorBlock(parent1, (80, 80))
     modifier1_1 = modifiers.AxisMove(block1, 0, 700, speed = 100, mode = "linear", strength = 6, show_path = True)
     modifier1_2 = modifiers.AxisMove(block1_2, 0, 700, speed = 300, mode = "ease-both", axis = "y", strength = 2)
@@ -52,6 +53,8 @@ def run():
 
     parent2 = nodes.BaseNode(scene2, offset_str = "CenTer")
     block2 = nodes.SpriteBlock(parent2, (250, 250), bonsai.image, offset_str = "center")
+    nodes.ShowAxis(parent2)
+    nodes.ShowAxis(block2)
     modifier2 = modifiers.KeyboardWASDMove(parent2, 320)
 
     desc2 = nodes.TextBlock(scene2, "Image loading and move with WASD", my_game.fonts["main"], offset_str="top", txt_color = (0, 0, 0), bg_color = (255, 255, 255), padding = 25, zindex = 2)
@@ -88,29 +91,33 @@ def run():
     parent6 = nodes.BaseNode(scene6)
     nodes.ShowAxis(parent6)
     nodes.ColorBlock(parent6, Vector2(100, 100), pygame.Color(0, 0, 240), offset_str = "center")
-    circle = modifiers.CircularMove(parent6, Vector2(my_game.screen_size) // 2, radius = 350, clockwise = False, show_path = True)
+    circle = modifiers.CircularMove(parent6, Vector2(my_game.screen_size) // 2, radius = 350, speed = 50, clockwise = False, start_deg = 180, show_path = True)
 
-    def chanageRadius(value):
-        circle.speed += value
+    
 
-    modifiers.Press(scene6, pygame.K_g, lambda: chanageRadius(10))
-    modifiers.Press(scene6, pygame.K_h, lambda: chanageRadius(-10))
+    modifiers.Press(scene6, pygame.K_g, lambda: circle.change(speed = circle.speed + 10))
+    modifiers.Press(scene6, pygame.K_h, lambda: circle.change(speed = circle.speed - 10))
+    modifiers.Press(scene6, pygame.K_j, lambda: circle.change(clockwise = circle.direction == 1))
 
     nodes.TextBlock(scene6, "Move block with axis and move its modifiers with it", my_game.fonts["secondary"], txt_color = (210, 100, 255), padding = 20, offset_str = "Top")
-    nodes.Label(scene6, "Press G and H to change radius", my_game.fonts["main"], (10, 80, 55), offset_str = "bottom")
+    nodes.Label(scene6, "Press G, H or J to change ", my_game.fonts["main"], (10, 80, 55), offset_str = "bottom")
 
 
     block_size = 2
-    for i in range(my_game.screen_size[0] // block_size):
-        new_block = nodes.ColorBlock(scene7, Vector2(block_size, block_size), color = (255 / (my_game.screen_size[0] // block_size) * i, 255 / (my_game.screen_size[0] // block_size) * i / 2, 255), offset = Vector2(i * block_size, 200))
-        modifiers.AxisMove(new_block, my_game.screen_size[1] - block_size - 200, axis = "y", mode = "ease-both", speed = 200 + i / 4, strength = 1.5)
+    for i in range(int(my_game.screen_size.x) // block_size):
+        new_block = nodes.ColorBlock(scene7, Vector2(block_size, block_size), color = (255 / (my_game.screen_size.x // block_size) * i, 255 / (my_game.screen_size[0] // block_size) * i / 2, 255), offset = Vector2(i * block_size, 200))
+        modifiers.AxisMove(new_block, my_game.screen_size.y - block_size - 200, axis = "y", mode = "ease-both", speed = 300 + i, strength = 1.5)
 
-    nodes.Label(scene7, f"{my_game.screen_size[0] // block_size} blocks with different speeds", my_game.fonts["main"], (10, 80, 55), offset_str = "bottom")
+    nodes.Label(scene7, f"{my_game.screen_size.x // block_size} blocks with different speeds", my_game.fonts["main"], (10, 80, 55), offset_str = "bottom")
 
     press_global = []
     for scene in list(my_game.scenes.values()):
         press_global.append(modifiers.Press(scene, pygame.K_RIGHT, lambda: my_game.changeScene()))
         press_global.append(modifiers.Press(scene, pygame.K_LEFT, lambda: my_game.changeScene(-1)))
+        if press_esc not in scene.children:
+            scene.addChild(press_esc)
+
+    print(default.size)
 
 
     def scene_changing(event):

@@ -15,10 +15,12 @@ class Game:
         pygame.init()
         pygame.font.init()
 
+        self.position = Vector2(0, 0)
+
         self.game = self
 
         self.running = True
-        self.screen_size = tuple(screen_size)
+        self.screen_size = Vector2(screen_size)
 
         self.default_scene_name = "empty"
 
@@ -102,17 +104,18 @@ class Game:
 
 class Scene(Parent):
     def __init__(self, name : str, game, bg_color = Color(0, 0, 0)):
-        super().__init__(game)
         self.game = game
+        super().__init__(game, size = self.game.screen_size, angle = 0)
         
         self.name = name
         self.game.addScene(self.name, self)
 
-        self.size = self.game.screen_size
 
         self.offset = Vector2(0, 0)
 
         self.position = self.offset
+
+        self.global_angle = self.angle
 
         self.bg_color = Color(bg_color)
 
@@ -145,6 +148,8 @@ class ShowAxis():
 
         offsets = [Vector2(gap, size.x // -2), Vector2(size.x // -2, gap), Vector2(gap, gap)]
         axis = ["x", "y", None]
+        lines = [lambda: pygame.draw.line(self.parentNode.game.screen, (255, 0, 0), Vector2(0, self.parentNode.position.y), Vector2(self.parentNode.game.screen_size[0], self.parentNode.position.y), 4),
+                 lambda: pygame.draw.line(self.parentNode.game.screen, (0, 255, 0), Vector2(self.parentNode.position.x, 0), Vector2(self.parentNode.position.x, self.parentNode.game.screen_size[1]), 4)]
 
         self.tiles = []
 
@@ -160,6 +165,8 @@ class ShowAxis():
             self.hitareas.append(new_area)
 
             self.modifiers.append(modifiers.MouseDragMove(self.parentNode, 98 + i, axis = axis[i]))
+            if i < 2:
+                self.modifiers.append(modifiers.Hold(self.parentNode, 98 + i, lines[i], 1))
 
     
     def hide(self):
@@ -171,8 +178,8 @@ class ShowAxis():
 
 
 class BaseNode(Node):
-    def __init__(self, parentNode,  zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
-        super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset)
+    def __init__(self, parentNode,  zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0), angle : int = 0):
+        super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset, angle = angle)
 
     def event(self, event):
         super().event(event)
@@ -433,10 +440,10 @@ class ColorBlock(Node):
         self.alpha_chanel = alpha_chanel
 
         if self.alpha_chanel:
-            self.image = pygame.Surface(self.size, pygame.SRCALPHA)
+            self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
         else:
-            self.image = pygame.Surface(self.size)
-        self.image.fill(self.color)
+            self.surface = pygame.Surface(self.size)
+        self.surface.fill(self.color)
 
 
     def event(self, event):
@@ -449,7 +456,7 @@ class ColorBlock(Node):
 
     def draw(self):
         # Draw the pre-rendered Surface instead of drawing a rectangle directly
-        self.game.screen.blit(self.image, self.rect)
+        self.game.screen.blit(self.surface, self.rect)
         super().draw()
     
     def addChild(self, newChild):
@@ -459,21 +466,19 @@ class ColorBlock(Node):
         super().addCollision(newCollision)
     
     def change(self, newSize = None, newColor = None):
-        if newSize is None:
-            newSize = self.size
+        if newSize is not None:
+            self.size = newSize
         
-        if newColor is None:
-            newColor = self.color
-
-        self.size = newSize
-        self.color = newColor
+        if newColor is not None:
+            self.color = newColor
 
         if self.alpha_chanel:
-            self.image = pygame.Surface(self.size, pygame.SRCALPHA)
+            self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
         else:
-            self.image = pygame.Surface(self.size)
+            self.surface = pygame.Surface(self.size)
 
-        self.image.fill(self.color)
+        self.surface.fill(self.color)
+    
     def kill(self):
         super().kill()
 
@@ -506,7 +511,9 @@ class SpriteBlock(Node):
         super().kill()
     
 
-    def change(self, image):
+    def change(self, image, size : Vector2 = None):
+        if size is not None:
+            self.size = size
         self.surface = pygame.transform.scale(image, self.size)
 
 class AnimatedSpriteBlock(Node):
@@ -601,7 +608,7 @@ class TileMapBlock(Node):
         super().kill()
     
     
-    def change(self, coords = None, changer = None):
+    def change(self, coords = None, changer = None, size = None):
         if coords is None:
             if changer is None:
                 return
@@ -616,4 +623,7 @@ class TileMapBlock(Node):
             self.coords = [int(coords[0] % self.tileNode.tileCount[0]), int(coords[1] % self.tileNode.tileCount[1])]
         
         self.surface = self.tileNode.grid[self.coords[0]][self.coords[1]]
+
+        if size is not None:
+            self.size = size
         self.surface = pygame.transform.scale(self.surface, self.size)

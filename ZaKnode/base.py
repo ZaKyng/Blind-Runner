@@ -1,3 +1,4 @@
+import math
 import pygame
 from pygame import Vector2
 
@@ -33,10 +34,14 @@ def positionFromStr(string: str, size, parentNode_size):
 
 
 class Parent:
-    def __init__(self, parentNode):
+    def __init__(self, parentNode, size = Vector2(0, 0), angle = 0):
+        self.parentNode = parentNode
         self.children = []
         self.collision = []
-        self.game = parentNode.game
+
+        self.size = Vector2(size)
+
+        self.angle = angle
     
     def event(self, event):
         for node in self.children:
@@ -75,11 +80,9 @@ class Parent:
                 child.kill()
 
             self.children.clear()
-            self.collision.clear()
 
         if self in self.parentNode.children:
             self.parentNode.children.remove(self)
-
 
 
 class Modifier(Parent):
@@ -101,11 +104,9 @@ class Modifier(Parent):
         
 
 class Node(Parent):
-    def __init__(self, parentNode, size = Vector2(0, 0), zindex = 0, offset_str = None, offset = Vector2(0, 0), show_axis = False):
-        super().__init__(parentNode)
+    def __init__(self, parentNode, size = Vector2(0, 0), zindex = 0, offset_str = None, offset = Vector2(0, 0), angle : int = 0):
+        super().__init__(parentNode, size = size, angle = angle)
         super().child(parentNode, zindex)
-
-        self.size = Vector2(size)
 
         if (offset_str):
             self.offset = positionFromStr(offset_str.lower(), self.size, self.parentNode.size)
@@ -115,8 +116,8 @@ class Node(Parent):
 
         self.position = self.parentNode.position + self.offset
 
-        for otherNode in self.parentNode.children:
-            """if otherNode.position == self.position and otherNode is not self:
+        """for otherNode in self.parentNode.children:
+            if otherNode.position == self.position and otherNode is not self:
                 print("Too many nodes at the same position, could not find a free spot")
                 pygame.quit()
                 exit()"""
@@ -125,7 +126,8 @@ class Node(Parent):
         super().event(event)
     
     def update(self):
-        self.position = self.parentNode.position + self.offset
+        #self.global_angle = self.parentNode.global_angle + self.angle
+        self.position = self.parentNode.position + self.offset #Vector2(self.offset.length() * math.cos(self.global_angle), self.offset.length() * math.sin(self.global_angle))
         super().update()
 
     def draw(self):
@@ -138,6 +140,7 @@ class Node(Parent):
         super().addCollision(newCollision)
     
     def kill(self):
+        self.collision.clear()
         super().kill()
 
     def changePos(self, offset_str = None, offset = Vector2(0, 0)):

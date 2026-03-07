@@ -215,17 +215,14 @@ class LinearMove(Modifier):
             return 1 - pow(-2 * p + 2, s) / 2
 
 class CircularMove(Modifier):
-    def __init__(self, parentNode : Node, relative_center : Vector2, radius : float = None, clockwise : bool = True, speed : float = default_speed, show_path : bool = False):
+    def __init__(self, parentNode : Node, relative_center : Vector2, radius : float = None, clockwise : bool = True, start_deg : float = 0, speed : float = default_speed, show_path : bool = False):
         super().__init__(parentNode)
 
         self.show = show_path
 
         self.speed = speed
 
-        if clockwise:
-            self.clockwise = 0
-        else:
-            self.clockwise = 1
+        self.direction = -1 if clockwise else 1
 
         self.center = self.parentNode.offset + Vector2(relative_center)
         if radius is None:
@@ -235,9 +232,10 @@ class CircularMove(Modifier):
             self.radius = radius
 
         self.path_len = 2 * math.pi * self.radius
-        self.duration = max(self.path_len / self.speed, 0.1)
+        self.duration = self.path_len / max(self.speed, 0.1)
 
-        self.elapsed = 0.0
+        self.angle = math.radians(start_deg)
+        self.elapsed = (start_deg / 360) * self.duration
 
         self.last_offset = self.parentNode.offset
         
@@ -247,14 +245,17 @@ class CircularMove(Modifier):
         super().event(event)
     
     def update(self):
-        self.elapsed += self.game.delta
+        self.elapsed += self.game.delta * self.direction
 
-        if self.elapsed >= self.duration:
+        if self.duration == 0:
+            return
+
+        if self.elapsed >= self.duration or self.elapsed <= 0:
             self.elapsed = self.elapsed % self.duration
         
         percents = self.elapsed / self.duration
 
-        self.angle = 2 * math.pi * (abs(self.clockwise - percents))
+        self.angle = 2 * math.pi * percents
 
         self.new_offset = Vector2(self.center.x + math.cos(self.angle) * self.radius, self.center.y + math.sin(self.angle) * self.radius)
 
@@ -277,18 +278,18 @@ class CircularMove(Modifier):
         super().kill()
     
 
-    def change(self, relative_center : Vector2 = None, radius : float = None, clockwise : bool = None, speed : float = None, show_path : bool = None):
+    def change(self, relative_center : Vector2 = None, radius : float = None, clockwise : bool = None, start_deg : float = None, speed : float = None, show_path : bool = None):
         if show_path is not None:
             self.show = show_path
 
         if speed is not None:
-            self.speed = speed
+            self.speed = max(speed, 0)
 
         if clockwise is not None:
-            if clockwise:
-                self.clockwise = 0
-            else:
-                self.clockwise = 1
+            self.direction = -1 if clockwise else 1
+
+        if start_deg is None:
+            start_deg = (self.angle / (2 * math.pi)) * 360
 
         if relative_center is not None:
             self.center = self.parentNode.offset + Vector2(relative_center)
@@ -299,9 +300,10 @@ class CircularMove(Modifier):
                 self.radius = radius
 
         self.path_len = 2 * math.pi * self.radius
-        self.duration = max(self.path_len / self.speed, 0.1)
+        self.duration = self.path_len / self.speed if self.speed != 0 else 0
 
-        self.elapsed = 0.0
+        self.angle = math.radians(start_deg)
+        self.elapsed = (start_deg / 360) * self.duration
 
         self.last_offset = self.parentNode.offset
 
@@ -501,6 +503,50 @@ class ClickOn(Modifier):
             return True
         return event.button == self.button
 
+class Hold(Modifier):
+    def __init__(self, parentNode : Node, physics_check : int, function : callable, button : int = None):
+        super().__init__(parentNode)
+        
+        self.func = function
+        self.button = button
+        
+        self.physics_check = physics_check
+
+        self.holding = False
+
+    def event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and self.pressed(event):
+            mouse = pygame.mouse.get_pos()
+            for collision_area in self.parentNode.collision:
+                if collision_area.physics_layer == self.physics_check:
+                    for rect in collision_area.collision_blocks:
+                        if rect.rect.collidepoint(mouse):
+                            self.holding = True
+                            return
+        
+        elif event.type == pygame.MOUSEBUTTONUP and self.pressed(event):
+            self.holding = False
+            return
+
+        super().event(event)
+    
+    def update(self):
+        if self.holding:
+            self.func()
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+    
+
+    def pressed(self, event):
+        if self.button is None:
+            return True
+        return event.button == self.button
+    
 class Press(Modifier):
     def __init__(self, parentNode : Node, key, function : callable, keydown : bool = True, mouse : bool = False):
         super().__init__(parentNode)
