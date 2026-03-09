@@ -58,7 +58,7 @@ def run():
     block4 = nodes.AnimatedSpriteBlock(parent4, (250, 250), bonsai_color_anim.frames, 3, offset_str = "center")
 
     parent5 = nodes.BaseNode(scene4)
-    block5 = nodes.TileMapBlock(parent5, (250, 250), bonsai_grid.grid, [1, 1])
+    block5 = nodes.TileMapBlock(parent5, (250, 250), bonsai_grid, [1, 1])
     modifier5 = modifiers.LinearMove(parent5, Vector2(0, 0), Vector2(800, 540))
 
     desc5 = nodes.TextBlock(scene4, "Translation of one tile of a tilemap \nfrom 1 point to another", my_game.fonts["main"], (220, 240, 190), (20, 200, 30), padding = 18, offset = Vector2(130, 900))
@@ -69,7 +69,12 @@ def run():
         #print(parent.offset)
         return
 
-    my_game.run(test)
+    def scene_changing(event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                my_game.changeScene()
+
+    my_game.run(test, global_input = scene_changing)
 
 
     pygame.quit()

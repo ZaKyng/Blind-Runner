@@ -53,7 +53,7 @@ class Game:
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         self.running = False
-                elif global_input:
+                if global_input:
                     global_input(event)
             
                 self.scenes[self.current_scene].event(event)
