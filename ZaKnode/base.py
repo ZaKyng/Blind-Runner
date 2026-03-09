@@ -1,10 +1,12 @@
+import math
 import pygame
 from pygame import Vector2
+
 
 __all__ = ["Parent", "Modifier", "Node"]
 
 
-def positionFromStr(string: str, size, parentNode_size, offset):
+def positionFromStr(string: str, size, parentNode_size):
     sw, sh = Vector2(size)
     w, h = Vector2(parentNode_size)
     
@@ -23,7 +25,7 @@ def positionFromStr(string: str, size, parentNode_size, offset):
         "center":       Vector2(mid_x, mid_y)
     }
 
-    output = pos.get(string, offset)
+    output = pos.get(string, Vector2(0, 0))
     
     return Vector2(output)
 
@@ -32,10 +34,12 @@ def positionFromStr(string: str, size, parentNode_size, offset):
 
 
 class Parent:
-    def __init__(self, parentNode):
+    def __init__(self, parentNode, size = Vector2(0, 0)):
+        self.parentNode = parentNode
         self.children = []
         self.collision = []
-        self.game = parentNode.game
+
+        self.size = Vector2(size)
     
     def event(self, event):
         for node in self.children:
@@ -74,11 +78,9 @@ class Parent:
                 child.kill()
 
             self.children.clear()
-            self.collision.clear()
 
         if self in self.parentNode.children:
             self.parentNode.children.remove(self)
-
 
 
 class Modifier(Parent):
@@ -101,20 +103,19 @@ class Modifier(Parent):
 
 class Node(Parent):
     def __init__(self, parentNode, size = Vector2(0, 0), zindex = 0, offset_str = None, offset = Vector2(0, 0)):
-        super().__init__(parentNode)
+        super().__init__(parentNode, size = size)
         super().child(parentNode, zindex)
 
-        self.size = Vector2(size)
-
         if (offset_str):
-            self.offset = positionFromStr(offset_str.lower(), self.size, self.parentNode.size, offset)
+            self.offset = positionFromStr(offset_str.lower(), self.size, self.parentNode.size)
+            self.offset += offset
         else:
             self.offset = Vector2(offset)
 
         self.position = self.parentNode.position + self.offset
 
-        for otherNode in self.parentNode.children:
-            """if otherNode.position == self.position and otherNode is not self:
+        """for otherNode in self.parentNode.children:
+            if otherNode.position == self.position and otherNode is not self:
                 print("Too many nodes at the same position, could not find a free spot")
                 pygame.quit()
                 exit()"""
@@ -123,7 +124,8 @@ class Node(Parent):
         super().event(event)
     
     def update(self):
-        self.position = self.parentNode.position + self.offset
+        #self.global_angle = self.parentNode.global_angle + self.angle
+        self.position = self.parentNode.position + self.offset #Vector2(self.offset.length() * math.cos(self.global_angle), self.offset.length() * math.sin(self.global_angle))
         super().update()
 
     def draw(self):
@@ -136,5 +138,13 @@ class Node(Parent):
         super().addCollision(newCollision)
     
     def kill(self):
+        self.collision.clear()
         super().kill()
+
+    def changePos(self, offset_str = None, offset = Vector2(0, 0)):
+        if (offset_str):
+            self.offset = positionFromStr(offset_str.lower(), self.size, self.parentNode.size)
+            self.offset += offset
+        else:
+            self.offset = Vector2(offset)
 

@@ -7,6 +7,3 @@ __pycache__/
 # Build / dist
 *.tar.gz
 *.egg-info/
-
-# Virtual env (if any)
-.venv/

@@ -13,21 +13,15 @@ The game is developed in **Python using Pygame** and includes a custom-built int
 
 You control a character running and jumping through levels toward a predefined goal.
 
-- The player **spawns at a fixed location** in each level.
-- **When the player moves**, the entire level (except the player and background) **disappears**.
-- **When the player stops**, the level becomes visible again.
-- Movement is therefore blind — you never see where you are going.
-- The camera is **static** to make spatial orientation easier.
-- Every few levels, a **new mechanic, element, or enemy** is introduced.
-- Enemies **cannot be killed** and must be avoided.
-- Upon death (enemy collision or other causes):
-  - The player briefly sees the reason for death.
-  - The player respawns at the spawn point.
-- User data (statistics, progress, collectibles) is stored in `.txt` files.
+1. Install latest .whl file in /dist/ folder. (Last update: 4. 3. 2026)
+2. Put it in an empty folder anywhere on your device.
+3. Open Terminal in that folder.
+   
+Run:
 
 ---
 
-## Objective
+# Updated developer comment (4. 3. 2026)
 
 Each level has a **visible target location**.
 
