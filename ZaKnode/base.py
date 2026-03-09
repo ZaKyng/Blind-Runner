@@ -34,14 +34,12 @@ def positionFromStr(string: str, size, parentNode_size):
 
 
 class Parent:
-    def __init__(self, parentNode, size = Vector2(0, 0), angle = 0):
+    def __init__(self, parentNode, size = Vector2(0, 0)):
         self.parentNode = parentNode
         self.children = []
         self.collision = []
 
         self.size = Vector2(size)
-
-        self.angle = angle
     
     def event(self, event):
         for node in self.children:
@@ -104,8 +102,8 @@ class Modifier(Parent):
         
 
 class Node(Parent):
-    def __init__(self, parentNode, size = Vector2(0, 0), zindex = 0, offset_str = None, offset = Vector2(0, 0), angle : int = 0):
-        super().__init__(parentNode, size = size, angle = angle)
+    def __init__(self, parentNode, size = Vector2(0, 0), zindex = 0, offset_str = None, offset = Vector2(0, 0)):
+        super().__init__(parentNode, size = size)
         super().child(parentNode, zindex)
 
         if (offset_str):

@@ -105,7 +105,7 @@ class Game:
 class Scene(Parent):
     def __init__(self, name : str, game, bg_color = Color(0, 0, 0)):
         self.game = game
-        super().__init__(game, size = self.game.screen_size, angle = 0)
+        super().__init__(game, size = self.game.screen_size)
         
         self.name = name
         self.game.addScene(self.name, self)
@@ -114,8 +114,6 @@ class Scene(Parent):
         self.offset = Vector2(0, 0)
 
         self.position = self.offset
-
-        self.global_angle = self.angle
 
         self.bg_color = Color(bg_color)
 
@@ -178,8 +176,8 @@ class ShowAxis():
 
 
 class BaseNode(Node):
-    def __init__(self, parentNode,  zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0), angle : int = 0):
-        super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset, angle = angle)
+    def __init__(self, parentNode,  zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
+        super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset)
 
     def event(self, event):
         super().event(event)
