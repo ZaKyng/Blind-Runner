@@ -2,9 +2,38 @@ import pygame
 from pygame import Vector2
 from pygame import Color
 
-from .base import *
+from .base import Node
 from . import modifiers
 from . import resources
+
+
+"""
+class default(Node):
+    def __init__(self, parentNode, size, zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0), angle = 0):
+        super().__init__(parentNode, size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self):
+        super().draw()
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
+    
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
+
+    def change(self, size = None, offset_str = None, offset = None, zindex = None, angle = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
+        
+    def kill(self):
+        super().kill()
+"""
+
 
 # ----------- Nodes ------------ #
 
@@ -16,6 +45,7 @@ class Game:
         pygame.font.init()
 
         self.position = Vector2(0, 0)
+        self.angle = 0
 
         self.game = self
 
@@ -102,20 +132,19 @@ class Game:
     def removeScene(self, name):
         self.scenes.pop(name)
 
-class Scene(Parent):
-    def __init__(self, name : str, game, bg_color = Color(0, 0, 0)):
+class Scene(Node):
+    def __init__(self, name : str, game : Game, bg_color = Color(0, 0, 0)):
         self.game = game
-        super().__init__(game, size = self.game.screen_size)
+
+        self.parentNode = game
+
+        self.children = []
+        self.collision = []
         
         self.name = name
         self.game.addScene(self.name, self)
 
-
-        self.offset = Vector2(0, 0)
-
-        self.position = self.offset
-
-        self.bg_color = Color(bg_color)
+        self.change(Color(bg_color), self.game.screen_size, offset = Vector2(0, 0), angle = 0)
 
     def event(self, event):
         super().event(event)
@@ -127,6 +156,12 @@ class Scene(Parent):
         super().draw()
     
     def kill(self):
+        for child in self.children[:]:
+            child.kill()
+
+        self.children.clear()
+        self.collision.clear()
+
         self.game.removeScene(self.name)
     
     def addChild(self, newChild):
@@ -134,6 +169,36 @@ class Scene(Parent):
     
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
+
+    def change(self, bg_color = None, size = None, offset = None, angle = None):
+        if bg_color is not None:
+            self.bg_color = bg_color
+        super().nodeChange(size = size, offset = offset, angle = angle)
+
+class BaseNode(Node):
+    def __init__(self, parentNode,  zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0), angle = 0):
+        super().__init__(parentNode, size = Vector2(0, 0), offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self):
+        super().draw()
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
+    
+    def addCollision(self, newCollision):
+        super().addCollision(newCollision)
+
+    def change(self, offset_str = None, offset = None, zindex = None, angle = None):
+        super().nodeChange(offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
+        
+    def kill(self):
+        super().kill()
 
 
 class ShowAxis():
@@ -175,30 +240,6 @@ class ShowAxis():
             hitarea.kill()
 
 
-class BaseNode(Node):
-    def __init__(self, parentNode,  zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
-        super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset)
-
-    def event(self, event):
-        super().event(event)
-    
-    def update(self):
-        super().update()
-
-    def draw(self):
-        super().draw()
-    
-    def addChild(self, newChild):
-        super().addChild(newChild)
-    
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
-
-    def kill(self):
-        super().kill()
-
-
-
 # -- Logic -- #
 
 class CollisionArea(Node):
@@ -233,6 +274,9 @@ class CollisionArea(Node):
     
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
+    
+    def change(self, size = None, offset_str = None, offset = None, zindex = None, angle = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
 
     def kill(self):
         for block in self.collision_blocks:
@@ -271,17 +315,13 @@ class CollisionBlock(Node):
     
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
+    
+    def change(self, size = None, offset_str = None, offset = None, zindex = None, angle = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
 
     def kill(self):
         self.parentNode.collision_blocks.remove(self)
         super().kill()
-    
-    def change(self, size = None, offset_str = None, offset = None):
-        if size is not None:
-            self.size = Vector2(size)
-        if offset_str is None and offset is None:
-            offset = self.offset
-        super().changePos(offset_str, offset)
 
 
 
@@ -323,16 +363,17 @@ class Label(Node):
     
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
-    
-    def change(self, newText : str = None, newFont : pygame.font = None, newColor : Color = None):
-        if newText is not None:
-            self.text = newText
-        
-        if newFont is not None:
-            self.font = newFont
 
-        if newColor is not None:
-            self.color = Color(newColor)
+    def change(self, text : str = None, font : pygame.font = None, color : Color = None, size = None, offset_str = None, offset = None, zindex = None, angle = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
+        if text is not None:
+            self.text = text
+        
+        if font is not None:
+            self.font = font
+
+        if color is not None:
+            self.color = Color(color)
 
         self.message = self.font.render(self.text, True, self.color)
 
@@ -340,41 +381,20 @@ class Label(Node):
 
         self.surface.blit(self.message)
 
-        self.size = Vector2(self.surface.get_size())
+        self.surface = pygame.transform.rotate(self.surface, self.angle)
 
+        self.size = Vector2(self.surface.get_size())
 
     def kill(self):
         super().kill()
 
+
 class TextBlock(Node):
     def __init__(self, parentNode, text : str, font, txt_color = Color(255, 255, 255), bg_color = Color(0, 0, 0), padding = 0, zindex = 0, 
-                offset_str = None, offset = Vector2(0, 0), alpha_chanel = False):
+                offset_str = None, offset = Vector2(0, 0), angle : int = 0, alpha_chanel = False):
+        super().__init__(parentNode, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
         
-        self.text = text
-        self.color = Color(txt_color)
-        self.background = Color(bg_color)
-        self.font = font
-
-        self.message = self.font.render(self.text, True, self.color)
-        
-        self.padding = padding
-
-        self.alpha = alpha_chanel
-        if self.alpha:
-            self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
-                                       self.message.get_size()[1] + self.padding * 2), pygame.SRCALPHA)
-        else:
-            self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
-                                       self.message.get_size()[1] + self.padding * 2))
-        
-        self.surface.fill(self.background)
-        self.surface.blit(self.message, (self.padding, self.padding))
-
-        size = Vector2(self.surface.get_size())
-        
-        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
-
-        self.rect = pygame.Rect(self.position, self.size)
+        self.change(text = text, font = font, txt_color = txt_color, bg_color = bg_color, padding = padding, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle, alpha_chanel = alpha_chanel)
 
 
     def event(self, event):
@@ -382,11 +402,10 @@ class TextBlock(Node):
     
     def update(self):
         super().update()
-        self.rect = pygame.Rect(self.position, self.size)
         
 
     def draw(self):
-        self.game.screen.blit(self.surface, self.rect)
+        self.game.screen.blit(self.surface, self.position)
         super().draw()
     
     def addChild(self, newChild):
@@ -395,22 +414,23 @@ class TextBlock(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
     
-    def change(self, text = None, font = None, txt_color = None, bg_color = None, padding = None):
+    def change(self, text = None, font = None, txt_color = None, bg_color = None, padding = None, offset_str = None, offset = None, zindex = None, angle = None, alpha_chanel = False):
         if text is not None:
             self.text = text
         
-        if font is None:
+        if font is not None:
             self.font = font
 
-        if txt_color is None:
+        if txt_color is not None:
             self.color = Color(txt_color)
         
-        if bg_color is None:
+        if bg_color is not None:
             self.background = Color(bg_color)
         
-        if padding is None:
+        if padding is not None:
             self.padding = padding
-
+        
+        self.alpha = alpha_chanel
 
         self.message = self.font.render(self.text, True, self.color)
         if self.alpha:
@@ -423,25 +443,22 @@ class TextBlock(Node):
         self.surface.fill(self.background)
         self.surface.blit(self.message, (self.padding, self.padding))
 
+        self.surface = pygame.transform.rotate(self.surface, self.angle)
+
         self.size = self.surface.get_size()
+
+        super().nodeChange(offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
 
 
     def kill(self):
         super().kill()
 
-class ColorBlock(Node):
-    def __init__(self, parentNode, size, color = Color(255, 255, 255, 255), zindex = 0, 
-                offset_str = None, offset = Vector2(0, 0), alpha_chanel = False):
-        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
-        self.color = pygame.Color(color)
-        
-        self.alpha_chanel = alpha_chanel
 
-        if self.alpha_chanel:
-            self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
-        else:
-            self.surface = pygame.Surface(self.size)
-        self.surface.fill(self.color)
+class ColorBlock(Node):
+    def __init__(self, parentNode, size, color = Color(255, 255, 255, 255), zindex = 0, offset_str = None, offset = Vector2(0, 0), angle = 0, alpha_channel = False):
+        super().__init__(parentNode, size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
+    
+        self.change(color = color, alpha_channel = alpha_channel)
 
 
     def event(self, event):
@@ -449,12 +466,9 @@ class ColorBlock(Node):
     
     def update(self):
         super().update()
-        self.rect = pygame.Rect(self.position, self.size)
         
-
     def draw(self):
-        # Draw the pre-rendered Surface instead of drawing a rectangle directly
-        self.game.screen.blit(self.surface, self.rect)
+        self.game.screen.blit(self.surface, self.position)
         super().draw()
     
     def addChild(self, newChild):
@@ -463,31 +477,35 @@ class ColorBlock(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
     
-    def change(self, newSize = None, newColor = None):
-        if newSize is not None:
-            self.size = newSize
-        
-        if newColor is not None:
-            self.color = newColor
+    def change(self, color = None, alpha_channel = None, size = None, offset_str = None, offset = None, zindex = None, angle = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
 
-        if self.alpha_chanel:
+        if color is not None:
+            self.color = color
+        
+        if alpha_channel is not None:
+            self.alpha_channel = alpha_channel
+
+        if self.alpha_channel:
             self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
         else:
             self.surface = pygame.Surface(self.size)
 
         self.surface.fill(self.color)
+
+        self.surface = pygame.transform.rotate(self.surface, self.angle)
+        
+        
     
     def kill(self):
         super().kill()
 
+
 class SpriteBlock(Node):
-    def __init__(self, parentNode, size, image, zindex = 0, offset_str=None, offset=pygame.Vector2(0, 0)):
-        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
-
-        self.size = size
-
-        self.surface = pygame.transform.scale(image, self.size)
-
+    def __init__(self, parentNode, size, image, zindex = 0, offset_str = None, offset = Vector2(0, 0), angle = 0):
+        super().__init__(parentNode, size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
+        
+        self.change(image = image)
 
     def event(self, event):
         super().event(event)
@@ -507,12 +525,15 @@ class SpriteBlock(Node):
     
     def kill(self):
         super().kill()
-    
 
-    def change(self, image, size : Vector2 = None):
-        if size is not None:
-            self.size = size
-        self.surface = pygame.transform.scale(image, self.size)
+    def change(self, image = None, size = None, offset_str = None, offset = None, zindex = None, angle = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
+
+        if image is not None:
+            self.surface = pygame.transform.scale(image, self.size)
+
+        self.surface = pygame.transform.rotate(self.surface, 45)
+
 
 class AnimatedSpriteBlock(Node):
     def __init__(self, parentNode, size, framesArr, fps, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0)):
@@ -557,18 +578,29 @@ class AnimatedSpriteBlock(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
+    def change(self, frames_arr = None, fps = None, size = None, offset_str = None, offset = None, zindex = None, angle = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
+
+        if frames_arr is not None:
+            self.frames.clear()
+            for one_frame in frames_arr:
+                frame = pygame.transform.scale(one_frame, self.size)
+                self.frames.append(frame)
+
+            self.count = 0
+            self.index = 0
+        
+        new_frames = []
+        for frame in self.frames:
+            new_frames.append(pygame.transform.rotate(frame, self.angle))
+        
+        self.frames.clear()
+        self.frames = new_frames
+
+
     def kill(self):
         super().kill()
 
-
-    def change(self, framesArr):
-        self.frames.clean()
-        for i in range(len(framesArr)):
-            frame = pygame.transform.scale(framesArr[i], self.size)
-            self.frames.append(frame)
-
-        self.count = 0
-        self.index = 0
 
 class TileMapBlock(Node):
     def __init__(self, parentNode, size, tile_node, coords, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0)):
@@ -602,11 +634,12 @@ class TileMapBlock(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
-    def kill(self):
-        super().kill()
+    def change(self, tile_node = None, coords = None, changer = None, size = None, offset_str = None, offset = None, zindex = None, angle = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
+
+        if tile_node is not None:
+            self.tileNode = tile_node
     
-    
-    def change(self, coords = None, changer = None, size = None):
         if coords is None:
             if changer is None:
                 return
@@ -622,6 +655,11 @@ class TileMapBlock(Node):
         
         self.surface = self.tileNode.grid[self.coords[0]][self.coords[1]]
 
-        if size is not None:
-            self.size = size
         self.surface = pygame.transform.scale(self.surface, self.size)
+
+        self.surface = pygame.transform.rotate(self.surface, 45)
+
+
+    def kill(self):
+        super().kill()
+

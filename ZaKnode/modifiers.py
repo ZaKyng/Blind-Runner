@@ -8,6 +8,29 @@ from .base import *
 default_speed = 200
 
 
+"""
+class default(Modifier):
+    def __init__(self, parentNode : Node):
+        super().__init__(parentNode)
+
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def kill(self):
+        super().kill()
+    
+    def change(self):
+        super().modifierChange()
+        
+"""
+
 
 # ----------- Modifiers ------------ #
 
@@ -81,8 +104,12 @@ class AxisMove(Modifier):
         #print([self.new_offset, self.last_offset, percents, partition])
 
         step = new_offset - self.last_offset
+
+        real_offset = Vector2(0, 0)
+
+        real_offset[self.axis] = self.parentNode.offset[self.axis] + step
         
-        self.parentNode.offset[self.axis] += step
+        self.parentNode.change(offset = real_offset)
         self.last_offset = new_offset
 
         super().update()
@@ -104,6 +131,9 @@ class AxisMove(Modifier):
 
     def kill(self):
         super().kill()
+    
+    def change(self):
+        super().modifierChange()
     
     
     def linear(self, p, s):
@@ -157,7 +187,6 @@ class LinearMove(Modifier):
 
         self.mode = modes.get(mode, self.linear)
 
-    
     def event(self, event):
         super().event(event)
     
@@ -194,10 +223,13 @@ class LinearMove(Modifier):
                 
             pygame.draw.line(self.game.screen, (255, 0, 0), start, end, width = 4)
         super().draw()
+    
+    def change(self):
+        super().modifierChange()
 
     def kill(self):
         super().kill()
-    
+
     
     def linear(self, p, s):
         return p
@@ -239,8 +271,6 @@ class CircularMove(Modifier):
 
         self.last_offset = self.parentNode.offset
         
-
-    
     def event(self, event):
         super().event(event)
     
@@ -274,10 +304,6 @@ class CircularMove(Modifier):
             pygame.draw.circle(self.game.screen, (255, 0, 0), center, abs(self.radius), width = 4)
         super().draw()
 
-    def kill(self):
-        super().kill()
-    
-
     def change(self, relative_center : Vector2 = None, radius : float = None, clockwise : bool = None, start_deg : float = None, speed : float = None, show_path : bool = None):
         if show_path is not None:
             self.show = show_path
@@ -307,6 +333,9 @@ class CircularMove(Modifier):
 
         self.last_offset = self.parentNode.offset
 
+    def kill(self):
+        super().kill()
+
 
 ### - Mouse - ###
 
@@ -314,7 +343,6 @@ class MouseClickMove(Modifier):
     def __init__(self, parentNode : Node):
         super().__init__(parentNode)
     
-
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = Vector2(pygame.mouse.get_pos())
@@ -326,6 +354,9 @@ class MouseClickMove(Modifier):
 
     def draw(self):
         super().draw()
+    
+    def change(self):
+        super().modifierChange()
 
     def kill(self):
         super().kill()
@@ -365,13 +396,18 @@ class MouseDragMove(Modifier):
         if self.mouse_clicked:
             mouse = Vector2(pygame.mouse.get_pos())
             global_pos = mouse + self.mouse_offset
+            new_offset = self.parentNode.position
             for i in self.axis:
-                self.parentNode.offset[i] = global_pos[i] - self.parentNode.parentNode.position[i]
+                new_offset[i] = global_pos[i] - self.parentNode.parentNode.position[i]
+            self.parentNode.change(offset = new_offset)
 
         super().update()
 
     def draw(self):
         super().draw()
+    
+    def change(self):
+        super().modifierChange()
 
     def kill(self):
         super().kill()
@@ -409,6 +445,9 @@ class KeyboardMove(Modifier):
 
     def draw(self):
         super().draw()
+    
+    def change(self):
+        super().modifierChange()
 
     def kill(self):
         super().kill()
@@ -493,6 +532,9 @@ class ClickOn(Modifier):
 
     def draw(self):
         super().draw()
+    
+    def change(self):
+        super().modifierChange()
 
     def kill(self):
         super().kill()
@@ -537,6 +579,9 @@ class Hold(Modifier):
 
     def draw(self):
         super().draw()
+    
+    def change(self):
+        super().modifierChange()
 
     def kill(self):
         super().kill()
@@ -577,6 +622,9 @@ class Press(Modifier):
 
     def draw(self):
         super().draw()
+    
+    def change(self):
+        super().modifierChange()
 
     def kill(self):
         super().kill()
