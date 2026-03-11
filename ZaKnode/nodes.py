@@ -1,3 +1,4 @@
+import math
 import pygame
 from pygame import Vector2
 from pygame import Color
@@ -44,8 +45,10 @@ class Game:
         pygame.init()
         pygame.font.init()
 
+        self.offset = Vector2(0, 0)
         self.position = Vector2(0, 0)
         self.angle = 0
+        self.global_angle = 0
 
         self.game = self
 
@@ -211,8 +214,11 @@ class ShowAxis():
 
         offsets = [Vector2(gap, size.x // -2), Vector2(size.x // -2, gap), Vector2(gap, gap)]
         axis = ["x", "y", None]
-        lines = [lambda: pygame.draw.line(self.parentNode.game.screen, (255, 0, 0), Vector2(0, self.parentNode.position.y), Vector2(self.parentNode.game.screen_size[0], self.parentNode.position.y), 4),
-                 lambda: pygame.draw.line(self.parentNode.game.screen, (0, 255, 0), Vector2(self.parentNode.position.x, 0), Vector2(self.parentNode.position.x, self.parentNode.game.screen_size[1]), 4)]
+        lines = [lambda: pygame.draw.line(self.parentNode.game.screen, (255, 0, 0), Vector2(0, self.parentNode.position.y + math.tan(self.parentNode.global_angle / 180 * math.pi) * self.parentNode.position.x),
+                        Vector2(self.parentNode.game.screen_size[0], self.parentNode.position.y + 
+                                math.tan(self.parentNode.global_angle / 180 * math.pi) * (self.parentNode.game.screen_size.x - self.parentNode.position.x)), 4),
+                 lambda: pygame.draw.line(self.parentNode.game.screen, (0, 255, 0), Vector2(self.parentNode.position.x - math.tan(self.parentNode.global_angle / 180 * math.pi) * self.parentNode.position.y, 0), 
+                        Vector2(self.parentNode.position.x + math.tan(self.parentNode.global_angle / 180 * math.pi) * self.parentNode.position.y, self.parentNode.game.screen_size[1]), 4)]
 
         self.tiles = []
 
@@ -223,7 +229,7 @@ class ShowAxis():
 
         for i in range(3):
             self.tiles.append(TileMapBlock(self.parentNode, size, self.images, [1 + i, 0], 600, offset = offsets[i]))
-            new_area = CollisionArea(self.parentNode, 98 + i)
+            new_area = CollisionArea(self.parentNode, 98 + i, show = True)
             new_area.addCollisionBlock(size, offset = offsets[i])
             self.hitareas.append(new_area)
 
@@ -292,18 +298,14 @@ class CollisionBlock(Node):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
         self.parentNode.collision_blocks.append(self)
 
-        self.rect = pygame.Rect(self.position.x, self.position.y, self.size.x, self.size.y)
-
-        if self.parentNode.show:
-            self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
-            self.surface.fill("#00ff0044")
+        self.change()
     
     def event(self, event):
         super().event(event)
     
     def update(self):
         super().update()
-        self.rect = pygame.Rect(self.position, self.size)
+        
         
     def draw(self):
         if self.parentNode.show:
@@ -318,6 +320,11 @@ class CollisionBlock(Node):
     
     def change(self, size = None, offset_str = None, offset = None, zindex = None, angle = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, angle = angle)
+
+        self.rect = pygame.Rect(self.position, self.size)
+        if self.parentNode.show:
+            self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
+            self.surface.fill("#00ff0044")
 
     def kill(self):
         self.parentNode.collision_blocks.remove(self)
@@ -603,18 +610,10 @@ class AnimatedSpriteBlock(Node):
 
 
 class TileMapBlock(Node):
-    def __init__(self, parentNode, size, tile_node, coords, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0)):
-        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
+    def __init__(self, parentNode, size, tile_node, coords, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0), angle = 0):
+        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset, angle = angle)
         
-        self.size = size
-
-        self.tileNode = tile_node
-
-        self.coords = [int(coords[0] % self.tileNode.tileCount[0]), int(coords[1] % self.tileNode.tileCount[1])]
-
-
-        self.surface = self.tileNode.grid[self.coords[0]][self.coords[1]]
-        self.surface = pygame.transform.scale(self.surface, self.size)
+        self.change(tile_node = tile_node, coords = coords)
 
 
     def event(self, event):
@@ -657,7 +656,7 @@ class TileMapBlock(Node):
 
         self.surface = pygame.transform.scale(self.surface, self.size)
 
-        self.surface = pygame.transform.rotate(self.surface, 45)
+        self.surface = pygame.transform.rotate(self.surface, self.global_angle)
 
 
     def kill(self):

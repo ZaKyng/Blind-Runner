@@ -346,7 +346,7 @@ class MouseClickMove(Modifier):
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = Vector2(pygame.mouse.get_pos())
-            self.parentNode.offset = mouse_pos - self.parentNode.parentNode.position
+            self.parentNode.change(offset = mouse_pos - self.parentNode.parentNode.position)
         super().event(event)
     
     def update(self):
@@ -396,7 +396,7 @@ class MouseDragMove(Modifier):
         if self.mouse_clicked:
             mouse = Vector2(pygame.mouse.get_pos())
             global_pos = mouse + self.mouse_offset
-            new_offset = self.parentNode.position
+            new_offset = self.parentNode.offset
             for i in self.axis:
                 new_offset[i] = global_pos[i] - self.parentNode.parentNode.position[i]
             self.parentNode.change(offset = new_offset)

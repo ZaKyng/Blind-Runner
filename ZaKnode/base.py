@@ -121,6 +121,8 @@ class Node(Base):
         if angle is not None:
             self.angle = angle
         
+        self.global_angle = self.parentNode.global_angle + self.angle
+        
         if offset is None:
             offset = self.offset
 
@@ -133,9 +135,9 @@ class Node(Base):
 
         self.offset_angle = Vector2(0, 0).angle_to(self.offset)
 
-        global_angle = self.parentNode.angle + self.offset_angle
+        total_angle = self.global_angle + self.offset_angle
         
-        self.position = self.parentNode.position + Vector2(math.cos(global_angle / 360 * 2 * math.pi) * self.offset.length(), math.sin(global_angle / 360 * 2 * math.pi) * self.offset.length())
+        self.position = self.parentNode.position + Vector2(math.cos(total_angle / 180 * math.pi) * self.offset.length(), math.sin(total_angle / 180 * math.pi) * self.offset.length())
 
         for child in self.children:
             child.change()

@@ -28,10 +28,12 @@ def run():
 
 
     parent1 = nodes.BaseNode(scene1, offset=Vector2(150, 150))
-    block1 = nodes.ColorBlock(parent1, (80, 80), angle = 45, alpha_channel = True)
+    nodes.ShowAxis(parent1)
+    block1 = nodes.ColorBlock(parent1, (80, 80), angle = 15, alpha_channel = True, offset = Vector2(10, 50))
     block1_2 = nodes.ColorBlock(parent1, (80, 80))
     #modifier1_1 = modifiers.AxisMove(block1, 0, 700, speed = 100, mode = "linear", strength = 6, show_path = True)
     modifier1_2 = modifiers.AxisMove(block1_2, 0, 700, speed = 300, mode = "ease-both", axis = "y", strength = 2)
+    modifiers.MouseClickMove(block1)
 
     nodes.ShowAxis(block1)
 
@@ -52,7 +54,7 @@ def run():
                 my_game.changeScene()
 
     def test():
-        #print(circle.center)
+        block1.change(angle = block1.angle + 0.2)
         return
 
     my_game.run(test, global_input = scene_changing)
