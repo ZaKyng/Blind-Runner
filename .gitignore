@@ -7,3 +7,6 @@ __pycache__/
 # Build / dist
 *.tar.gz
 *.egg-info/
+
+# Zipped
+.zip
