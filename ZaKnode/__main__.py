@@ -35,7 +35,7 @@ def run():
     nodes.ShowAxis(default)
 
     desc1 = nodes.Label(default, "Use <- / -> to switch scenes", my_game.fonts["main"], offset_str="center")
-    press_esc = nodes.Label(default, "Press ESC to leave", my_game.fonts["secondary"], offset_str="bottom-right")
+    press_esc = nodes.Label(default, "Press ESC to leave", my_game.fonts["secondary"], offset_str="bottom-right", offset = Vector2(-10, -10))
 
 
     parent1 = nodes.BaseNode(scene1, offset=Vector2(150, 150))
