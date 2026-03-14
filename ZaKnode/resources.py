@@ -11,7 +11,7 @@ from pygame import Vector2
 def directory(src):
     return os.path.join(os.path.dirname(__file__), src)
 
-class LoadImage:
+class Image:
     def __init__(self, path, alpha_channel = False):
         self.path = path
         self.rawImage = pygame.image.load(path)
@@ -25,7 +25,7 @@ class LoadImage:
 
         self.rawImage = None
 
-class LoadImageGrid:
+class SpriteSheet:
     def __init__(self, path, oneFrameSize, alpha_channel = False):
         self.path = path
         self.rawImage = pygame.image.load(path)

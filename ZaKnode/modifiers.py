@@ -2,7 +2,7 @@ import math
 import pygame
 from pygame import Vector2
 
-from .base import *
+from .base import Modifier, Node
 
 
 default_speed = 200

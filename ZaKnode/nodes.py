@@ -202,7 +202,7 @@ class BaseNode(Node):
 class ShowAxis():
     def __init__(self, parentNode : Node):
         self.parentNode = parentNode
-        self.images = resources.LoadImageGrid(resources.directory("img/axis.png"), Vector2(15, 15), alpha_channel = True)
+        self.images = resources.SpriteSheet(resources.directory("img/axis.png"), Vector2(15, 15), alpha_channel = True)
 
         size = Vector2(40, 40)
         gap = 50

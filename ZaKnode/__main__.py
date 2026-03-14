@@ -12,14 +12,14 @@ def run():
     screen_size = (1980, 1080)
     my_game = nodes.Game(screen_size, fps = 120)
 
-    bonsai = resources.LoadImage(resources.directory("img/bonsai.png"), alpha_channel = True)
+    bonsai = resources.Image(resources.directory("img/bonsai.png"), alpha_channel = True)
 
-    bonsai_grid = resources.LoadImageGrid(resources.directory("img/bonsai.png"), Vector2(32, 32))
+    bonsai_grid = resources.SpriteSheet(resources.directory("img/bonsai.png"), Vector2(32, 32))
 
     bonsai_grow_anim = resources.Animation(bonsai_grid.grid, 0, 5)
     bonsai_color_anim = resources.Animation(bonsai_grid.grid, 5, 7)
 
-    box = resources.LoadImage(resources.directory("img/box.png"), True)
+    box = resources.Image(resources.directory("img/box.png"), True)
 
     # --- Level-- #
 
