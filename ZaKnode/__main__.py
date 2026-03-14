@@ -12,21 +12,23 @@ def run():
     screen_size = (1980, 1080)
     my_game = nodes.Game(screen_size, fps = 120)
 
-    bonsai = resources.LoadImage(resources.directory("img/bonsai.png"), alpha_chanel = True)
+    bonsai = resources.LoadImage(resources.directory("img/bonsai.png"), alpha_channel = True)
 
     bonsai_grid = resources.LoadImageGrid(resources.directory("img/bonsai.png"), Vector2(32, 32))
 
     bonsai_grow_anim = resources.Animation(bonsai_grid.grid, 0, 5)
     bonsai_color_anim = resources.Animation(bonsai_grid.grid, 5, 7)
 
+    box = resources.LoadImage(resources.directory("img/box.png"), True)
+
     # --- Level-- #
 
     default = nodes.Scene("default", my_game)
     scene1 = nodes.Scene("scene1", my_game, bg_color = (200, 100, 20))
     scene2 = nodes.Scene("scene2", my_game, bg_color = (20, 200, 100))
-    scene3 = nodes.Scene("scene3", my_game, bg_color = (100, 20, 200))
-    scene4 = nodes.Scene("scene4", my_game, bg_color = (200, 20, 100))
-    scene5 = nodes.Scene("scene5", my_game, bg_color = (60, 50, 60))
+    scene3 = nodes.Scene("scene3", my_game, bg_color = (200, 20, 100))
+    scene4 = nodes.Scene("scene4", my_game, bg_color = (100, 20, 200))
+    scene5 = nodes.Scene("scene5", my_game, bg_color = (60, 50, 60)) 
     scene6 = nodes.Scene("scene6", my_game, bg_color = (200, 190, 20))
     scene7 = nodes.Scene("scene7", my_game, bg_color = (12, 5, 9))
 
@@ -37,10 +39,14 @@ def run():
 
 
     parent1 = nodes.BaseNode(scene1, offset=Vector2(150, 150))
-    block1 = nodes.ColorBlock(parent1, (80, 80), alpha_chanel = True)
+    block1 = nodes.ColorBlock(parent1, (80, 80), (170, 200, 20, 90), alpha_channel = True)
     block1_2 = nodes.ColorBlock(parent1, (80, 80))
     modifier1_1 = modifiers.AxisMove(block1, 0, 700, speed = 100, mode = "linear", strength = 6, show_path = True)
-    modifier1_2 = modifiers.AxisMove(block1_2, 0, 700, speed = 300, mode = "ease-both", axis = "y", strength = 2)
+    modifier1_2 = modifiers.AxisMove(block1_2, 0, 700, speed = 300, mode = "ease-both", strength = 20, looping = False)
+
+    modifier1_2.change(axis = "y")
+
+    nodes.ShowAxis(block1)
 
     collision = nodes.CollisionArea(block1, 8)
     collision.addCollisionBlock(Vector2(20, 200), offset = Vector2(100, 100))
@@ -74,9 +80,16 @@ def run():
     block5 = nodes.TileMapBlock(parent5, (250, 250), bonsai_grid, [1, 1])
     modifier5 = modifiers.LinearMove(parent5, Vector2(100, 130), Vector2(800, 540))
 
-    press = modifiers.Press(scene4, pygame.K_a, lambda: block5.change(changer = [0, 1]))
-    press = modifiers.Press(scene4, pygame.K_s, lambda: block5.change(changer = [1, 0]))
-    press = modifiers.Press(scene4, pygame.K_d, lambda: block5.change(changer = 1))
+    explain_text = nodes.Label(scene4, "Explanation: ", my_game.fonts["secondary"], (200, 200, 200), 8, offset_str = "top-right", offset = Vector2(-20, 20))
+    explain = nodes.SpriteBlock(scene4, Vector2(300, 300), bonsai.image, 5, offset_str = "top-right", offset = Vector2(-20, 20 + explain_text.size.y))
+    explain_box = nodes.SpriteBlock(explain, explain.size // 3, box.image, 6)
+    
+
+    modifiers.ForeverDo(explain_box, lambda: explain_box.change(offset = Vector2(explain_box.size[0] * block5.coords[0], explain_box.size[1] * block5.coords[1])))
+
+    press = modifiers.Press(scene4, pygame.K_a, lambda: block5.change(coords_change = [0, 1]))
+    press = modifiers.Press(scene4, pygame.K_s, lambda: block5.change(coords_change = [1, 0]))
+    press = modifiers.Press(scene4, pygame.K_d, lambda: block5.change(coords_change = 1))
 
     desc5_1 = nodes.TextBlock(scene4, "Press A, S or D to change", my_game.fonts["secondary"], (255, 200, 255), (25, 25, 25), padding = 18, offset = Vector2(130, 20))
     desc5 = nodes.Label(scene4, "Translation of one tile of a tilemap \nfrom 1 point to another", my_game.fonts["main"], (220, 240, 190), offset = Vector2(130, 900))
@@ -84,9 +97,11 @@ def run():
 
     tile5 = nodes.TileMapBlock(scene5, Vector2(400, 500), bonsai_grid, [0, 0], offset_str = "center")
     collision_tile5 = nodes.CollisionArea(tile5, 2, show_self = True)
+    collision_tile5.change(show = True)
     collision_tile5.addCollisionBlock(tile5.size, offset = Vector2(100, 200))
-    modifiers.ClickOn(tile5, 2, lambda: tile5.change(changer = 1))
-    desc6 = nodes.Label(scene5, "Click on picture to change", my_game.fonts["main"], (110, 100, 255), offset_str = "bottom")
+    modifiers.ClickOn(tile5, 2, lambda: tile5.change(coords_change = 1))
+    drag = modifiers.MouseDragMove(tile5, 2)
+    desc6 = nodes.Label(scene5, "Click on green area (hitbox) to change image", my_game.fonts["main"], (110, 100, 255), offset_str = "bottom")
 
     parent6 = nodes.BaseNode(scene6)
     nodes.ShowAxis(parent6)
@@ -117,9 +132,6 @@ def run():
         if press_esc not in scene.children:
             scene.addChild(press_esc)
 
-    print(default.size)
-
-
     def scene_changing(event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
@@ -128,8 +140,7 @@ def run():
                 my_game.changeScene()
 
     def test():
-        #print(circle.center)
-        return
+        pass
 
     my_game.run(test, global_input = scene_changing)
 

@@ -12,11 +12,11 @@ def directory(src):
     return os.path.join(os.path.dirname(__file__), src)
 
 class LoadImage:
-    def __init__(self, path, alpha_chanel = False):
+    def __init__(self, path, alpha_channel = False):
         self.path = path
         self.rawImage = pygame.image.load(path)
 
-        if alpha_chanel:
+        if alpha_channel:
             self.image = pygame.Surface(self.rawImage.get_size(), pygame.SRCALPHA)
         else:
             self.image = pygame.Surface(self.rawImage.get_size())
@@ -26,7 +26,7 @@ class LoadImage:
         self.rawImage = None
 
 class LoadImageGrid:
-    def __init__(self, path, oneFrameSize, alpha_chanel = False):
+    def __init__(self, path, oneFrameSize, alpha_channel = False):
         self.path = path
         self.rawImage = pygame.image.load(path)
 
@@ -35,7 +35,7 @@ class LoadImageGrid:
         for x in range(int(self.tileCount[0])):
             self.grid.append([])
             for y in range(int(self.tileCount[1])):
-                if alpha_chanel:
+                if alpha_channel:
                     oneTile = pygame.Surface(oneFrameSize, pygame.SRCALPHA)
                 else:
                     oneTile = pygame.Surface(oneFrameSize)
