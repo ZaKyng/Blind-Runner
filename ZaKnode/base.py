@@ -51,8 +51,10 @@ class Base:
             self.children.clear()
             self.collision.clear()
 
-        if self in self.parentNode.children:
-            self.parentNode.children.remove(self)
+        if self.parentNode:
+            if self in self.parentNode.children:
+                self.parentNode.children.remove(self)
+            self.parentNode = None
 
 
 class Modifier(Base):

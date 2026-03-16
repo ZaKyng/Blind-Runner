@@ -42,6 +42,7 @@ class Game:
     def __init__(self, screen_size, name : str = "ZaKgame window", fps : int = 120):
         pygame.init()
         pygame.font.init()
+        pygame.mixer.init()
 
         self.offset = Vector2(0, 0)
         self.position = Vector2(0, 0)
@@ -57,12 +58,13 @@ class Game:
         self.current_scene = None
         Scene(self.default_scene_name, self)
         
-
         pygame.display.set_caption(name)
 
         self.fonts = {}
         self.fonts["main"] = pygame.font.SysFont('Arial', 50)
         self.fonts["secondary"] = pygame.font.SysFont('Arial', 30)
+
+        self.signals = {}
 
         self.screen = pygame.display.set_mode(self.screen_size) #pygame surface
         self.clock = pygame.time.Clock()
@@ -130,6 +132,14 @@ class Game:
     
     def removeScene(self, name):
         self.scenes.pop(name)
+    
+
+    def addSignal(self, name):
+        self.signals[name] = False
+    
+    def setOffSignal(self, name):
+        self.signals[name] = True
+
 
 class Scene(Node):
     def __init__(self, name : str, game : Game, bg_color = Color(0, 0, 0)):
@@ -202,7 +212,7 @@ class BaseNode(Node):
 class ShowAxis():
     def __init__(self, parentNode : Node):
         self.parentNode = parentNode
-        self.images = resources.SpriteSheet(resources.directory("img/axis.png"), Vector2(15, 15), alpha_channel = True)
+        self.images = resources.SpriteSheet(resources.directory("assets/axis.png"), Vector2(15, 15), alpha_channel = True)
 
         size = Vector2(40, 40)
         gap = 50

@@ -12,14 +12,16 @@ def run():
     screen_size = (1980, 1080)
     my_game = nodes.Game(screen_size, fps = 120)
 
-    bonsai = resources.Image(resources.directory("img/bonsai.png"), alpha_channel = True)
+    bonsai = resources.Image(resources.directory("assets/bonsai.png"), alpha_channel = True)
 
-    bonsai_grid = resources.SpriteSheet(resources.directory("img/bonsai.png"), Vector2(32, 32))
+    bonsai_grid = resources.SpriteSheet(resources.directory("assets/bonsai.png"), Vector2(32, 32))
 
     bonsai_grow_anim = resources.Animation(bonsai_grid.grid, 0, 5)
     bonsai_color_anim = resources.Animation(bonsai_grid.grid, 5, 7)
 
-    box = resources.Image(resources.directory("img/box.png"), True)
+    box = resources.Image(resources.directory("assets/box.png"), True)
+
+    click_fx = resources.Sound(resources.directory("assets/click.mp3"))
 
     # --- Level-- #
 
@@ -31,6 +33,8 @@ def run():
     scene5 = nodes.Scene("scene5", my_game, bg_color = (60, 50, 60)) 
     scene6 = nodes.Scene("scene6", my_game, bg_color = (200, 190, 20))
     scene7 = nodes.Scene("scene7", my_game, bg_color = (12, 5, 9))
+    scene8 = nodes.Scene("scene8", my_game, bg_color = (89, 214, 128))
+    scene9 = nodes.Scene("scene9", my_game, bg_color = (0, 0, 0))
 
     nodes.ShowAxis(default)
 
@@ -48,11 +52,12 @@ def run():
 
     nodes.ShowAxis(block1)
 
-    collision = nodes.CollisionArea(block1, 8)
+    collision = nodes.CollisionArea(block1, 8, show = True)
     collision.addCollisionBlock(Vector2(20, 200), offset = Vector2(100, 100))
-    modifier1_3 = modifiers.MouseDragMove(block1, 8)
+    my_game.addSignal("change_color")
+    modifier1_3 = modifiers.ClickOn(block1, 8, lambda: my_game.setOffSignal("change_color"))
 
-    desc = nodes.TextBlock(scene1, "Dragging the green hitbox moves the block and all it's children", my_game.fonts["secondary"], offset_str="bottom", offset = Vector2(0, -120))
+    desc = nodes.TextBlock(scene1, "Visible axis can change objects position", my_game.fonts["secondary"], offset_str="bottom", offset = Vector2(0, -120))
     desc_1 = nodes.TextBlock(scene1, "Red line shows the path of AxisMove", my_game.fonts["secondary"], offset_str="bottom", offset = Vector2(0, -80))
     desc1 = nodes.Label(scene1, "Showcase of linear and gradual interpolation on block of color", my_game.fonts["main"], offset_str="top")
     
@@ -105,17 +110,24 @@ def run():
 
     parent6 = nodes.BaseNode(scene6)
     nodes.ShowAxis(parent6)
-    nodes.ColorBlock(parent6, Vector2(100, 100), pygame.Color(0, 0, 240), offset_str = "center")
+    rotating_block = nodes.ColorBlock(parent6, Vector2(100, 100), pygame.Color(0, 0, 240), offset_str = "center")
+    modifiers.SignalTrigger(rotating_block, "change_color", lambda: rotating_block.change(offset = rotating_block.offset - Vector2(20, 0)))
     circle = modifiers.CircularMove(parent6, Vector2(my_game.screen_size) // 2, radius = 350, speed = 50, clockwise = False, start_deg = 180, show_path = True)
 
     
 
+    modifiers.Press(scene6, pygame.K_d, lambda: circle.change(radius = circle.radius + 10))
+    modifiers.Press(scene6, pygame.K_f, lambda: circle.change(radius = circle.radius - 10))
     modifiers.Press(scene6, pygame.K_g, lambda: circle.change(speed = circle.speed + 10))
     modifiers.Press(scene6, pygame.K_h, lambda: circle.change(speed = circle.speed - 10))
     modifiers.Press(scene6, pygame.K_j, lambda: circle.change(clockwise = circle.direction == 1))
 
+    fx_player = modifiers.SoundEffect(scene9)
+    fx_player.add("click", click_fx.sound)
+    modifiers.Press(scene6, pygame.K_SPACE, lambda: fx_player.play("click"))
+
     nodes.TextBlock(scene6, "Move block with axis and move its modifiers with it", my_game.fonts["secondary"], txt_color = (210, 100, 255), padding = 20, offset_str = "Top")
-    nodes.Label(scene6, "Press G, H or J to change ", my_game.fonts["main"], (10, 80, 55), offset_str = "bottom")
+    nodes.Label(scene6, "Press D, F, G, H or J to change properties", my_game.fonts["main"], (10, 80, 55), offset_str = "bottom")
 
 
     block_size = 2
@@ -123,7 +135,28 @@ def run():
         new_block = nodes.ColorBlock(scene7, Vector2(block_size, block_size), color = (255 / (my_game.screen_size.x // block_size) * i, 255 / (my_game.screen_size[0] // block_size) * i / 2, 255), offset = Vector2(i * block_size, 200))
         modifiers.AxisMove(new_block, my_game.screen_size.y - block_size - 200, axis = "y", mode = "ease-both", speed = 300 + i, strength = 1.5)
 
-    nodes.Label(scene7, f"{my_game.screen_size.x // block_size} blocks with different speeds", my_game.fonts["main"], (10, 80, 55), offset_str = "bottom")
+    nodes.Label(scene7, f"{int(my_game.screen_size.x // block_size)} blocks with different speeds", my_game.fonts["main"], (10, 80, 55), offset_str = "bottom")
+
+    block_to_follow = nodes.TileMapBlock(scene8, Vector2(150, 150), bonsai_grid, [1, 2], offset_str = "center", offset = Vector2(-400, 0))
+    nodes.ShowAxis(block_to_follow)
+    modifiers.CircularMove(block_to_follow, Vector2(400, 0), speed = 205)
+    centralize_test = nodes.ColorBlock(block_to_follow, Vector2(100, 100), color = (250, 0, 250), offset = (200, 100))
+    center_mod = modifiers.Centralize(centralize_test, scene8)
+    nodes.ShowAxis(scene8)
+    modifiers.Press(scene8, pygame.K_DELETE, lambda: center_mod.kill())
+    following_block = nodes.ColorBlock(scene8, Vector2(120, 120), color = (100, 0, 240), zindex = 1)
+    modifiers.Follow(following_block, block_to_follow)
+    
+    block_size = 2
+    for i in range(int(my_game.screen_size.x) // block_size):
+        new_block = nodes.ColorBlock(scene9, Vector2(block_size, block_size), color = (255 / (my_game.screen_size.x // block_size) * i, 255 / (my_game.screen_size[0] // block_size) * i / 2, 255), offset = Vector2(i * block_size, (my_game.screen_size.y - block_size) / 2))
+        if i == 0:
+            modifiers.AxisMove(new_block, start = 200, end = my_game.screen_size.y - block_size - 200, axis = "y", mode = "ease-both", speed = 1000, strength = 1.5)
+        else:
+            modifiers.Follow(new_block, last_block, axis = "y", speed = 1000 - i)
+        last_block = new_block
+
+    nodes.Label(scene9, f"{int(my_game.screen_size.x // block_size)} blocks with different speeds (Version 2)", my_game.fonts["main"], (10, 80, 55), offset_str = "bottom")
 
     press_global = []
     for scene in list(my_game.scenes.values()):

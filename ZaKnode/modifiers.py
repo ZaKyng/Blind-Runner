@@ -13,7 +13,6 @@ class default(Modifier):
     def __init__(self, parentNode : Node):
         super().__init__(parentNode)
 
-
     def event(self, event):
         super().event(event)
     
@@ -33,10 +32,10 @@ class default(Modifier):
 
 # ----------- Modifiers ------------ #
 
-## -- Position changers -- ##
+#   # -- Position changers -- ##
 
+#       ## - Constant - ###
 
-### - Constant - ###
 
 class AxisMove(Modifier):
     def __init__(self, parentNode : Node, start : int, end : int = None, axis : str = "x", mode : str = "linear", speed : float = default_speed, strength : float = 3, looping : bool = True, show_path : bool = False):
@@ -59,6 +58,9 @@ class AxisMove(Modifier):
         super().event(event)
     
     def update(self):
+        if self.duration == 0:
+            return
+        
         self.elapsed += self.direction * self.game.delta
 
         if self.elapsed >= self.duration:
@@ -110,9 +112,8 @@ class AxisMove(Modifier):
         if looping is not None:
             self.looping = looping
 
-        axis_arr = {"x" : 0, "y" : 1}
-
         if axis is not None:
+            axis_arr = {"x" : 0, "y" : 1}
             self.axis = axis_arr.get(axis.lower(), 0)
         
         if end is not None:
@@ -217,6 +218,9 @@ class LinearMove(Modifier):
         super().event(event)
     
     def update(self):
+        if self.duration == 0:
+            return
+        
         self.elapsed += self.direction * self.game.delta
 
         if self.elapsed >= self.duration:
@@ -284,10 +288,10 @@ class CircularMove(Modifier):
         super().event(event)
     
     def update(self):
-        self.elapsed += self.game.delta * self.direction
-
         if self.duration == 0:
             return
+
+        self.elapsed += self.game.delta * self.direction
 
         if self.elapsed >= self.duration or self.elapsed <= 0:
             self.elapsed = self.elapsed % self.duration
@@ -318,14 +322,19 @@ class CircularMove(Modifier):
     
 
     def change(self, relative_center : Vector2 = None, radius : float = None, clockwise : bool = None, start_deg : float = None, speed : float = None, show_path : bool = None):
+
         if relative_center is not None:
             self.center = self.parentNode.offset + Vector2(relative_center)
             if radius is None:
                 difference = self.parentNode.offset - self.center
-                self.radius = math.sqrt(abs(difference.x ** 2 + difference.y ** 2))
+                self.radius = difference.length()
             else:
                 self.radius = radius
             self.path_len = 2 * math.pi * self.radius
+        else:
+            if radius is not None:
+                self.radius = radius
+                self.path_len = 2 * math.pi * self.radius
         
         if show_path is not None:
             self.show = show_path
@@ -338,7 +347,7 @@ class CircularMove(Modifier):
 
         if start_deg is None:
             start_deg = (self.angle / (2 * math.pi)) * 360
-            self.angle = math.radians(start_deg)
+        self.angle = math.radians(start_deg)
 
         
         self.duration = self.path_len / self.speed if self.speed != 0 else 0
@@ -347,31 +356,67 @@ class CircularMove(Modifier):
 
         super().modifierChange()
 
-class ForeverDo(Modifier):
-    def __init__(self, parentNode : Node, func : callable):
+class Follow(Modifier):
+    def __init__(self, parentNode : Node, follow_node : Node, axis = "both", speed = default_speed):
         super().__init__(parentNode)
-        self.change(func = func)
+        self.change(follow_node = follow_node, speed = speed, axis = axis)
 
     def event(self, event):
         super().event(event)
     
     def update(self):
-        self.func()
+        direction = self.follow_node.position - self.parentNode.position 
+        if direction != Vector2(0, 0):
+            changer = self.parentNode.offset
+            step = self.speed * self.game.delta * direction.normalize()
+            for i in self.axis:
+                changer[i] += step[i]
+            if step.length() > direction.length():
+                for i in self.axis:
+                    changer[i] = (self.follow_node.position - self.parentNode.parentNode.position)[i]
+            self.parentNode.change(offset = changer)
         super().update()
 
     def draw(self):
         super().draw()
 
-    def change(self, func = None):
-        if func is not None:
-            self.func = func
+    def change(self, follow_node : Node = None, speed : int = None, axis : str = None):
+        if follow_node is  not None:
+            self.follow_node = follow_node
+        if speed is not None:
+            self.speed = speed
+        if axis is not None:
+            axis_arr = {"x" : [0], "y" : [1], "both" : [0, 1], "all" : [0, 1]}
+            self.axis = axis_arr.get(axis.lower(), [0, 1])
         super().modifierChange()
 
     def kill(self):
         super().kill()
 
+class Centralize(Modifier):
+    def __init__(self, parentNode : Node, scene : Node):
+        super().__init__(parentNode)
+        self.scene = scene
 
-### - Mouse - ###
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        self.scene.change(offset = self.game.screen_size / 2 - (self.parentNode.position - self.scene.position))
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def change(self):
+        super().modifierChange()
+
+    def kill(self):
+        self.scene.change(offset = Vector2(0, 0))
+        super().kill()
+
+
+#       ## - Mouse - ###
 
 class MouseClickMove(Modifier):
     def __init__(self, parentNode : Node):
@@ -439,7 +484,7 @@ class MouseDragMove(Modifier):
         axis_arr = {"x" : [0], "y" : [1], "all" : [0, 1], "both" : [0, 1], "xy" : [0, 1]}
 
         if axis is not None:
-            self.axis = axis_arr.get(axis, [0, 1])
+            self.axis = axis_arr.get(axis.lower(), [0, 1])
 
         if physics_check is not None:
             self.physics_check = physics_check
@@ -451,7 +496,7 @@ class MouseDragMove(Modifier):
         super().kill()
 
 
-### - Keyboard - ###
+#       ## - Keyboard - ###
 
 class KeyboardMove(Modifier):
     def __init__(self, parentNode, speed, leave_window):
@@ -469,15 +514,14 @@ class KeyboardMove(Modifier):
         if direction.length_squared() > 0:
             direction = direction.normalize()
 
-        velocity = direction * self.speed * self.game.delta
-        self.parentNode.offset += velocity
+        step = self.parentNode.offset + direction * self.speed * self.game.delta
+        self.parentNode.change(offset = step)
 
         if not self.leave_window:
             max_x = self.game.screen_size[0] - self.parentNode.size.x
             max_y = self.game.screen_size[1] - self.parentNode.size.y
 
-            self.parentNode.offset.x = max(0, min(max_x, self.parentNode.offset.x))
-            self.parentNode.offset.y = max(0, min(max_y, self.parentNode.offset.y))
+            self.parentNode.change(offset = Vector2(max(0, min(max_x, self.parentNode.offset.x)), max(0, min(max_y, self.parentNode.offset.y))))
 
         super().update()
 
@@ -543,7 +587,7 @@ class KeyboardWASDMove(KeyboardMove):
         super().kill()
     
 
-## -- User func -- ##
+#   # -- User func -- ##
 
 class ClickOn(Modifier):
     def __init__(self, parentNode : Node, physics_check : int, function : callable, buttondown : bool = True, button : int = None):
@@ -679,3 +723,86 @@ class Press(Modifier):
     
     def keyboard(self, event):
         return event.key == self.key
+
+class ForeverDo(Modifier):
+    def __init__(self, parentNode : Node, func : callable):
+        super().__init__(parentNode)
+        self.change(func = func)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        self.func()
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def change(self, func = None):
+        if func is not None:
+            self.func = func
+        super().modifierChange()
+
+    def kill(self):
+        super().kill()
+
+class SignalTrigger(Modifier):
+    def __init__(self, parentNode : Node, signal_name : str, func : callable):
+        super().__init__(parentNode)
+
+        self.change(name = signal_name, func = func)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        if self.game.signals[self.signal_name]:
+            self.game.signals[self.signal_name] = False
+            self.func()
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def change(self, name = None, func = None):
+        if name is not None:
+            self.signal_name = name
+        if func is not None:
+            self.func = func
+        super().modifierChange()
+
+    def kill(self):
+        super().kill()
+
+
+
+#   # -- Sound/Music -- ##
+
+class SoundEffect(Modifier):
+    def __init__(self, parentNode : Node):
+        super().__init__(parentNode)
+        self.sound_effects = {}
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def change(self):
+        super().modifierChange()
+
+    def kill(self):
+        super().kill()
+
+    def add(self, name : str, sound):
+        self.sound_effects[name] = sound
+    
+    def play(self, name : str):
+        self.sound_effects[name].play()
+
+

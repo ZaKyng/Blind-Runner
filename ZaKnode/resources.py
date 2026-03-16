@@ -60,3 +60,6 @@ class Animation:
             y = frame // max(len(framesArr[0]), 1)
             self.frames.append(framesArr[int(x)][int(y)])
 
+class Sound:
+    def __init__(self, path):
+        self.sound = pygame.mixer.Sound(path)
