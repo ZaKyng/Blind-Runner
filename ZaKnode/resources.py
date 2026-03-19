@@ -8,8 +8,8 @@ from pygame import Vector2
 
 ## ----- Visual ----- ##
 
-def directory(src):
-    return os.path.join(os.path.dirname(__file__), src)
+def directory(current_file, src):
+    return os.path.join(os.path.dirname(current_file), src)
 
 class Image:
     def __init__(self, path, alpha_channel = False):

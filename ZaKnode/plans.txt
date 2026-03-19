@@ -32,3 +32,21 @@ Focus: Performance and organization.
     10. BISECT SORTING: Use 'bisect' module in 'addChild' for O(log n) Z-index management.
     11. FOLDER SCALING: Move modules into /core, /nodes, /modifiers, and /resources directories.
 """
+
+
+Changes:
+    1. Rotating visual blocks
+
+Nodes:
+    1. InfiniteBackgroundSprite
+    2. Button
+
+Modifiers:
+    1. LoopingMusic
+
+Resources:
+    1. Saving vars into a .txt file / Reading vars from .txt
+
+
+Try:
+    1. resizing the window

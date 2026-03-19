@@ -36,7 +36,6 @@ class default(Modifier):
 
 #       ## - Constant - ###
 
-
 class AxisMove(Modifier):
     def __init__(self, parentNode : Node, start : int, end : int = None, axis : str = "x", mode : str = "linear", speed : float = default_speed, strength : float = 3, looping : bool = True, show_path : bool = False):
         super().__init__(parentNode)
@@ -122,16 +121,11 @@ class AxisMove(Modifier):
         if start is not None:
             self.start = start
         
-        
         if self.start > self.end:
             self.start, self.end = self.end, self.start
-
-        
         
         if speed is not None:
             self.speed = speed
-            if self.speed == 0:
-                self.speed = 1
 
         if strength is not None:
             self.strength = abs(strength)
@@ -143,7 +137,7 @@ class AxisMove(Modifier):
                 self.parentNode.change(offset = self.end)
 
             self.path_len = self.end - self.start
-            self.duration = self.path_len / self.speed
+            self.duration = self.path_len / self.speed if self.speed != 0 else 0
 
         if mode is not None:
             modes = {
@@ -178,40 +172,20 @@ class AxisMove(Modifier):
             return 1 - pow(-2 * p + 2, s) / 2
 
 class LinearMove(Modifier):
-    def __init__(self, parentNode : Node, start : Vector2, end : Vector2 = None, mode : str = "linear", speed : float = default_speed, strength : float = 3, show_path : bool = False):
+    def __init__(self, parentNode : Node, end : Vector2, start : Vector2 = None, mode : str = "linear", speed : float = default_speed, strength : float = 3, looping : bool = True, show_path : bool = False):
         super().__init__(parentNode)
-        self.show = show_path
 
-        self.direction = 1
+        if start is None:
+            start = self.parentNode.offset
 
-        if end is None:
-            end = self.parentNode.offset
-        
-        self.start = Vector2(start)
-        self.parentNode.offset = self.start
-        self.end = Vector2(end)
-
-        self.speed = abs(speed)
-        self.strength = abs(strength)
-        
-        self.difference = self.end - self.start
-        self.path_len = math.sqrt(self.difference.x ** 2 + self.difference.y ** 2)
-
-        self.duration = self.path_len / self.speed
         self.elapsed = 0.0
-        
+
         self.direction = 1
+
+        self.change(end = end, start = start, mode = mode, speed = speed, strength = strength, looping = looping, show_path = show_path)
 
         self.last_offset = Vector2(0, 0)
 
-        modes = {
-            "linear" : self.linear,
-            "ease-in" : self.easeIn,
-            "ease-out" : self.easeOut,
-            "ease-both" : self.easeBoth
-        }
-
-        self.mode = modes.get(mode, self.linear)
 
     
     def event(self, event):
@@ -241,6 +215,9 @@ class LinearMove(Modifier):
         self.parentNode.change(offset = self.parentNode.offset + step)
         self.last_offset = self.new_offset
 
+        if self.direction == -1 and not self.looping:
+            self.kill()
+
         super().update()
 
     def draw(self):
@@ -254,7 +231,46 @@ class LinearMove(Modifier):
             pygame.draw.line(self.game.screen, (255, 0, 0), start, end, width = 4)
         super().draw()
     
-    def change(self):
+    def change(self, end = None, start = None, mode : str = None, speed : int = None, strength = None, looping = None, show_path = None):
+        
+        if looping is not None:
+            self.looping = looping
+        
+        if show_path is not None:
+            self.show = show_path
+        
+        if speed is not None:
+            self.speed = abs(speed)
+        
+        if strength is not None:
+            self.strength = abs(strength)
+
+        if end is not None:
+            self.end = Vector2(end)
+        
+        if start is not None:
+            self.start = Vector2(start)
+
+        if start is not None or end is not None:
+            self.difference = self.end - self.start
+            self.path_len = self.difference.length()
+
+        self.duration = self.path_len / self.speed if self.speed != 0 else 0
+        
+        if mode is not None:
+            modes = {
+                "linear" : self.linear,
+                "ease-in" : self.easeIn,
+                "ease-out" : self.easeOut,
+                "ease-both" : self.easeBoth,
+                "ease-in-out" : self.easeBoth
+            }
+
+            self.mode = modes.get(mode, self.linear)
+        
+        if start is not None:
+            self.parentNode.change(offset = self.start)
+        
         super().modifierChange()
 
     def kill(self):
@@ -343,7 +359,7 @@ class CircularMove(Modifier):
             self.speed = max(speed, 0)
 
         if clockwise is not None:
-            self.direction = -1 if clockwise else 1
+            self.direction = 1 if clockwise else -1
 
         if start_deg is None:
             start_deg = (self.angle / (2 * math.pi)) * 360
@@ -633,6 +649,49 @@ class ClickOn(Modifier):
             return True
         return event.button == self.button
 
+class Hover(Modifier):
+    def __init__(self, parentNode : Node, physics_check : int, func : callable, else_func : callable = None):
+        super().__init__(parentNode)
+        self.hover = False
+        self.else_func = None
+        self.change(physics_check = physics_check, func = func, else_func = else_func)
+
+    def event(self, event):     
+        super().event(event)
+    
+    def update(self):
+        did = False
+        mouse = pygame.mouse.get_pos()
+        for collision_area in self.parentNode.collision:
+            if collision_area.physics_layer == self.physics_check:
+                for rect in collision_area.collision_blocks:
+                    if rect.rect.collidepoint(mouse):
+                        self.func()
+                        did = True
+        
+        if not did and self.else_func is not None:
+            self.else_func()
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def change(self, physics_check = None, func = None, else_func = None):
+        if physics_check is not None:
+            self.physics_check = physics_check
+        
+        if func is not None:
+            self.func = func
+        
+        if else_func is not None:
+            self.else_func = else_func
+
+        super().modifierChange()
+
+    def kill(self):
+        super().kill()
+
+
 class Hold(Modifier):
     def __init__(self, parentNode : Node, physics_check : int, function : callable, button : int = None):
         super().__init__(parentNode)
@@ -775,11 +834,136 @@ class SignalTrigger(Modifier):
     def kill(self):
         super().kill()
 
+class OnCollideDo(Modifier):
+    def __init__(self, parentNode : Node, func : callable, physics_check : int, parent_physics_layer : int = None):
+        super().__init__(parentNode)
+        if parent_physics_layer is None:
+            parent_physics_layer = "all"
+
+        self.change(func = func, physics_check = physics_check, parent_physics_layer =  parent_physics_layer)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        if self.checkForCollision(self.game.scenes[self.game.current_scene].children):
+            self.func
+
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def change(self, func = None, physics_check = None, parent_physics_layer = None):
+        if func is not None:
+            self.func = func
+
+        if physics_check is not None:
+            self.physics_check = physics_check
+
+        if parent_physics_layer is not None:
+            if parent_physics_layer == "all":
+                self.parent_physics_check = self.allParentLayers
+            else:
+                self.parent_physics_check = self.parentLayers
+                self.parent_physics = list(parent_physics_layer)
+
+        super().modifierChange()
+
+    def kill(self):
+        super().kill()
+
+    
+    def allParentLayers(self, collision_area):
+        return True
+    
+    def parentLayers(self, collision_area):
+        return collision_area.physics_layer in self.parent_physics
+
+    def checkForCollision(self, parentNode):
+        for node in parentNode:
+            if hasattr(node, "collision"):
+                for collisionArea in node.collision:
+                    if collisionArea.physics_layer == self.physics_check:
+                        for collisionBlock in collisionArea.collision_blocks:
+                            for parentColArea in self.parentNode.collision:
+                                if self.parent_physics_check(parentColArea):
+                                    for parentRect in parentColArea.collision_blocks:
+                                        if parentRect.rect.colliderect(collisionBlock.rect):
+                                            return True
+            if hasattr(node, "children"):
+                self.checkForCollision(node)
+
+class OnCollideBothObjects(Modifier):
+    def __init__(self, parentNode : Node, func : callable, physics_check : int, parent_physics_layer : int = None):
+        super().__init__(parentNode)
+        if parent_physics_layer is None:
+            parent_physics_layer = "all"
+            
+        self.change(func = func, physics_check = physics_check, parent_physics_layer =  parent_physics_layer)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        output = self.checkForCollision(self.game.scenes[self.game.current_scene])
+        if output[0]:
+            self.func(output[1])
+
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def change(self, func = None, physics_check = None, parent_physics_layer = None):
+        if func is not None:
+            self.func = func
+
+        if physics_check is not None:
+            self.physics_check = physics_check
+
+        if parent_physics_layer is not None:
+            if parent_physics_layer == "all":
+                self.parent_physics_check = self.allParentLayers
+            else:
+                self.parent_physics_check = self.parentLayers
+                self.parent_physics = list(parent_physics_layer)
+
+        super().modifierChange()
+
+    def kill(self):
+        super().kill()
+
+    
+    def allParentLayers(self, collision_area):
+        return True
+    
+    def parentLayers(self, collision_area):
+        return collision_area.physics_layer in self.parent_physics
+
+    def checkForCollision(self, parentNode):
+        if hasattr(parentNode, "children"):
+            for node in parentNode.children:
+                if hasattr(node, "collision"):
+                    for collisionArea in node.collision:
+                        if collisionArea.physics_layer == self.physics_check:
+                            for collisionBlock in collisionArea.collision_blocks:
+                                for parentColArea in self.parentNode.collision:
+                                    if self.parent_physics_check(parentColArea):
+                                        for parentRect in parentColArea.collision_blocks:
+                                            if parentRect.rect.colliderect(collisionBlock.rect):
+                                                return [True, node]
+                if hasattr(node, "children"):
+                    self.checkForCollision(node)
+
+        return [False, None]
+
+
 
 
 #   # -- Sound/Music -- ##
 
-class SoundEffect(Modifier):
+class SoundEffectPlayer(Modifier):
     def __init__(self, parentNode : Node):
         super().__init__(parentNode)
         self.sound_effects = {}

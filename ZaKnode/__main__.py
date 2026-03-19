@@ -1,4 +1,3 @@
-import os
 import pygame
 from pygame import Vector2
 from . import *
@@ -12,16 +11,16 @@ def run():
     screen_size = (1980, 1080)
     my_game = nodes.Game(screen_size, fps = 120)
 
-    bonsai = resources.Image(resources.directory("assets/bonsai.png"), alpha_channel = True)
+    bonsai = resources.Image(resources.directory(__file__, "assets/bonsai.png"), alpha_channel = True)
 
-    bonsai_grid = resources.SpriteSheet(resources.directory("assets/bonsai.png"), Vector2(32, 32))
+    bonsai_grid = resources.SpriteSheet(resources.directory(__file__, "assets/bonsai.png"), Vector2(32, 32))
 
     bonsai_grow_anim = resources.Animation(bonsai_grid.grid, 0, 5)
     bonsai_color_anim = resources.Animation(bonsai_grid.grid, 5, 7)
 
-    box = resources.Image(resources.directory("assets/box.png"), True)
+    box = resources.Image(resources.directory(__file__, "assets/box.png"), True)
 
-    click_fx = resources.Sound(resources.directory("assets/click.mp3"))
+    click_fx = resources.Sound(resources.directory(__file__, "assets/click.mp3"))
 
     # --- Level-- #
 
@@ -42,11 +41,15 @@ def run():
     press_esc = nodes.Label(default, "Press ESC to leave", my_game.fonts["secondary"], offset_str="bottom-right", offset = Vector2(-10, -10))
 
 
-    parent1 = nodes.BaseNode(scene1, offset=Vector2(150, 150))
+    parent1 = nodes.BaseNode(scene1, offset = Vector2(150, 150))
+    nodes.ShowAxis(parent1)
     block1 = nodes.ColorBlock(parent1, (80, 80), (170, 200, 20, 90), alpha_channel = True)
     block1_2 = nodes.ColorBlock(parent1, (80, 80))
+    block1_3 = nodes.ColorBlock(parent1, (80, 80), offset = Vector2(100, 0))
+    
     modifier1_1 = modifiers.AxisMove(block1, 0, 700, speed = 100, mode = "linear", strength = 6, show_path = True)
-    modifier1_2 = modifiers.AxisMove(block1_2, 0, 700, speed = 300, mode = "ease-both", strength = 20, looping = False)
+    modifier1_2 = modifiers.AxisMove(block1_2, 0, 700, speed = 300, mode = "ease-in", strength = 0.6)
+    modifier1_22 = modifiers.AxisMove(block1_3, 0, 700, speed = 300, axis = "y", mode = "ease-out", strength = 12)
 
     modifier1_2.change(axis = "y")
 
@@ -92,8 +95,8 @@ def run():
 
     modifiers.ForeverDo(explain_box, lambda: explain_box.change(offset = Vector2(explain_box.size[0] * block5.coords[0], explain_box.size[1] * block5.coords[1])))
 
-    press = modifiers.Press(scene4, pygame.K_a, lambda: block5.change(coords_change = [0, 1]))
-    press = modifiers.Press(scene4, pygame.K_s, lambda: block5.change(coords_change = [1, 0]))
+    press = modifiers.Press(scene4, pygame.K_a, lambda: block5.change(coords_change = [1, 0]))
+    press = modifiers.Press(scene4, pygame.K_s, lambda: block5.change(coords_change = [0, 1]))
     press = modifiers.Press(scene4, pygame.K_d, lambda: block5.change(coords_change = 1))
 
     desc5_1 = nodes.TextBlock(scene4, "Press A, S or D to change", my_game.fonts["secondary"], (255, 200, 255), (25, 25, 25), padding = 18, offset = Vector2(130, 20))
@@ -120,9 +123,9 @@ def run():
     modifiers.Press(scene6, pygame.K_f, lambda: circle.change(radius = circle.radius - 10))
     modifiers.Press(scene6, pygame.K_g, lambda: circle.change(speed = circle.speed + 10))
     modifiers.Press(scene6, pygame.K_h, lambda: circle.change(speed = circle.speed - 10))
-    modifiers.Press(scene6, pygame.K_j, lambda: circle.change(clockwise = circle.direction == 1))
+    modifiers.Press(scene6, pygame.K_j, lambda: circle.change(clockwise = circle.direction == -1))
 
-    fx_player = modifiers.SoundEffect(scene9)
+    fx_player = modifiers.SoundEffectPlayer(scene9)
     fx_player.add("click", click_fx.sound)
     modifiers.Press(scene6, pygame.K_SPACE, lambda: fx_player.play("click"))
 
@@ -177,9 +180,6 @@ def run():
 
     my_game.run(test, global_input = scene_changing)
 
-
-    pygame.quit()
-    exit()
 
 if __name__ == "__main__":
     run()

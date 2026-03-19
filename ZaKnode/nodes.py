@@ -36,7 +36,7 @@ class default(Node):
 """
 # ----------- Nodes ------------ #
 
-# -- Primary -- #
+#   # -- Primary -- #
 
 class Game:
     def __init__(self, screen_size, name : str = "ZaKgame window", fps : int = 120):
@@ -98,6 +98,12 @@ class Game:
             self.scenes[self.current_scene].draw()
 
             pygame.display.flip()
+        
+        pygame.quit()
+        exit()
+
+    def end(self):
+        self.running = False
     
 
     def addScene(self, name, scene):
@@ -115,6 +121,7 @@ class Game:
 
             if changer in self.scenes:
                 self.current_scene = changer
+                self.enterScene(self.scenes[self.current_scene])
             else:
                 print("error")
 
@@ -126,8 +133,14 @@ class Game:
             index = index % len(scene_names)
 
             self.current_scene = scene_names[index]
+
+            self.enterScene(self.scenes[self.current_scene])
         else:
             self.changeScene(1)
+        
+    def enterScene(self, scene):
+        if scene.onEntry is not None:
+            scene.onEntry()
 
     
     def removeScene(self, name):
@@ -140,9 +153,8 @@ class Game:
     def setOffSignal(self, name):
         self.signals[name] = True
 
-
 class Scene(Node):
-    def __init__(self, name : str, game : Game, bg_color = Color(0, 0, 0)):
+    def __init__(self, name : str, game : Game, bg_color = Color(0, 0, 0), onEntry : callable = None):
         self.game = game
 
         self.parentNode = game
@@ -153,7 +165,9 @@ class Scene(Node):
         self.name = name
         self.game.addScene(self.name, self)
 
-        self.change(Color(bg_color), self.game.screen_size, offset = Vector2(0, 0))
+        self.onEntry = None
+
+        self.change(Color(bg_color), self.game.screen_size, offset = Vector2(0, 0), onEntry = onEntry)
 
     def event(self, event):
         super().event(event)
@@ -179,9 +193,12 @@ class Scene(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
-    def change(self, bg_color = None, size = None, offset = None):
+    def change(self, bg_color = None, size = None, offset = None, onEntry = None):
         if bg_color is not None:
             self.bg_color = bg_color
+        
+        if onEntry is not None:
+            self.onEntry = onEntry
         super().nodeChange(size = size, offset = offset)
 
 class BaseNode(Node):
@@ -212,7 +229,7 @@ class BaseNode(Node):
 class ShowAxis():
     def __init__(self, parentNode : Node):
         self.parentNode = parentNode
-        self.images = resources.SpriteSheet(resources.directory("assets/axis.png"), Vector2(15, 15), alpha_channel = True)
+        self.images = resources.SpriteSheet(resources.directory(__file__, "assets/axis.png"), Vector2(15, 15), alpha_channel = True)
 
         size = Vector2(40, 40)
         gap = 50
@@ -249,7 +266,7 @@ class ShowAxis():
             hitarea.kill()
 
 
-# -- Logic -- #
+#   # -- Logic -- #
 
 class CollisionArea(Node):
     def __init__(self, parentNode, physics_layer : int = 0, show : bool = False, show_self : bool = False):
@@ -341,7 +358,7 @@ class CollisionBlock(Node):
 
 
 
-# -- Visuals -- #
+#   # -- Visuals -- #
 
 class Label(Node):
     def __init__(self, parentNode, text : str, font : pygame.font, color : Color = Color(255, 255, 255), zindex : float = 0, 
@@ -634,5 +651,4 @@ class TileMapBlock(Node):
 
     def kill(self):
         super().kill()
-
 
