@@ -516,10 +516,14 @@ class ColorBlock(Node):
         super().kill()
 
 class SpriteBlock(Node):
-    def __init__(self, parentNode, size, image, zindex = 0, offset_str = None, offset = Vector2(0, 0)):
+    def __init__(self, parentNode, size, image, angle = None, zindex = 0, offset_str = None, offset = Vector2(0, 0)):
         super().__init__(parentNode, size = size, offset_str = offset_str, offset = offset, zindex = zindex)
         
-        self.change(image = image)
+        if angle is not None:
+            self.change(image = image, angle = angle, offset_str = offset_str, offset = offset)
+        else:
+            self.angle = 0
+            self.change(image = image)
 
     def event(self, event):
         super().event(event)
@@ -540,19 +544,31 @@ class SpriteBlock(Node):
     def kill(self):
         super().kill()
 
-    def change(self, image = None, size = None, offset_str = None, offset = None, zindex = None):
+    def change(self, image = None, angle = None, size = None, offset_str = None, offset = None, zindex = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
 
         if image is not None:
             self.surface = pygame.transform.scale(image, self.size)
+        
+        if angle is not None:
+            self.angle = angle
+            self.surface = pygame.transform.rotate(self.surface, angle)
+            
+            super().nodeChange(size = self.surface.get_size(), offset_str = offset_str, offset = offset)
 
 class AnimatedSpriteBlock(Node):
-    def __init__(self, parentNode, size, framesArr, fps, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0)):
+    def __init__(self, parentNode, size, framesArr, fps, angle = None, zindex = 0, offset_str = None, offset = pygame.Vector2(0, 0)):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
 
         self.frames = []
 
-        self.change(frames_arr = framesArr, fps = fps)
+        
+
+        if angle is not None:
+            self.change(frames_arr = framesArr, fps = fps, angle = angle, offset_str = offset_str, offset = offset)
+        else:
+            self.angle = 0
+            self.change(frames_arr = framesArr, fps = fps)
 
     def event(self, event):
         super().event(event)
@@ -578,7 +594,7 @@ class AnimatedSpriteBlock(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
-    def change(self, frames_arr = None, fps = None, size = None, offset_str = None, offset = None, zindex = None):
+    def change(self, frames_arr = None, fps = None, angle = None, size = None, offset_str = None, offset = None, zindex = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
 
         if frames_arr is not None:
@@ -594,6 +610,15 @@ class AnimatedSpriteBlock(Node):
         
         if fps is not None:
             self.fps = fps
+        
+        if angle is not None:
+            self.angle = angle
+            temp = []
+            for one_frame in self.frames[:]:
+                temp.append(pygame.transform.rotate(one_frame, angle))
+            
+            self.frames = temp
+            super().nodeChange(size = self.frames[0].get_size(), offset_str = offset_str, offset = offset)
         
         self.frameLen = self.game.tick_speed // self.fps
         

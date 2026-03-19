@@ -22,7 +22,8 @@ class player:
         self.sprite = nodes.SpriteBlock(self.origin, (sprite_size, sprite_size), sprite, zindex = 0, offset_str = "center")
         self.collision = nodes.CollisionArea(self.origin, 1)
         self.collision.addCollisionBlock((hitbox_size, hitbox_size), offset_str = "center")
-        self.arrow = nodes.SpriteBlock(self.origin, (scope_size, scope_size), arrow, zindex = 2, offset_str = "center", offset = (0, -self.scope_dist))
+        self.arrow = nodes.BaseNode(self.origin, offset_str = "center", offset = (0, -self.scope_dist))
+        self.arrow_sprite = nodes.SpriteBlock(self.arrow, (scope_size, scope_size), arrow, zindex = 2, offset_str = "center")
         self.arrow_move = modifiers.CircularMove(self.arrow, (0, self.scope_dist), self.scope_dist)
 
         self.score = score
@@ -50,7 +51,7 @@ class player:
 
 class bullet:
     def __init__(self, parentNode, angle, game_objects, score, anim, end_anim, dist):
-        angle = angle / 180 * math.pi
+        rads = angle / 180 * math.pi
 
         self.game_objects = game_objects
 
@@ -64,13 +65,14 @@ class bullet:
 
         sizer = 2
         self.size = 15 * sizer
-        self.bullet = nodes.BaseNode(parentNode.origin, offset = [math.cos(angle) * dist, math.sin(angle) * dist])
-        self.sprite = nodes.AnimatedSpriteBlock(self.bullet, (self.size, sizer * 32), anim.frames, 20, offset_str = "center")
+        self.bullet = nodes.BaseNode(parentNode.origin, offset = [math.cos(rads) * dist, math.sin(rads) * dist])
+        self.sprite = nodes.AnimatedSpriteBlock(self.bullet, (self.size, sizer * 32), anim.frames, 20, angle = -angle - 90, offset_str = "center")
+        self.original_size = (self.size, sizer * 32)
         self.collision = nodes.CollisionArea(self.bullet, 3)
         self.collision.addCollisionBlock((self.size, self.size), offset_str = "center")
         self.end_timer = modifiers.Timer(self.bullet, 0.3, self.kill)
         
-        end = [math.cos(angle) * (self.bullet.game.screen_size[0]), math.sin(angle) * (self.bullet.game.screen_size[1])]
+        end = [math.cos(rads) * (self.bullet.game.screen_size[0]), math.sin(rads) * (self.bullet.game.screen_size[1])]
         self.mover = modifiers.LinearMove(self.bullet, end, looping = False)
 
         modifiers.ForeverDo(self.bullet, self.outOfRange)
@@ -87,7 +89,7 @@ class bullet:
             self.score.fasterArrow()
         enemy.kill()
         self.mover.kill()
-        self.sprite.change(frames_arr = self.end_anim.frames)
+        self.sprite.change(frames_arr = self.end_anim.frames, angle = self.sprite.angle, size = self.original_size)
         self.end_timer.start()
 
     def kill(self):
@@ -103,11 +105,13 @@ class enemy:
         self.game_objects.append(self)
 
         size = 100
+        sizer = 6
         angle = random.randrange(0, 360) / 180 * math.pi
         offset = [(math.cos(angle) + 1) * (parentNode.game.screen_size[0] + 2 * size) / 2 - size,
                 (math.sin(angle) + 1) * (parentNode.game.screen_size[1] + 2 * size) / 2 - size]
         self.origin = nodes.BaseNode(parentNode, offset = offset)
-        self.sprite = nodes.SpriteBlock(self.origin, (size, size), asteroid, offset_str = "center")
+        self.sprite = nodes.SpriteBlock(self.origin, (sizer * 18, sizer * 15), asteroid, offset_str = "center")
+        #modifiers.ForeverDo(self.sprite, lambda: self.sprite.change(angle = self.sprite.angle - 0.5))
         collisionA = nodes.CollisionArea(self.origin, 2)
         nodes.CollisionBlock(collisionA, (size * 0.7, size * 0.7), offset_str = "center")
         modifiers.Follow(self.origin, player.origin, speed = 160)
@@ -133,12 +137,12 @@ class score:
             self.time = 0
             return
         
-        if self.time >= max(20, 60 / self.score * 15):
+        if self.time >= max(40, 120 / self.score * 20):
             self.time = 0
             self.func()
     
     def fasterArrow(self):
-        self.player.arrow_move.change(speed = self.player.arrow_move.speed + 12)
+        self.player.arrow_move.change(speed = min(self.player.arrow_move.speed + 12, 800))
 
 
 class endScreen:

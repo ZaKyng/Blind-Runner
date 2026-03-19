@@ -35,6 +35,15 @@ def run():
     menu_bg.append(nodes.BaseNode(menu_bg[0], offset_str = "center", offset = (0, -480)))
     nodes.SpriteBlock(menu_bg[1], (120, 120), moon.image, offset_str = "center")
     modifiers.CircularMove(menu_bg[1], (0, 500))
+    menu_bg.append(nodes.SpriteBlock(menu, (18 * 20, 15 * 20), asteroid.grid[0][0], offset_str = "top-right", offset = (-100, 100)))
+    menu_bg.append(nodes.SpriteBlock(menu, (18 * 13, 15 * 13), asteroid.grid[0][0], offset_str = "top", offset = (-160, 30)))
+    menu_rocket = nodes.AnimatedSpriteBlock(menu, (15 * 4, 32 * 4), rocket.frames, 20, angle = 45, offset = screen_size)
+    menu_rocket_target = nodes.BaseNode(menu, offset = -menu_rocket.size)
+    modifiers.Follow(menu_rocket, menu_rocket_target)
+    def menu_rocket_anim_func(element, linearMove):
+        if element.position == menu_rocket_target.position:
+            element.change(offset = screen_size)
+    modifiers.ForeverDo(menu_rocket, lambda: menu_rocket_anim_func(menu_rocket, menu_rocket_target))
 
 
     for scene in [game, stats]:
