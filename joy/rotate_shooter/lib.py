@@ -13,20 +13,24 @@ class button:
     
 
 class player:
-    def __init__(self, parentNode, score, endScreen):
-        sprite_size = 100
-        hitbox_size = sprite_size
-        scope_size = 20
+    def __init__(self, parentNode, score, endScreen, sprite, arrow, rocket_anim, rocket_end):
+        sprite_size = 150
+        hitbox_size = 100
+        scope_size = 50
+        self.scope_dist = 150
         self.origin = nodes.BaseNode(parentNode, zindex = 3, offset_str = "center")
-        self.sprite = nodes.ColorBlock(self.origin, (sprite_size, sprite_size), zindex = 0, offset_str = "center")
+        self.sprite = nodes.SpriteBlock(self.origin, (sprite_size, sprite_size), sprite, zindex = 0, offset_str = "center")
         self.collision = nodes.CollisionArea(self.origin, 1)
-        self.collision.addCollisionBlock((hitbox_size, hitbox_size), offset = self.sprite.offset)
-        self.arrow = nodes.ColorBlock(self.origin, (scope_size, scope_size), (200, 180, 170),zindex = 2, offset_str = "center", offset = (0, -100))
-        self.arrow_move = modifiers.CircularMove(self.arrow, (0, 100), 100)
+        self.collision.addCollisionBlock((hitbox_size, hitbox_size), offset_str = "center")
+        self.arrow = nodes.SpriteBlock(self.origin, (scope_size, scope_size), arrow, zindex = 2, offset_str = "center", offset = (0, -self.scope_dist))
+        self.arrow_move = modifiers.CircularMove(self.arrow, (0, self.scope_dist), self.scope_dist)
 
         self.score = score
 
         self.endScreen = endScreen
+
+        self.rocket_anim = rocket_anim
+        self.rocket_end = rocket_end
 
         modifiers.OnCollideBothObjects(self.origin, self.die, 2)
 
@@ -35,7 +39,7 @@ class player:
     def shoot(self, game_objects):
         if self.alive:
             angle = Vector2(0, 0).angle_to(self.arrow.offset)
-            bullet(self, angle, game_objects, self.score)
+            bullet(self, angle, game_objects, self.score, self.rocket_anim, self.rocket_end, self.scope_dist)
     
     def die(self, enemy):
         if self.alive:
@@ -45,7 +49,7 @@ class player:
     
 
 class bullet:
-    def __init__(self, parentNode, angle, game_objects, score):
+    def __init__(self, parentNode, angle, game_objects, score, anim, end_anim, dist):
         angle = angle / 180 * math.pi
 
         self.game_objects = game_objects
@@ -56,14 +60,18 @@ class bullet:
 
         self.player = parentNode
 
-        self.size = 5
-        self.bullet = nodes.BaseNode(parentNode.origin, offset = [math.cos(angle) * 100, math.sin(angle) * 100])
-        self.sprite = nodes.ColorBlock(self.bullet, (self.size, self.size), offset_str = "center")
+        self.end_anim = end_anim
+
+        sizer = 2
+        self.size = 15 * sizer
+        self.bullet = nodes.BaseNode(parentNode.origin, offset = [math.cos(angle) * dist, math.sin(angle) * dist])
+        self.sprite = nodes.AnimatedSpriteBlock(self.bullet, (self.size, sizer * 32), anim.frames, 20, offset_str = "center")
         self.collision = nodes.CollisionArea(self.bullet, 3)
-        self.collision.addCollisionBlock(self.sprite.size, offset = self.sprite.offset)
+        self.collision.addCollisionBlock((self.size, self.size), offset_str = "center")
+        self.end_timer = modifiers.Timer(self.bullet, 0.3, self.kill)
         
         end = [math.cos(angle) * (self.bullet.game.screen_size[0]), math.sin(angle) * (self.bullet.game.screen_size[1])]
-        modifiers.LinearMove(self.bullet, end, looping = False)
+        self.mover = modifiers.LinearMove(self.bullet, end, looping = False)
 
         modifiers.ForeverDo(self.bullet, self.outOfRange)
 
@@ -76,8 +84,11 @@ class bullet:
     def hitEnemy(self, enemy):
         if self.player.alive:
             self.score.score += 1
+            self.score.fasterArrow()
         enemy.kill()
-        self.kill()
+        self.mover.kill()
+        self.sprite.change(frames_arr = self.end_anim.frames)
+        self.end_timer.start()
 
     def kill(self):
         self.game_objects.remove(self)
@@ -85,20 +96,20 @@ class bullet:
 
 
 class enemy:
-    def __init__(self, parentNode, player, game_objects):
+    def __init__(self, parentNode, player, game_objects, asteroid):
 
         self.game_objects = game_objects
 
         self.game_objects.append(self)
 
-        size = 120
+        size = 100
         angle = random.randrange(0, 360) / 180 * math.pi
         offset = [(math.cos(angle) + 1) * (parentNode.game.screen_size[0] + 2 * size) / 2 - size,
                 (math.sin(angle) + 1) * (parentNode.game.screen_size[1] + 2 * size) / 2 - size]
         self.origin = nodes.BaseNode(parentNode, offset = offset)
-        self.sprite = nodes.ColorBlock(self.origin, (size, size), (250, 30, 80), offset_str = "center")
+        self.sprite = nodes.SpriteBlock(self.origin, (size, size), asteroid, offset_str = "center")
         collisionA = nodes.CollisionArea(self.origin, 2)
-        nodes.CollisionBlock(collisionA, self.sprite.size, offset = self.sprite.offset)
+        nodes.CollisionBlock(collisionA, (size * 0.7, size * 0.7), offset_str = "center")
         modifiers.Follow(self.origin, player.origin, speed = 160)
     
     def kill(self):
@@ -122,10 +133,12 @@ class score:
             self.time = 0
             return
         
-        if self.time >= max(10, 60 / self.score * 15):
+        if self.time >= max(20, 60 / self.score * 15):
             self.time = 0
-            self.player.arrow_move.change(speed = self.player.arrow_move.speed + 5)
             self.func()
+    
+    def fasterArrow(self):
+        self.player.arrow_move.change(speed = self.player.arrow_move.speed + 12)
 
 
 class endScreen:
@@ -145,9 +158,9 @@ class endScreen:
             self.score = nodes.Label(self.background, scores[0], self.parentNode.game.fonts["secondary"], (255, 255, 255), offset_str = "center", offset = (-140, 0))
             self.score = nodes.Label(self.background, scores[1], self.parentNode.game.fonts["secondary"], (255, 255, 255), offset_str = "center", offset = (80, 0))
         self.buttons = []
-        self.buttons.append(button(self.background, "Restart", self.parentNode.game.fonts["secondary"], (244, 244, 244), (23, 230, 45), 16, offset_str = "center", offset = (-140, 80), physics_layer = 30, func = lambda: self.parentNode.game.changeScene("game")))
-        self.buttons.append(button(self.background, "Menu", self.parentNode.game.fonts["secondary"], (244, 244, 244), (23, 230, 45), 16, offset_str = "center", offset = (0, 80), physics_layer = 31, func = self.restart))
-        self.buttons.append(button(self.background, "Exit", self.parentNode.game.fonts["secondary"], (244, 244, 244), (23, 230, 45), 16, offset_str = "center", offset = (140, 80), physics_layer = 32, func = lambda: self.parentNode.game.end()))
+        self.buttons.append(button(self.background, "Restart", self.parentNode.game.fonts["secondary"], (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (-140, 80), physics_layer = 30, func = lambda: self.parentNode.game.changeScene("game")))
+        self.buttons.append(button(self.background, "Menu", self.parentNode.game.fonts["secondary"], (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (0, 80), physics_layer = 31, func = self.restart))
+        self.buttons.append(button(self.background, "Exit", self.parentNode.game.fonts["secondary"], (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (120, 80), physics_layer = 32, func = lambda: self.parentNode.game.end()))
     
     def hide(self):
         if callable(getattr(self.background, "kill", None)):

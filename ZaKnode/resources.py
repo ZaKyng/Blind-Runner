@@ -49,15 +49,13 @@ class SpriteSheet:
 class Animation:
     def __init__(self, framesArr, start, end):
         if start > end:
-            temp = end
-            end = start
-            start = temp
+            end, start = start, end
 
         self.frames = []
         for i in range(end - start + 1):
             frame = i + start
             x = frame % max(len(framesArr), 1)
-            y = frame // max(len(framesArr[0]), 1)
+            y = frame / max(len(framesArr), 1)
             self.frames.append(framesArr[int(x)][int(y)])
 
 class Sound:

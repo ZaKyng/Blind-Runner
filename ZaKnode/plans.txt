@@ -43,6 +43,7 @@ Nodes:
 
 Modifiers:
     1. LoopingMusic
+    2. Timer (do something after a time (recallable))✅
 
 Resources:
     1. Saving vars into a .txt file / Reading vars from .txt

@@ -329,7 +329,7 @@ class CircularMove(Modifier):
 
     def draw(self):
         if self.show:
-            center = self.parentNode.offset + Vector2(math.cos(self.angle) * self.radius, math.sin(self.angle) * self.radius) * -1
+            center = self.parentNode.position + Vector2(math.cos(self.angle) * self.radius, math.sin(self.angle) * self.radius) * -1
             pygame.draw.circle(self.game.screen, (255, 0, 0), center, abs(self.radius), width = 4)
         super().draw()
 
@@ -691,7 +691,6 @@ class Hover(Modifier):
     def kill(self):
         super().kill()
 
-
 class Hold(Modifier):
     def __init__(self, parentNode : Node, physics_check : int, function : callable, button : int = None):
         super().__init__(parentNode)
@@ -958,6 +957,45 @@ class OnCollideBothObjects(Modifier):
 
         return [False, None]
 
+class Timer(Modifier):
+    def __init__(self, parentNode : Node, time : float, func : callable):
+        super().__init__(parentNode)
+        self.elapsed = 0.0
+        self.active = False
+        self.change(time = time, func = func)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        if self.active:
+            self.elapsed += self.game.delta
+            if self.elapsed >= self.time:
+                self.func()
+                self.end()
+        super().update()
+
+    def draw(self):
+        super().draw()
+
+    def change(self, time = None, func = None):
+        if time is not None:
+            self.time = time
+        
+        if func is not None:
+            self.func = func
+        super().modifierChange()
+
+    def kill(self):
+        super().kill()
+
+    
+    def start(self):
+        self.elapsed = 0.0
+        self.active = True
+    
+    def end(self):
+        self.active = False
 
 
 
