@@ -1,4 +1,5 @@
 import os
+import sys
 import pygame
 from pygame import Vector2
 
@@ -9,7 +10,12 @@ from pygame import Vector2
 ## ----- Visual ----- ##
 
 def directory(current_file, src):
-    return os.path.join(os.path.dirname(current_file), src)
+    if hasattr(sys, "_MEIPASS"):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.abspath(current_file))
+
+    return os.path.join(base_path, src)
 
 class Image:
     def __init__(self, path, alpha_channel = False):

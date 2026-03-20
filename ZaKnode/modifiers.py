@@ -375,35 +375,43 @@ class CircularMove(Modifier):
 class Follow(Modifier):
     def __init__(self, parentNode : Node, follow_node : Node, axis = "both", speed = default_speed):
         super().__init__(parentNode)
+        self.active = True
         self.change(follow_node = follow_node, speed = speed, axis = axis)
 
     def event(self, event):
         super().event(event)
     
     def update(self):
-        direction = self.follow_node.position - self.parentNode.position 
-        if direction != Vector2(0, 0):
-            changer = self.parentNode.offset
-            step = self.speed * self.game.delta * direction.normalize()
-            for i in self.axis:
-                changer[i] += step[i]
-            if step.length() > direction.length():
+        if self.active:
+            direction = self.follow_node.position - self.parentNode.position 
+            if direction != Vector2(0, 0):
+                changer = self.parentNode.offset
+                step = self.speed * self.game.delta * direction.normalize()
                 for i in self.axis:
-                    changer[i] = (self.follow_node.position - self.parentNode.parentNode.position)[i]
-            self.parentNode.change(offset = changer)
-        super().update()
+                    changer[i] += step[i]
+                if step.length() > direction.length():
+                    for i in self.axis:
+                        changer[i] = (self.follow_node.position - self.parentNode.parentNode.position)[i]
+                self.parentNode.change(offset = changer)
+            super().update()
 
     def draw(self):
         super().draw()
 
-    def change(self, follow_node : Node = None, speed : int = None, axis : str = None):
+    def change(self, follow_node : Node = None, speed : int = None, axis : str = None, active : bool = None):
         if follow_node is  not None:
             self.follow_node = follow_node
+
         if speed is not None:
             self.speed = speed
+
         if axis is not None:
             axis_arr = {"x" : [0], "y" : [1], "both" : [0, 1], "all" : [0, 1]}
             self.axis = axis_arr.get(axis.lower(), [0, 1])
+        
+        if active is not None:
+            self.active = active
+            
         super().modifierChange()
 
     def kill(self):
@@ -652,7 +660,7 @@ class ClickOn(Modifier):
 class Hover(Modifier):
     def __init__(self, parentNode : Node, physics_check : int, func : callable, else_func : callable = None):
         super().__init__(parentNode)
-        self.hover = False
+        self.last_frame = False
         self.else_func = None
         self.change(physics_check = physics_check, func = func, else_func = else_func)
 
@@ -669,8 +677,10 @@ class Hover(Modifier):
                         self.func()
                         did = True
         
-        if not did and self.else_func is not None:
+        if not did and self.last_frame and self.else_func is not None:
             self.else_func()
+        
+        self.last_frame = did
         super().update()
 
     def draw(self):

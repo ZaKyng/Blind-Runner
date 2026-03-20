@@ -1,4 +1,4 @@
-import math
+import sys
 import pygame
 from pygame import Vector2
 from pygame import Color
@@ -100,7 +100,7 @@ class Game:
             pygame.display.flip()
         
         pygame.quit()
-        exit()
+        sys.exit()
 
     def end(self):
         self.running = False

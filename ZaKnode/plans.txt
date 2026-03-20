@@ -36,6 +36,7 @@ Focus: Performance and organization.
 
 Changes:
     1. Rotating visual blocks
+    2. Active bool - if can interact and is shown
 
 Nodes:
     1. InfiniteBackgroundSprite

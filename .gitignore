@@ -4,9 +4,14 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Build / dist
+# Build
 *.tar.gz
 *.egg-info/
+build/
 
 # Zipped
-.zip
+*.zip
+
+
+#Specific
+game-test1/
