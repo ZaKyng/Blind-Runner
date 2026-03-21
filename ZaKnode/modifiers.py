@@ -42,7 +42,7 @@ class AxisMove(Modifier):
 
         if end is None:
             axis_arr = {"x" : 0, "y" : 1}
-            end = self.parentNode.offset[axis_arr[axis]]
+            end = self.parentNode.offset[axis_arr.get(axis.lower(), 0)]
         
         self.elapsed = 0.0
         
@@ -426,7 +426,7 @@ class Centralize(Modifier):
         super().event(event)
     
     def update(self):
-        self.scene.change(offset = self.game.screen_size / 2 - (self.parentNode.position - self.scene.position))
+        self.scene.change(offset = self.game.size / 2 - (self.parentNode.position - self.scene.position))
         super().update()
 
     def draw(self):
@@ -542,8 +542,8 @@ class KeyboardMove(Modifier):
         self.parentNode.change(offset = step)
 
         if not self.leave_window:
-            max_x = self.game.screen_size[0] - self.parentNode.size.x
-            max_y = self.game.screen_size[1] - self.parentNode.size.y
+            max_x = self.game.size[0] - self.parentNode.size.x
+            max_y = self.game.size[1] - self.parentNode.size.y
 
             self.parentNode.change(offset = Vector2(max(0, min(max_x, self.parentNode.offset.x)), max(0, min(max_y, self.parentNode.offset.y))))
 

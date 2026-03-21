@@ -1,1 +1,1 @@
-{"data": "", "level": 1, "rank": "A"}
+{"screen_size": 900000}

@@ -1,4 +1,6 @@
+import os
 import sys
+import json
 import pygame
 from pygame import Vector2
 from pygame import Color
@@ -39,39 +41,62 @@ class default(Node):
 #   # -- Primary -- #
 
 class Game:
-    def __init__(self, screen_size, name : str = "ZaKgame window", fps : int = 120):
+    def __init__(self, screen_size, file_location, name : str = "ZaKgame window", fps : int = 120, remember_screen_size : bool = False):
         pygame.init()
         pygame.font.init()
         pygame.mixer.init()
+        self.file = file_location
+
+        self.running = True
 
         self.offset = Vector2(0, 0)
         self.position = Vector2(0, 0)
 
         self.game = self
 
-        self.running = True
-        self.screen_size = Vector2(screen_size)
+        if remember_screen_size is not None:
+            resources.SaveData(self.directory("ZaK-settings.txt"), "remember_screen_size", remember_screen_size)
+
+        saved_info = resources.ReadData(self.directory("ZaK-settings.txt"))
+        if saved_info is not None:
+            if saved_info["remember_screen_size"]:
+                screen_size = saved_info["screen_size"]
+        else:
+            resources.SaveDataList(self.directory("ZaK-settings.txt"), ["screen_size", "remember_screen_size"], [screen_size, remember_screen_size if remember_screen_size is not None else True])
+            
+
+        self.size = Vector2(screen_size)
+        self.vw = self.size.x / 100
+        self.vh = self.size.y / 100
 
         self.default_scene_name = "empty"
-
         self.scenes = {}
         self.current_scene = None
         Scene(self.default_scene_name, self)
-        
-        pygame.display.set_caption(name)
 
         self.fonts = {}
-        self.fonts["main"] = pygame.font.SysFont('Arial', 50)
-        self.fonts["secondary"] = pygame.font.SysFont('Arial', 30)
+        self.fonts["default"] = {
+            "xs" : pygame.font.SysFont('Arial', int(3 * self.vh)),
+            "s" : pygame.font.SysFont('Arial', int(4 * self.vh)),
+            "m" : pygame.font.SysFont('Arial', int(5 * self.vh)), 
+            "l" : pygame.font.SysFont('Arial', int(6 * self.vh)),
+            "xl" : pygame.font.SysFont('Arial', int(7 * self.vh))
+        }
 
         self.signals = {}
 
-        self.screen = pygame.display.set_mode(self.screen_size) #pygame surface
+        self.addSignal("scene_changed")
+        self.addSignal("screen_size_changed")
+        
+        pygame.display.set_caption(name)
+
+        self.screen = pygame.display.set_mode(self.size, pygame.RESIZABLE) #pygame surface
         self.clock = pygame.time.Clock()
 
         self.tick_speed = fps
 
         self.delta = 1 / fps
+
     
     def run(self, func = None, global_input : callable = None):
         while self.running:
@@ -84,6 +109,10 @@ class Game:
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         self.running = False
+
+                elif event.type == pygame.VIDEORESIZE:
+                    self.windowResize(Vector2(event.size))
+
                 if global_input:
                     global_input(event)
             
@@ -99,14 +128,54 @@ class Game:
 
             pygame.display.flip()
         
+        resources.SaveData(self.directory("ZaK-settings.txt"), "screen_size", tuple(self.size))
+        
         pygame.quit()
         sys.exit()
-
+    
     def end(self):
         self.running = False
     
 
-    def addScene(self, name, scene):
+    def directory(self, src : str):
+        if hasattr(sys, "_MEIPASS"):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(os.path.abspath(self.file))
+
+        #return os.path.join(base_path, src)
+        return os.path.normpath(os.path.join(base_path, src))
+
+
+    def windowResize(self, newSize):
+        self.setOffSignal("screen_size_changed")
+        ratio = Vector2(0, 0)
+        ratio.x = newSize.x / self.size.x
+        ratio.y = newSize.y / self.size.y
+        for scene in self.scenes.values():
+            self.screenResizeChange(scene, ratio)
+
+        self.size = newSize
+        self.vw = self.size.x / 100
+        self.vh = self.size.y / 100
+    
+    def screenResizeChange(self, node, ratio):
+        if hasattr(node, "children"):
+            new_offset = node.offset
+            new_offset.x *= ratio.x
+            new_offset.y *= ratio.y
+            try:
+                new_size = node.size
+                new_size.x *= ratio.x
+                new_size.y *= ratio.y
+                node.change(size = new_size, offset = new_offset)
+            except:
+                node.change(offset = new_offset)
+            for childNode in node.children:
+                self.screenResizeChange(childNode, ratio)
+
+
+    def addScene(self, name : str, scene):
         self.scenes[name] = scene
         if not self.current_scene:
             self.current_scene = name
@@ -114,7 +183,6 @@ class Game:
             self.current_scene = name
             self.scenes.pop(self.default_scene_name)
         
-    
     def changeScene(self, changer = None):
         if isinstance(changer, str):
             last = self.current_scene
@@ -137,15 +205,24 @@ class Game:
             self.enterScene(self.scenes[self.current_scene])
         else:
             self.changeScene(1)
+        self.setOffSignal("scene_changed")
         
     def enterScene(self, scene):
         if scene.onEntry is not None:
             scene.onEntry()
 
-    
     def removeScene(self, name):
         self.scenes.pop(name)
-    
+
+
+    def addFont(self, name, path):
+        size_names = ["xs", "s", "m", "l", "xl"]
+        sizes = [int(3 * self.vh), int(4 * self.vh), int(5 * self.vh), int(6 * self.vh), int(7 * self.vh)]
+        new_font = {}
+        for i in range(len(size_names)):
+            new_font[size_names[i]] = pygame.font.Font(path, sizes[i])
+        self.fonts[name] = new_font
+
 
     def addSignal(self, name):
         self.signals[name] = False
@@ -167,7 +244,7 @@ class Scene(Node):
 
         self.onEntry = None
 
-        self.change(Color(bg_color), self.game.screen_size, offset = Vector2(0, 0), onEntry = onEntry)
+        self.change(Color(bg_color), self.game.size, offset = Vector2(0, 0), onEntry = onEntry)
 
     def event(self, event):
         super().event(event)
@@ -193,13 +270,13 @@ class Scene(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
-    def change(self, bg_color = None, size = None, offset = None, onEntry = None):
+    def change(self, bg_color = None, size = None, offset_str = None, offset = None, onEntry = None):
         if bg_color is not None:
             self.bg_color = bg_color
         
         if onEntry is not None:
             self.onEntry = onEntry
-        super().nodeChange(size = size, offset = offset)
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset)
 
 class BaseNode(Node):
     def __init__(self, parentNode,  zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
@@ -229,15 +306,15 @@ class BaseNode(Node):
 class ShowAxis():
     def __init__(self, parentNode : Node):
         self.parentNode = parentNode
-        self.images = resources.SpriteSheet(resources.directory(__file__, "assets/axis.png"), Vector2(15, 15), alpha_channel = True)
+        self.images = resources.SpriteSheet(parentNode.game.directory("assets/axis.png"), Vector2(15, 15), alpha_channel = True)
 
         size = Vector2(40, 40)
         gap = 50
 
         offsets = [Vector2(gap, size.x // -2), Vector2(size.x // -2, gap), Vector2(gap, gap)]
         axis = ["x", "y", None]
-        lines = [lambda: pygame.draw.line(self.parentNode.game.screen, (255, 0, 0), Vector2(0, self.parentNode.position.y), Vector2(self.parentNode.game.screen_size[0], self.parentNode.position.y), 4),
-                 lambda: pygame.draw.line(self.parentNode.game.screen, (0, 255, 0), Vector2(self.parentNode.position.x, 0), Vector2(self.parentNode.position.x, self.parentNode.game.screen_size[1]), 4)]
+        lines = [lambda: pygame.draw.line(self.parentNode.game.screen, (255, 0, 0), Vector2(0, self.parentNode.position.y), Vector2(self.parentNode.game.size[0], self.parentNode.position.y), 4),
+                 lambda: pygame.draw.line(self.parentNode.game.screen, (0, 255, 0), Vector2(self.parentNode.position.x, 0), Vector2(self.parentNode.position.x, self.parentNode.game.size[1]), 4)]
 
         self.tiles = []
 
@@ -463,7 +540,7 @@ class TextBlock(Node):
         self.surface.fill(self.background)
         self.surface.blit(self.message, (self.padding, self.padding))
 
-        self.size = self.surface.get_size()
+        self.size = Vector2(self.surface.get_size())
 
         super().nodeChange(offset_str = offset_str, offset = offset, zindex = zindex)
 
@@ -548,13 +625,17 @@ class SpriteBlock(Node):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
 
         if image is not None:
-            self.surface = pygame.transform.scale(image, self.size)
+            self.image = image
+            self.surface = pygame.transform.scale(self.image, self.size)
+
+        elif size is not None:
+            self.surface = pygame.transform.scale(self.image, self.size)
         
         if angle is not None:
             self.angle = angle
             self.surface = pygame.transform.rotate(self.surface, angle)
             
-            super().nodeChange(size = self.surface.get_size(), offset_str = offset_str, offset = offset)
+            super().nodeChange(size = Vector2(self.surface.get_size()), offset_str = offset_str, offset = offset)
 
 class AnimatedSpriteBlock(Node):
     def __init__(self, parentNode, size, framesArr, fps, angle = None, zindex = 0, offset_str = None, offset = pygame.Vector2(0, 0)):
@@ -608,6 +689,12 @@ class AnimatedSpriteBlock(Node):
             self.count = 0
             self.index = 0
         
+        if size is not None:
+            temp = []
+            for one_frame in self.frames:
+                temp.append(pygame.transform.scale(one_frame, self.size))
+            self.frames = list(temp)
+        
         if fps is not None:
             self.fps = fps
         
@@ -657,15 +744,14 @@ class TileMapBlock(Node):
             self.tileNode = tile_node
     
         if coords is None:
-            if coords_change is None:
-                return
-            elif isinstance(coords_change, int):
-                new_x = int((self.coords[0] + coords_change) % self.tileNode.tileCount[0])
-                new_y = int((self.coords[1] + (self.coords[0] + coords_change) // self.tileNode.tileCount[0]) % self.tileNode.tileCount[1])
-            else:
-                new_x = int((self.coords[0] + coords_change[0]) % self.tileNode.tileCount[0])
-                new_y = int((self.coords[1] + coords_change[1]) % self.tileNode.tileCount[1])
-            self.coords = [new_x, new_y]
+            if coords_change is not None:
+                if isinstance(coords_change, int):
+                    new_x = int((self.coords[0] + coords_change) % self.tileNode.tileCount[0])
+                    new_y = int((self.coords[1] + (self.coords[0] + coords_change) // self.tileNode.tileCount[0]) % self.tileNode.tileCount[1])
+                else:
+                    new_x = int((self.coords[0] + coords_change[0]) % self.tileNode.tileCount[0])
+                    new_y = int((self.coords[1] + coords_change[1]) % self.tileNode.tileCount[1])
+                self.coords = [new_x, new_y]
         else:
             self.coords = [int(coords[0] % self.tileNode.tileCount[0]), int(coords[1] % self.tileNode.tileCount[1])]
         

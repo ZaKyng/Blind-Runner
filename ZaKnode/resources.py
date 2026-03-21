@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import pygame
 from pygame import Vector2
 
@@ -8,14 +9,6 @@ from pygame import Vector2
 # ----- Resources ----- #
 
 ## ----- Visual ----- ##
-
-def directory(current_file, src):
-    if hasattr(sys, "_MEIPASS"):
-        base_path = sys._MEIPASS
-    else:
-        base_path = os.path.dirname(os.path.abspath(current_file))
-
-    return os.path.join(base_path, src)
 
 class Image:
     def __init__(self, path, alpha_channel = False):
@@ -67,3 +60,44 @@ class Animation:
 class Sound:
     def __init__(self, path):
         self.sound = pygame.mixer.Sound(path)
+
+def SaveData(path, index, value):
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+            data[str(index)] = value
+
+        with open(path, "w") as f:
+            json.dump(data, f)
+    except:
+        with open(path, "w") as f:
+            data = {}
+            data[index] = value
+            json.dump(data, f)
+
+def SaveDataList(path, index : list, value : list):
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+            for num in range(len(index)):
+                data[str(index[num])] = value[num]
+
+        with open(path, "w") as f:
+            json.dump(data, f)
+    except:
+        with open(path, "w") as f:
+            data = {}
+            for num in range(len(index)):
+                data[str(index[num])] = value[num]
+            json.dump(data, f)
+
+def ReadData(path, index = None):
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+            if index is not None:
+                return data[index]
+            else:
+                return data
+    except:
+        return None

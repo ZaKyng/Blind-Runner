@@ -35,8 +35,10 @@ Focus: Performance and organization.
 
 
 Changes:
-    1. Rotating visual blocks
+    1. Rotating visual blocks ✅
     2. Active bool - if can interact and is shown
+    3. Font added to Game node as XS, S, M, L, XL sizes ✅
+    4. When i resize the window, it gets saved into a txt file and the next time, it starts as that window, also add VH and VW, so block can depend on screen size✅
 
 Nodes:
     1. InfiniteBackgroundSprite
@@ -47,8 +49,8 @@ Modifiers:
     2. Timer (do something after a time (recallable))✅
 
 Resources:
-    1. Saving vars into a .txt file / Reading vars from .txt
+    1. Saving vars into a .txt file / Reading vars from .txt ✅
 
 
 Try:
-    1. resizing the window
+    1. resizing the window  1/2

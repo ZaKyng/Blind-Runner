@@ -3,7 +3,7 @@ from ZaKnode import *
 # ----- Pygame setup ----- #
 def run():
     screen_size = (1980, 1080)
-    my_game = nodes.Game(screen_size, fps = 120)
+    my_game = nodes.Game(screen_size, __file__, fps = 120)
 
     def global_input(event):
         pass
