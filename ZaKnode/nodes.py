@@ -15,6 +15,8 @@ class default(Node):
     def __init__(self, parentNode, size, zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
         super().__init__(parentNode, size = size, offset_str = offset_str, offset = offset, zindex = zindex)
 
+        self.change(size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = True)
+
     def event(self, event):
         super().event(event)
     
@@ -30,7 +32,7 @@ class default(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
-    def change(self, size = None, offset_str = None, offset = None, zindex = None):
+    def change(self, size = None, offset_str = None, offset = None, zindex = None, active = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
         
     def kill(self):
@@ -75,13 +77,8 @@ class Game:
         Scene(self.default_scene_name, self)
 
         self.fonts = {}
-        self.fonts["default"] = {
-            "xs" : pygame.font.SysFont('Arial', int(3 * self.vh)),
-            "s" : pygame.font.SysFont('Arial', int(4 * self.vh)),
-            "m" : pygame.font.SysFont('Arial', int(5 * self.vh)), 
-            "l" : pygame.font.SysFont('Arial', int(6 * self.vh)),
-            "xl" : pygame.font.SysFont('Arial', int(7 * self.vh))
-        }
+        self.addFont("default", self.directory("assets/font1.ttf"))
+        self.addFont("default2", self.directory("assets/font2.ttf"))
 
         self.signals = {}
 
@@ -158,6 +155,9 @@ class Game:
         self.size = newSize
         self.vw = self.size.x / 100
         self.vh = self.size.y / 100
+
+        for font_name in self.fonts.keys():
+            self.updateFont(font_name)
     
     def screenResizeChange(self, node, ratio):
         if hasattr(node, "children"):
@@ -215,13 +215,26 @@ class Game:
         self.scenes.pop(name)
 
 
-    def addFont(self, name, path):
-        size_names = ["xs", "s", "m", "l", "xl"]
-        sizes = [int(3 * self.vh), int(4 * self.vh), int(5 * self.vh), int(6 * self.vh), int(7 * self.vh)]
+    def addFont(self, name, path, size : float = 2):
+        font_sizes = {"xs" : int(size * self.vh), "s" : int((size + 1) * self.vh), "m" : int((size + 2) * self.vh), "l" : int((size + 3) * self.vh), "xl" : int((size + 4) * self.vh)}
         new_font = {}
-        for i in range(len(size_names)):
-            new_font[size_names[i]] = pygame.font.Font(path, sizes[i])
+        new_font["raw-font"] = path
+        new_font["size"] = size
+        new_font["font"] = {}
+        for key in font_sizes.keys():
+            new_font["font"][key] = pygame.font.Font(path, font_sizes[key])
         self.fonts[name] = new_font
+
+    def updateFont(self, name):
+        font_sizes = {"xs" : int(self.fonts[name]["size"] * self.vh),
+                      "s" : int((self.fonts[name]["size"] + 1) * self.vh),
+                      "m" : int((self.fonts[name]["size"] + 2) * self.vh),
+                      "l" : int((self.fonts[name]["size"] + 3) * self.vh),
+                      "xl" : int((self.fonts[name]["size"] + 4) * self.vh)
+                      }
+        for key in self.fonts[name]["font"].keys():
+            if key != "raw-font" and key != "size":
+                self.fonts[name]["font"][key] = pygame.font.Font(self.fonts[name]["raw-font"], font_sizes[key])
 
 
     def addSignal(self, name):

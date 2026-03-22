@@ -1,1 +1,1 @@
-{"remember_screen_size": true, "screen_size": [2048.0, 1257.0]}
+{"remember_screen_size": true, "screen_size": [1603.0, 825.0]}

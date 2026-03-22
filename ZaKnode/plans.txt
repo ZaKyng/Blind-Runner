@@ -39,6 +39,9 @@ Changes:
     2. Active bool - if can interact and is shown
     3. Font added to Game node as XS, S, M, L, XL sizes ✅
     4. When i resize the window, it gets saved into a txt file and the next time, it starts as that window, also add VH and VW, so block can depend on screen size✅
+    5. Resizing the window must change something in move modifiers, speed and some more things
+    6. Resizing the window should be done at a setted ratio, or you should have an option to give a ratio and the window will stay in that ratio (like is its 1:1, the window will be 1080 : 1080 and after making the width 960,
+        the height also changes, so its 960 : 960 in the end)
 
 Nodes:
     1. InfiniteBackgroundSprite
