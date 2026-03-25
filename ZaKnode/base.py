@@ -34,13 +34,15 @@ def positionFromStr(string: str, size, parentNode_size):
 
 
 class Base:
-    def __init__(self, parentNode, zindex = 0):
+    def __init__(self, parentNode, zindex = 0, active = True):
         self.zindex = zindex
 
         self.parentNode = parentNode
         self.parentNode.addChild(self)
 
         self.game = self.parentNode.game
+
+        self.universalChange(active)
 
 
     def kill(self):
@@ -55,11 +57,15 @@ class Base:
             if self in self.parentNode.children:
                 self.parentNode.children.remove(self)
             self.parentNode = None
+    
+    def universalChange(self, active = None):
+        if active is not None:
+            self.active = active
 
 
 class Modifier(Base):
-    def __init__(self, parentNode, zindex = -10):
-        super().__init__(parentNode, zindex)
+    def __init__(self, parentNode, zindex = -10, active = True):
+        super().__init__(parentNode, zindex, active)
     
     def event(self, event):
         pass
@@ -73,13 +79,13 @@ class Modifier(Base):
     def kill(self) -> None:
         super().kill()
     
-    def modifierChange(self):
-        pass
+    def modifierChange(self, active : bool = None):
+        super().universalChange(active)
         
 
 class Node(Base):
-    def __init__(self, parentNode, size : Vector2 = Vector2(0, 0), offset_str : str = None, offset : Vector2 = Vector2(0, 0), zindex : int = 0):
-        super().__init__(parentNode, zindex = zindex)
+    def __init__(self, parentNode, size : Vector2 = Vector2(0, 0), offset_str : str = None, offset : Vector2 = Vector2(0, 0), zindex : int = 0, active = True):
+        super().__init__(parentNode, zindex = zindex, active = active)
         self.children = []
         self.collision = []
 
@@ -87,15 +93,18 @@ class Node(Base):
 
     def event(self, event):
         for node in self.children:
-            node.event(event)
+            if node.active:
+                node.event(event)
     
     def update(self):
         for node in self.children:
-            node.update()
+            if node.active:
+                node.update()
 
     def draw(self):
         for node in self.children:
-            node.draw()
+            if node.active:
+                node.draw()
     
     def addChild(self, newChild):
         for i in range(len(self.children)):
@@ -107,7 +116,7 @@ class Node(Base):
     def addCollision(self, newCollision):
         self.collision.append(newCollision)
 
-    def nodeChange(self, size = None, offset_str = None, offset = None, zindex = None):
+    def nodeChange(self, size = None, offset_str = None, offset = None, zindex = None, active = None):
         if size is not None:
             self.size = Vector2(size)
 
@@ -126,6 +135,8 @@ class Node(Base):
             self.offset = Vector2(offset)
         
         self.position = self.parentNode.position + self.offset
+
+        super().universalChange(active)
 
         for child in self.children:
             child.change()

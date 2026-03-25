@@ -137,7 +137,7 @@ class score:
         self.player = None
         self.score = 0
         self.time = 0
-        self.text = nodes.Label(parentNode, f"Score :{self.score}", parentNode.game.fonts["pixel_big"], offset = (40, 40))
+        self.text = nodes.Label(parentNode, f"Score :{self.score}", parentNode.game.fonts["pixel"] "m",, offset = (40, 40))
         modifiers.ForeverDo(self.text, self.update )
     
     def update(self):
@@ -185,16 +185,16 @@ class endScreen:
         self.hide()
         scores = self.maxScore(self.scoreNode.score)
         self.background = nodes.ColorBlock(self.parentNode, self.parentNode.game.screen_size, (0, 0, 0, 120), zindex = 10, alpha_channel = True)
-        self.text = nodes.Label(self.background, "Game Over", self.parentNode.game.fonts["pixel_big"], (255, 10, 10), offset_str = "center", offset = (0, -90))
+        self.text = nodes.Label(self.background, "Game Over", self.parentNode.game.fonts["pixel"] "m",, (255, 10, 10), offset_str = "center", offset = (0, -90))
         if len(scores) == 1:
-            self.score = nodes.Label(self.background, scores[0], self.parentNode.game.fonts["pixel_small"], (255, 255, 255), offset_str = "center")
+            self.score = nodes.Label(self.background, scores[0], self.parentNode.game.fonts["pixel"] "m",, (255, 255, 255), offset_str = "center")
         else:
-            self.score = nodes.Label(self.background, scores[0], self.parentNode.game.fonts["pixel_small"], (255, 255, 255), offset_str = "center", offset = (-180, 0))
-            self.score = nodes.Label(self.background, scores[1], self.parentNode.game.fonts["pixel_small"], (255, 255, 255), offset_str = "center", offset = (180, 0))
+            self.score = nodes.Label(self.background, scores[0], self.parentNode.game.fonts["pixel"] "m",, (255, 255, 255), offset_str = "center", offset = (-180, 0))
+            self.score = nodes.Label(self.background, scores[1], self.parentNode.game.fonts["pixel"] "m",, (255, 255, 255), offset_str = "center", offset = (180, 0))
         self.buttons = []
-        self.buttons.append(button(self.background, "Restart", self.parentNode.game.fonts["pixel_small"], (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (-190, 120), physics_layer = 30, func = lambda: self.parentNode.game.changeScene("game")))
-        self.buttons.append(button(self.background, "Menu", self.parentNode.game.fonts["pixel_small"], (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (50, 120), physics_layer = 31, func = self.restart))
-        self.buttons.append(button(self.background, "Exit", self.parentNode.game.fonts["pixel_small"], (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (240, 120), physics_layer = 32, func = lambda: self.parentNode.game.end()))
+        self.buttons.append(button(self.background, "Restart", self.parentNode.game.fonts["pixel"] "m",, (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (-190, 120), physics_layer = 30, func = lambda: self.parentNode.game.changeScene("game")))
+        self.buttons.append(button(self.background, "Menu", self.parentNode.game.fonts["pixel"] "m",, (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (50, 120), physics_layer = 31, func = self.restart))
+        self.buttons.append(button(self.background, "Exit", self.parentNode.game.fonts["pixel"] "m",, (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (240, 120), physics_layer = 32, func = lambda: self.parentNode.game.end()))
     
     def hide(self):
         if callable(getattr(self.background, "kill", None)):
@@ -207,7 +207,7 @@ class endScreen:
     def maxScore(self, score):
         scoreBigger = False
 
-        path = resources.directory(__file__, "max_score.txt")
+        path = my_game.directory("max_score.txt")
         with open(path, "r") as r:
             try:
                 maxScore = int(r.read())
@@ -230,29 +230,28 @@ class endScreen:
 # ----- Pygame setup ----- #
 def run():
     screen_size = (1080, 1080)
-    my_game = nodes.Game(screen_size, "Orbital Defender", fps = 120)
-    my_game.fonts["pixel_big"] = pygame.font.Font(resources.directory(__file__, "img/early_gameboy.ttf"), 50)
-    my_game.fonts["pixel_small"] = pygame.font.Font(resources.directory(__file__, "img/early_gameboy.ttf"), 30)
+    my_game = nodes.Game(screen_size, "Orbital Defender", fps = 120, screen_ratio = 1)
+    my_game.addFont("pixel", my_game.directory("img/early_gameboy.ttf"))
 
-    earth = resources.Image(resources.directory(__file__, "img/earth.png"), True)
+    earth = resources.Image(my_game.directory("img/earth.png"), True)
     pygame.display.set_icon(earth.image)
-    moon = resources.Image(resources.directory(__file__, "img/moon.png"), True)
+    moon = resources.Image(my_game.directory("img/moon.png"), True)
 
-    rocket_img = resources.SpriteSheet(resources.directory(__file__, "img/rocket.png"), pygame.Vector2(15, 24), True)
+    rocket_img = resources.SpriteSheet(my_game.directory("img/rocket.png"), pygame.Vector2(15, 24), True)
     rocket = resources.Animation(rocket_img.grid, 0, 6)
     rocket_end = resources.Animation(rocket_img.grid, 7, 7)
 
-    asteroid = resources.SpriteSheet(resources.directory(__file__, "img/asteroid2.png"), (18, 15), True)
+    asteroid = resources.SpriteSheet(my_game.directory("img/asteroid2.png"), (18, 15), True)
 
     menu = nodes.Scene("menu", my_game, (5, 5, 5))
     game = nodes.Scene("game", my_game, (5, 5, 5))
     stats = nodes.Scene("stats", my_game, (5, 5, 5))
 
-    button(menu, "Play", my_game.fonts["pixel_big"], (8, 8, 8), (156, 156, 156), 20, "center", (0, -160), 20, lambda: my_game.changeScene("game"), hover_color = (206, 206, 206))
+    button(menu, "Play", "pixel", "m", (8, 8, 8), (156, 156, 156), 20, "center", (0, -160), 20, lambda: my_game.changeScene("game"), hover_color = (206, 206, 206))
 
-    button(menu, "Stats", my_game.fonts["pixel_big"], (8, 8, 8), (156, 156, 156), 20, "center", (0, 0), 21, lambda: my_game.changeScene("stats"), hover_color = (206, 206, 206))
+    button(menu, "Stats", "pixel", "m", (8, 8, 8), (156, 156, 156), 20, "center", (0, 0), 21, lambda: my_game.changeScene("stats"), hover_color = (206, 206, 206))
 
-    button(menu, "Exit", my_game.fonts["pixel_big"], (8, 8, 8), (156, 156, 156), 20, "center", (0, 160), 22, lambda: my_game.end(), hover_color = (206, 206, 206))
+    button(menu, "Exit", "pixel", "m", (8, 8, 8), (156, 156, 156), 20, "center", (0, 160), 22, lambda: my_game.end(), hover_color = (206, 206, 206))
 
     menu_bg = []
 
@@ -289,7 +288,7 @@ def run():
 
 
     for scene in [game, stats]:
-        button(scene, "Back", my_game.fonts["pixel_small"], (0, 0, 0), (200, 200, 200), 10, "bottom-right", (0, 0), 23, lambda: my_game.changeScene("menu"))
+        button(scene, "Back", "pixel", "m", (0, 0, 0), (200, 200, 200), 10, "bottom-right", (0, 0), 23, lambda: my_game.changeScene("menu"))
 
     sectors = 5
     width = int(screen_size[0] / sectors)
@@ -324,7 +323,7 @@ def run():
     character = player(game, score_count, end_screen, earth.image, moon.image, rocket, rocket_end)
 
     def shoot(game_objects):
-        if character.alive:
+        if character.alive:  
             character.arrow_move.change(clockwise = character.arrow_move.direction == -1)
             character.shoot(game_objects)
     
@@ -343,14 +342,14 @@ def run():
     game.change(onEntry = lambda: clearGame(character, game_objects, score_count))
 
 
-    score_text = nodes.Label(stats, "High score", my_game.fonts["pixel_small"], color = (205, 205, 205), zindex = 5, offset_str = "center", offset = (0, -80))
+    score_text = nodes.Label(stats, "High score", "pixel", "m", color = (205, 205, 205), zindex = 5, offset_str = "center", offset = (0, -80))
 
-    score_score = nodes.Label(stats, "0", my_game.fonts["pixel_big"], zindex = 5, offset_str = "center", offset = (0, 0))
+    score_score = nodes.Label(stats, "0", "pixel", "m", zindex = 5, offset_str = "center", offset = (0, 0))
 
     stat_bg = nodes.SpriteBlock(stats, (500, 500), pygame.transform.hsl(earth.image, lightness = -0.25), 0, offset_str = "center", offset = (0, -20))
 
     def showStats():
-        path = resources.directory(__file__, "max_score.txt")
+        path = my_game.directory("max_score.txt")
         with open(path, "r") as r:
             try:
                 maxScore = r.read()

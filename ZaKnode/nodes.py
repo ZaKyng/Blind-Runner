@@ -32,7 +32,7 @@ class default(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
-    def change(self, size = None, offset_str = None, offset = None, zindex = None, active = None):
+    def change(self, size = None, offset_str = None, offset = None, zindex = None, active = None, sizer : float = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
         
     def kill(self):
@@ -43,7 +43,7 @@ class default(Node):
 #   # -- Primary -- #
 
 class Game:
-    def __init__(self, screen_size, file_location, name : str = "ZaKgame window", fps : int = 120, remember_screen_size : bool = False):
+    def __init__(self, window_size, file_location, name : str = "ZaKgame window", fps : int = 120, remember_window_size : bool = False, screen_ratio : float = None):
         pygame.init()
         pygame.font.init()
         pygame.mixer.init()
@@ -56,20 +56,30 @@ class Game:
 
         self.game = self
 
-        if remember_screen_size is not None:
-            resources.SaveData(self.directory("ZaK-settings.txt"), "remember_screen_size", remember_screen_size)
+        if remember_window_size is not None:
+            resources.SaveData(self.directory("ZaK-settings.txt"), "remember_window_size", remember_window_size)
 
         saved_info = resources.ReadData(self.directory("ZaK-settings.txt"))
         if saved_info is not None:
-            if saved_info["remember_screen_size"]:
-                screen_size = saved_info["screen_size"]
+            if saved_info["remember_window_size"]:
+                window_size = saved_info["window_size"]
         else:
-            resources.SaveDataList(self.directory("ZaK-settings.txt"), ["screen_size", "remember_screen_size"], [screen_size, remember_screen_size if remember_screen_size is not None else True])
+            resources.SaveDataList(self.directory("ZaK-settings.txt"), ["window_size", "remember_window_size"], [window_size, remember_window_size if remember_window_size is not None else False])
             
 
-        self.size = Vector2(screen_size)
-        self.vw = self.size.x / 100
-        self.vh = self.size.y / 100
+        self.size = Vector2(window_size)
+        self.screen_ratio = screen_ratio
+        if self.screen_ratio is None:
+            self.screen_size = self.size
+        else:
+            if self.size.x / self.screen_ratio <= self.size.y:
+                self.screen_size = Vector2(self.size.x, self.size.x / self.screen_ratio)
+            else:
+                self.screen_size = Vector2(self.size.y * self.screen_ratio, self.size.y)
+
+        self.vw = self.screen_size.x / 100
+        self.vh = self.screen_size.y / 100
+        
 
         self.default_scene_name = "empty"
         self.scenes = {}
@@ -77,13 +87,11 @@ class Game:
         Scene(self.default_scene_name, self)
 
         self.fonts = {}
-        self.addFont("default", self.directory("assets/font1.ttf"))
-        self.addFont("default2", self.directory("assets/font2.ttf"))
 
         self.signals = {}
 
         self.addSignal("scene_changed")
-        self.addSignal("screen_size_changed")
+        self.addSignal("window_size_changed")
         
         pygame.display.set_caption(name)
 
@@ -118,14 +126,14 @@ class Game:
             if func:
                 func()
 
-            self.screen.fill(self.scenes[self.current_scene].bg_color)
+            self.screen.fill((0, 0, 0))
 
             self.scenes[self.current_scene].update()
             self.scenes[self.current_scene].draw()
 
             pygame.display.flip()
         
-        resources.SaveData(self.directory("ZaK-settings.txt"), "screen_size", tuple(self.size))
+        resources.SaveData(self.directory("ZaK-settings.txt"), "window_size", tuple(self.size))
         
         pygame.quit()
         sys.exit()
@@ -144,33 +152,42 @@ class Game:
         return os.path.normpath(os.path.join(base_path, src))
 
 
-    def windowResize(self, newSize):
-        self.setOffSignal("screen_size_changed")
+    def windowResize(self, new_size):
+        self.setOffSignal("window_size_changed")
+        if self.screen_ratio is None:
+            new_screen_size = new_size
+        else:
+            if new_size.x / self.screen_ratio <= new_size.y:
+                new_screen_size = Vector2(new_size.x, new_size.x / self.screen_ratio)
+            else:
+                new_screen_size = Vector2(new_size.y * self.screen_ratio, new_size.y)
+            
+        
         ratio = Vector2(0, 0)
-        ratio.x = newSize.x / self.size.x
-        ratio.y = newSize.y / self.size.y
-        for scene in self.scenes.values():
-            self.screenResizeChange(scene, ratio)
+        ratio.x = new_screen_size.x / self.screen_size.x
+        ratio.y = new_screen_size.y / self.screen_size.y
 
-        self.size = newSize
-        self.vw = self.size.x / 100
-        self.vh = self.size.y / 100
+        self.size = new_size
+        self.screen = pygame.display.set_mode(self.size, pygame.RESIZABLE)
+
+        self.screen_size = new_screen_size
+        self.vw = self.screen_size.x / 100
+        self.vh = self.screen_size.y / 100
+
 
         for font_name in self.fonts.keys():
             self.updateFont(font_name)
+
+        for scene in self.scenes.values():
+            scene.change(size = self.screen_size, offset_str = "center", offset = Vector2(0, 0))
+            for childNode in scene.children:
+                self.screenResizeChange(childNode, ratio)
+
+        
     
     def screenResizeChange(self, node, ratio):
+        node.change(sizer = ratio)
         if hasattr(node, "children"):
-            new_offset = node.offset
-            new_offset.x *= ratio.x
-            new_offset.y *= ratio.y
-            try:
-                new_size = node.size
-                new_size.x *= ratio.x
-                new_size.y *= ratio.y
-                node.change(size = new_size, offset = new_offset)
-            except:
-                node.change(offset = new_offset)
             for childNode in node.children:
                 self.screenResizeChange(childNode, ratio)
 
@@ -188,8 +205,9 @@ class Game:
             last = self.current_scene
 
             if changer in self.scenes:
-                self.current_scene = changer
-                self.enterScene(self.scenes[self.current_scene])
+                if self.scenes[changer].active:
+                    self.current_scene = changer
+                    self.enterScene(self.scenes[self.current_scene])
             else:
                 print("error")
 
@@ -200,9 +218,12 @@ class Game:
             
             index = index % len(scene_names)
 
-            self.current_scene = scene_names[index]
+            if self.scenes[scene_names[index]].active:
+                self.current_scene = scene_names[index]
 
-            self.enterScene(self.scenes[self.current_scene])
+                self.enterScene(self.scenes[self.current_scene])
+            else:
+                self.changeScene(changer + 1 if changer > 0 else changer - 1)
         else:
             self.changeScene(1)
         self.setOffSignal("scene_changed")
@@ -243,6 +264,8 @@ class Game:
     def setOffSignal(self, name):
         self.signals[name] = True
 
+
+
 class Scene(Node):
     def __init__(self, name : str, game : Game, bg_color = Color(0, 0, 0), onEntry : callable = None):
         self.game = game
@@ -257,7 +280,7 @@ class Scene(Node):
 
         self.onEntry = None
 
-        self.change(Color(bg_color), self.game.size, offset = Vector2(0, 0), onEntry = onEntry)
+        self.change(Color(bg_color), self.game.screen_size, offset_str = "center", offset = Vector2(0, 0), onEntry = onEntry, active = True)
 
     def event(self, event):
         super().event(event)
@@ -266,6 +289,7 @@ class Scene(Node):
         super().update()
 
     def draw(self):
+        self.game.screen.blit(self.surface, self.position)
         super().draw()
     
     def kill(self):
@@ -283,17 +307,29 @@ class Scene(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
-    def change(self, bg_color = None, size = None, offset_str = None, offset = None, onEntry = None):
+    def change(self, bg_color = None, size = None, offset_str = None, offset = None, onEntry = None, sizer = None, active = None):
         if bg_color is not None:
             self.bg_color = bg_color
+            try:
+                self.surface.fill(self.bg_color)
+            except:
+                pass
         
         if onEntry is not None:
             self.onEntry = onEntry
-        super().nodeChange(size = size, offset_str = offset_str, offset = offset)
+        
+        if sizer is None:
+            super().nodeChange(size = size, offset_str = offset_str, offset = offset, active = active)
+            self.surface = pygame.Surface(self.size)
+            self.surface.fill(self.bg_color)
+        else:
+            self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
+        
+        
 
 class BaseNode(Node):
     def __init__(self, parentNode,  zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
-        super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset)
+        super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset, active = True)
 
     def event(self, event):
         super().event(event)
@@ -310,8 +346,11 @@ class BaseNode(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
     
-    def change(self, offset_str = None, offset = None, zindex = None):
-        super().nodeChange(offset_str = offset_str, offset = offset, zindex = zindex)
+    def change(self, offset_str = None, offset = None, zindex = None, active = None, sizer = None):
+        if sizer is not None:
+            self.change(offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
+
+        super().nodeChange(offset_str = offset_str, offset = offset, zindex = zindex, active = active)
 
     def kill(self):
         super().kill()
@@ -344,7 +383,7 @@ class ShowAxis():
 
             self.modifiers.append(modifiers.MouseDragMove(self.parentNode, 98 + i, axis = axis[i]))
             if i < 2:
-                self.modifiers.append(modifiers.Hold(self.parentNode, 98 + i, lines[i], 1))
+                self.modifiers.append(modifiers.Hold(self.parentNode, 98 + i, lines[i], button = 1))
 
 
     
@@ -365,7 +404,7 @@ class CollisionArea(Node):
         
         self.collision_blocks = []
         
-        self.change(show = show, show_self = show_self)
+        self.change(show = show, show_self = show_self, active = True)
 
         self.parentNode.addCollision(self)
 
@@ -388,8 +427,8 @@ class CollisionArea(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
     
-    def change(self, show : bool = None, show_self : bool = None, size : Vector2 = None, offset_str = None, offset = None, zindex = None):
-        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
+    def change(self, show : bool = None, show_self : bool = None, size : Vector2 = None, offset_str : str = None, offset = None, zindex : int = None, sizer = None, active = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = active)
 
         if show is not None:
             self.show = show
@@ -399,6 +438,13 @@ class CollisionArea(Node):
             if self.show_self:
                 self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
                 self.surface.fill("#ff00ff44")
+        
+        if self.show_self and size is not None:
+            self.surface = pygame.Surface(size, pygame.SRCALPHA)
+            self.surface.fill("#ff00ff44")
+
+        if sizer is not None:
+            self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
 
 
     def kill(self):
@@ -434,13 +480,16 @@ class CollisionBlock(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
     
-    def change(self, size = None, offset_str = None, offset = None, zindex = None):
+    def change(self, size = None, offset_str = None, offset = None, zindex = None, sizer = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
 
         self.rect = pygame.Rect(self.position, self.size)
         if self.parentNode.show:
             self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
             self.surface.fill("#00ff0044")
+
+        if sizer is not None:
+            self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
 
     def kill(self):
         self.parentNode.collision_blocks.remove(self)
@@ -451,10 +500,10 @@ class CollisionBlock(Node):
 #   # -- Visuals -- #
 
 class Label(Node):
-    def __init__(self, parentNode, text : str, font : pygame.font, color : Color = Color(255, 255, 255), zindex : float = 0, 
+    def __init__(self, parentNode, text : str, font_name : str, font_size : str = "m", color : Color = Color(255, 255, 255), zindex : float = 0, 
                 offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
         super().__init__(parentNode, zindex = zindex, offset_str = offset_str, offset = offset)
-        self.change(text = text, font = font, color = color, offset_str = offset_str, offset = offset)
+        self.change(text = text, font_name = font_name, font_size = font_size, color = color, offset_str = offset_str, offset = offset, active = True)
 
 
     def event(self, event):
@@ -473,38 +522,49 @@ class Label(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
     
-    def change(self, text : str = None, font : pygame.font = None, 
-               color : Color = None, offset_str = None, 
-               offset = None, zindex = None):
+    def change(self, text : str = None, font_name : str = None, font_size = None, color : Color = None, offset_str = None, offset = None, zindex = None, sizer = None, active = None):
         if text is not None:
             self.text = text
         
-        if font is not None:
-            self.font = font
+        if font_name is not None:
+            try:
+                self.font = self.game.fonts[font_name]
+            except:
+                self.font = self.game.fonts["default"]
+        
+        if font_size is not None:
+            self.font_size = font_size
 
         if color is not None:
             self.color = Color(color)
 
-        self.message = self.font.render(self.text, True, self.color)
+        if text is not None or color is not None or font_name is not None or font_size is not None:
+            try:
+                self.message = self.font["font"][self.font_size].render(self.text, True, self.color)
+            except:
+                self.message = self.font["font"]["m"].render(self.text, True, self.color)
 
-        self.surface = pygame.Surface(self.message.get_size(), pygame.SRCALPHA)
+            self.surface = pygame.Surface(self.message.get_size(), pygame.SRCALPHA)
 
-        self.surface.blit(self.message)
+            self.surface.blit(self.message)
 
-        self.size = Vector2(self.surface.get_size())
+            self.size = Vector2(self.surface.get_size())
 
-        super().nodeChange(offset_str = offset_str, offset = offset, zindex = zindex)
+        if sizer is not None:
+            self.change(font_size = self.font_size, offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
+
+        super().nodeChange(offset_str = offset_str, offset = offset, zindex = zindex, active = active)
 
 
     def kill(self):
         super().kill()
 
 class TextBlock(Node):
-    def __init__(self, parentNode, text : str, font, txt_color = Color(255, 255, 255), bg_color = Color(0, 0, 0), padding = 0, zindex = 0, 
+    def __init__(self, parentNode, text : str, font_name : str, font_size : str = "m", txt_color = Color(255, 255, 255), bg_color = Color(0, 0, 0), padding = 0, zindex = 0, 
                 offset_str = None, offset = Vector2(0, 0), alpha_channel = False):
         super().__init__(parentNode, offset_str = offset_str, offset = offset, zindex = zindex)
         
-        self.change(text = text, font = font, txt_color = txt_color, bg_color = bg_color, padding = padding, offset_str = offset_str, offset = offset, zindex = zindex, alpha_channel = alpha_channel)
+        self.change(text = text, font_name = font_name, font_size = font_size, txt_color = txt_color, bg_color = bg_color, padding = padding, offset_str = offset_str, offset = offset, zindex = zindex, alpha_channel = alpha_channel, active = True)
 
 
     def event(self, event):
@@ -524,38 +584,62 @@ class TextBlock(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
     
-    def change(self, text = None, font = None, txt_color = None, bg_color = None, padding = None, offset_str = None, offset = None, zindex = None, alpha_channel = False):
+    def change(self, text = None, font_name : str = None, font_size = None, txt_color = None, bg_color = None, padding = None, offset_str = None, offset = None, zindex = None, alpha_channel = None, sizer = None, active = None):
+        relevant_change = False
+        
         if text is not None:
             self.text = text
+            relevant_change = True
         
-        if font is not None:
-            self.font = font
+        if font_name is not None:
+            try:
+                self.font = self.game.fonts[font_name]
+            except:
+                self.font = self.game.fonts["default"]
+            relevant_change = True
+        
+        if font_size is not None:
+            self.font_size = font_size
+            relevant_change = True
 
         if txt_color is not None:
             self.color = Color(txt_color)
+            relevant_change = True
         
         if bg_color is not None:
             self.background = Color(bg_color)
+            relevant_change = True
         
         if padding is not None:
             self.padding = padding
-        
-        self.alpha = alpha_channel
+            relevant_change = True
 
-        self.message = self.font.render(self.text, True, self.color)
-        if self.alpha:
-            self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
-                                       self.message.get_size()[1] + self.padding * 2), pygame.SRCALPHA)
-        else:
-            self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
-                                       self.message.get_size()[1] + self.padding * 2))
-            
-        self.surface.fill(self.background)
-        self.surface.blit(self.message, (self.padding, self.padding))
+        if alpha_channel is not None:
+            self.alpha = alpha_channel
+            relevant_change = True
 
-        self.size = Vector2(self.surface.get_size())
+        if relevant_change:
+            try:
+                self.message = self.font["font"][self.font_size].render(self.text, True, self.color)
+            except:
+                self.message = self.font["font"]["m"].render(self.text, True, self.color)
 
-        super().nodeChange(offset_str = offset_str, offset = offset, zindex = zindex)
+            if self.alpha:
+                self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
+                                        self.message.get_size()[1] + self.padding * 2), pygame.SRCALPHA)
+            else:
+                self.surface = pygame.Surface((self.message.get_size()[0] + self.padding * 2, 
+                                        self.message.get_size()[1] + self.padding * 2))
+                
+            self.surface.fill(self.background)
+            self.surface.blit(self.message, (self.padding, self.padding))
+
+            self.size = Vector2(self.surface.get_size())
+
+        if sizer is not None:
+            self.change(font_size = self.font_size, offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
+
+        super().nodeChange(offset_str = offset_str, offset = offset, zindex = zindex, active = active)
 
 
     def kill(self):
@@ -565,7 +649,7 @@ class ColorBlock(Node):
     def __init__(self, parentNode, size, color = Color(255, 255, 255, 255), zindex = 0, offset_str = None, offset = Vector2(0, 0), alpha_channel = False):
         super().__init__(parentNode, size = size, offset_str = offset_str, offset = offset, zindex = zindex)
     
-        self.change(color = color, alpha_channel = alpha_channel)
+        self.change(size = size, color = color, alpha_channel = alpha_channel, active = True)
 
 
     def event(self, event):
@@ -584,8 +668,8 @@ class ColorBlock(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
     
-    def change(self, color = None, alpha_channel = None, size = None, offset_str = None, offset = None, zindex = None):
-        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
+    def change(self, size = None, color = None, alpha_channel = None, offset_str = None, offset = None, zindex = None, sizer = None, active = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = active)
 
         if color is not None:
             self.color = color
@@ -595,10 +679,14 @@ class ColorBlock(Node):
 
         if self.alpha_channel:
             self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
-        else:
+        elif size is not None:
             self.surface = pygame.Surface(self.size)
-
-        self.surface.fill(self.color)
+        
+        if self.alpha_channel or size is not None or color is not None:
+            self.surface.fill(self.color)
+        
+        if sizer is not None:
+            self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
         
         
     
@@ -606,8 +694,8 @@ class ColorBlock(Node):
         super().kill()
 
 class SpriteBlock(Node):
-    def __init__(self, parentNode, size, image, angle = None, zindex = 0, offset_str = None, offset = Vector2(0, 0)):
-        super().__init__(parentNode, size = size, offset_str = offset_str, offset = offset, zindex = zindex)
+    def __init__(self, parentNode, size, image, angle : int = None, zindex = 0, offset_str = None, offset = Vector2(0, 0)):
+        super().__init__(parentNode, size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = True)
         
         if angle is not None:
             self.change(image = image, angle = angle, offset_str = offset_str, offset = offset)
@@ -634,29 +722,34 @@ class SpriteBlock(Node):
     def kill(self):
         super().kill()
 
-    def change(self, image = None, angle = None, size = None, offset_str = None, offset = None, zindex = None):
-        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
+    def change(self, image = None, size = None, angle = None, offset_str = None, offset = None, zindex = None, sizer = None, active = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = active)
 
         if image is not None:
-            self.image = image
-            self.surface = pygame.transform.scale(self.image, self.size)
+            self.orig_image = image
+            self.orig_size = size
+            self.surface = pygame.transform.scale(self.orig_image, self.size)
 
         elif size is not None:
-            self.surface = pygame.transform.scale(self.image, self.size)
+            self.orig_size = size
+            self.surface = pygame.transform.scale(self.orig_image, self.size)
+            if self.angle != 0:
+                angle = self.angle
         
         if angle is not None:
             self.angle = angle
-            self.surface = pygame.transform.rotate(self.surface, angle)
+            self.surface = pygame.transform.rotate(pygame.transform.scale(self.orig_image, self.orig_size), angle)
             
             super().nodeChange(size = Vector2(self.surface.get_size()), offset_str = offset_str, offset = offset)
 
+        if sizer is not None:
+            self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
+
 class AnimatedSpriteBlock(Node):
     def __init__(self, parentNode, size, framesArr, fps, angle = None, zindex = 0, offset_str = None, offset = pygame.Vector2(0, 0)):
-        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
+        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset,  active = True)
 
         self.frames = []
-
-        
 
         if angle is not None:
             self.change(frames_arr = framesArr, fps = fps, angle = angle, offset_str = offset_str, offset = offset)
@@ -688,8 +781,8 @@ class AnimatedSpriteBlock(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
-    def change(self, frames_arr = None, fps = None, angle = None, size = None, offset_str = None, offset = None, zindex = None):
-        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
+    def change(self, frames_arr = None, fps = None, angle = None, size = None, offset_str = None, offset = None, zindex = None, sizer = None, active = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = active)
 
         if frames_arr is not None:
             self.frames.clear()
@@ -720,6 +813,9 @@ class AnimatedSpriteBlock(Node):
             self.frames = temp
             super().nodeChange(size = self.frames[0].get_size(), offset_str = offset_str, offset = offset)
         
+        if sizer is not None:
+            self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
+        
         self.frameLen = self.game.tick_speed // self.fps
         
 
@@ -730,7 +826,7 @@ class TileMapBlock(Node):
     def __init__(self, parentNode, size, tile_node, coords, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0)):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
         
-        self.change(tile_node = tile_node, coords = coords)
+        self.change(tile_node = tile_node, coords = coords, active = True)
 
 
     def event(self, event):
@@ -750,8 +846,8 @@ class TileMapBlock(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
-    def change(self, tile_node = None, coords = None, coords_change = None, size = None, offset_str = None, offset = None, zindex = None):
-        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
+    def change(self, tile_node = None, coords = None, coords_change = None, size = None, offset_str = None, offset = None, zindex = None, sizer = None, active = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = active)
 
         if tile_node is not None:
             self.tileNode = tile_node
@@ -771,6 +867,9 @@ class TileMapBlock(Node):
         self.surface = self.tileNode.grid[self.coords[0]][self.coords[1]]
 
         self.surface = pygame.transform.scale(self.surface, self.size)
+    
+        if sizer is not None:
+            self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
 
 
     def kill(self):

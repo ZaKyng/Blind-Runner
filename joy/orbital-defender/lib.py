@@ -4,8 +4,8 @@ from ZaKnode import *
 from pygame import Vector2
 
 class button:
-    def __init__(self, parent, text, font, txt_color, bg_color, padding, offset_str, offset, physics_layer, func, hover_color = None):
-        self.button = nodes.TextBlock(parent, text, font, txt_color = txt_color, bg_color = bg_color, padding = padding, offset_str = offset_str, offset = offset)
+    def __init__(self, parent, text, font_name, font_size, txt_color, bg_color, padding, offset_str, offset, physics_layer, func, hover_color = None):
+        self.button = nodes.TextBlock(parent, text, font_name, font_size = font_size, txt_color = txt_color, bg_color = bg_color, padding = padding, offset_str = offset_str, offset = offset)
         play_collision = nodes.CollisionArea(self.button, physics_layer)
         play_collision.addCollisionBlock(self.button.size)
         modifiers.ClickOn(self.button, physics_layer, func)
@@ -81,7 +81,7 @@ class bullet:
         modifiers.OnCollideBothObjects(self.bullet, self.hitEnemy, 2)
     
     def outOfRange(self):
-        if -self.sprite.size.x > self.bullet.position.x or self.bullet.position.x > self.bullet.game.screen_size.x or -self.sprite.size.y > self.bullet.position.y or self.bullet.position.y > self.bullet.game.screen_size.y:
+        if -self.sprite.size.x - self.player.origin.offset.x > self.bullet.offset.x or self.bullet.offset.x > self.bullet.game.screen_size.x / 2 or -self.sprite.size.y - self.player.origin.offset.y > self.bullet.offset.y or self.bullet.offset.y > self.bullet.game.screen_size.y / 2:
             self.kill()
         
     def hitEnemy(self, enemy):
@@ -107,6 +107,8 @@ class enemy:
 
         grid_x = random.randrange(0, 2)
         grid_y = random.randrange(0, 2)
+        self.rotate_dir = -1 if random.randrange(0, 2) == 1 else 1
+        init_angle = random.randrange(0, 360)
 
         size = 100
         sizer = 6
@@ -114,9 +116,9 @@ class enemy:
         offset = [(math.cos(angle) + 1) * (parentNode.game.screen_size[0] + 2 * size) / 2 - size,
                 (math.sin(angle) + 1) * (parentNode.game.screen_size[1] + 2 * size) / 2 - size]
         self.origin = nodes.BaseNode(parentNode, offset = offset)
-        self.sprite = nodes.SpriteBlock(self.origin, (sizer * 18, sizer * 15), asteroid_grid[grid_x][grid_y], offset_str = "center")
-        #modifiers.ForeverDo(self.sprite, lambda: self.sprite.change(angle = self.sprite.angle - 0.5))
-        collisionA = nodes.CollisionArea(self.origin, 2)
+        self.sprite = nodes.SpriteBlock(self.origin, (sizer * 18, sizer * 15), asteroid_grid[grid_x][grid_y], angle = init_angle, offset_str = "center")
+        modifiers.ForeverDo(self.sprite, lambda: self.sprite.change(angle = self.sprite.angle + 0.2 * self.rotate_dir))
+        collisionA = nodes.CollisionArea(self.origin, 2, show = False)
         nodes.CollisionBlock(collisionA, (size * 0.7, size * 0.7), offset_str = "center")
         modifiers.Follow(self.origin, player.origin, speed = 160)
     
@@ -131,7 +133,7 @@ class score:
         self.player = None
         self.score = 0
         self.time = 0
-        self.text = nodes.Label(parentNode, f"Score :{self.score}", parentNode.game.fonts["pixel_big"], offset = (40, 40))
+        self.text = nodes.Label(parentNode, f"Score :{self.score}", "pixel", "l", offset = (40, 40))
         modifiers.ForeverDo(self.text, self.update )
     
     def update(self):
@@ -179,16 +181,16 @@ class endScreen:
         self.hide()
         scores = self.maxScore(self.scoreNode.score)
         self.background = nodes.ColorBlock(self.parentNode, self.parentNode.game.screen_size, (0, 0, 0, 120), zindex = 10, alpha_channel = True)
-        self.text = nodes.Label(self.background, "Game Over", self.parentNode.game.fonts["pixel_big"], (255, 10, 10), offset_str = "center", offset = (0, -90))
+        self.text = nodes.Label(self.background, "Game Over", "pixel", color = (255, 10, 10), offset_str = "center", offset = (0, -90))
         if len(scores) == 1:
-            self.score = nodes.Label(self.background, scores[0], self.parentNode.game.fonts["pixel_small"], (255, 255, 255), offset_str = "center")
+            self.score = nodes.Label(self.background, scores[0], "pixel", "m", color = (255, 255, 255), offset_str = "center")
         else:
-            self.score = nodes.Label(self.background, scores[0], self.parentNode.game.fonts["pixel_small"], (255, 255, 255), offset_str = "center", offset = (-180, 0))
-            self.score = nodes.Label(self.background, scores[1], self.parentNode.game.fonts["pixel_small"], (255, 255, 255), offset_str = "center", offset = (180, 0))
+            self.score = nodes.Label(self.background, scores[0], "pixel", "s", color = (255, 255, 255), offset_str = "center", offset = (-180, 0))
+            self.score = nodes.Label(self.background, scores[1], "pixel", "s", color = (255, 255, 255), offset_str = "center", offset = (180, 0))
         self.buttons = []
-        self.buttons.append(button(self.background, "Restart", self.parentNode.game.fonts["pixel_small"], (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (-190, 120), physics_layer = 30, func = lambda: self.parentNode.game.changeScene("game")))
-        self.buttons.append(button(self.background, "Menu", self.parentNode.game.fonts["pixel_small"], (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (50, 120), physics_layer = 31, func = self.restart))
-        self.buttons.append(button(self.background, "Exit", self.parentNode.game.fonts["pixel_small"], (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (240, 120), physics_layer = 32, func = lambda: self.parentNode.game.end()))
+        self.buttons.append(button(self.background, "Restart", "pixel", "s", (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (-190, 120), physics_layer = 30, func = lambda: self.parentNode.game.changeScene("game")))
+        self.buttons.append(button(self.background, "Menu", "pixel", "s", (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (50, 120), physics_layer = 31, func = self.restart))
+        self.buttons.append(button(self.background, "Exit", "pixel", "s", (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (240, 120), physics_layer = 32, func = lambda: self.parentNode.game.end()))
     
     def hide(self):
         if callable(getattr(self.background, "kill", None)):
@@ -201,7 +203,7 @@ class endScreen:
     def maxScore(self, score):
         scoreBigger = False
 
-        path = resources.directory(__file__, "max_score.txt")
+        path = self.parentNode.game.directory("max_score.txt")
         with open(path, "r") as r:
             try:
                 maxScore = int(r.read())
