@@ -231,7 +231,7 @@ class endScreen:
 def run():
     screen_size = (1080, 1080)
     my_game = nodes.Game(screen_size, "Orbital Defender", fps = 120, screen_ratio = 1)
-    my_game.addFont("pixel", my_game.directory("img/early_gameboy.ttf"))
+    my_game.fonts.addFont("pixel", my_game.directory("img/early_gameboy.ttf"))
 
     earth = resources.Image(my_game.directory("img/earth.png"), True)
     pygame.display.set_icon(earth.image)
@@ -247,9 +247,9 @@ def run():
     game = nodes.Scene("game", my_game, (5, 5, 5))
     stats = nodes.Scene("stats", my_game, (5, 5, 5))
 
-    button(menu, "Play", "pixel", "m", (8, 8, 8), (156, 156, 156), 20, "center", (0, -160), 20, lambda: my_game.changeScene("game"), hover_color = (206, 206, 206))
+    button(menu, "Play", "pixel", "m", (8, 8, 8), (156, 156, 156), 20, "center", (0, -160), 20, lambda: my_game.scenes.changeScene("game"), hover_color = (206, 206, 206))
 
-    button(menu, "Stats", "pixel", "m", (8, 8, 8), (156, 156, 156), 20, "center", (0, 0), 21, lambda: my_game.changeScene("stats"), hover_color = (206, 206, 206))
+    button(menu, "Stats", "pixel", "m", (8, 8, 8), (156, 156, 156), 20, "center", (0, 0), 21, lambda: my_game.scenes.changeScene("stats"), hover_color = (206, 206, 206))
 
     button(menu, "Exit", "pixel", "m", (8, 8, 8), (156, 156, 156), 20, "center", (0, 160), 22, lambda: my_game.end(), hover_color = (206, 206, 206))
 
@@ -288,7 +288,7 @@ def run():
 
 
     for scene in [game, stats]:
-        button(scene, "Back", "pixel", "m", (0, 0, 0), (200, 200, 200), 10, "bottom-right", (0, 0), 23, lambda: my_game.changeScene("menu"))
+        button(scene, "Back", "pixel", "m", (0, 0, 0), (200, 200, 200), 10, "bottom-right", (0, 0), 23, lambda: my_game.scenes.changeScene("menu"))
 
     sectors = 5
     width = int(screen_size[0] / sectors)
@@ -346,7 +346,7 @@ def run():
 
     score_score = nodes.Label(stats, "0", "pixel", "m", zindex = 5, offset_str = "center", offset = (0, 0))
 
-    stat_bg = nodes.SpriteBlock(stats, (500, 500), pygame.transform.hsl(earth.image, lightness = -0.25), 0, offset_str = "center", offset = (0, -20))
+    stat_bg = nodes.SpriteBlock(stats, (500, 500), pygame.transform.hsl(earth.image, lightness = -0.25), offset_str = "center", offset = (0, -20))
 
     def showStats():
         path = my_game.directory("max_score.txt")

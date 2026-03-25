@@ -73,7 +73,7 @@ class Modifier(Base):
     def update(self):
         pass
 
-    def draw(self):
+    def draw(self, scale = Vector2(1, 1)):
         pass
     
     def kill(self) -> None:
@@ -101,10 +101,10 @@ class Node(Base):
             if node.active:
                 node.update()
 
-    def draw(self):
+    def draw(self, scale = Vector2(1, 1)):
         for node in self.children:
             if node.active:
-                node.draw()
+                node.draw(scale)
     
     def addChild(self, newChild):
         for i in range(len(self.children)):

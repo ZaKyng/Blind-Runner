@@ -19,11 +19,11 @@ class default(Modifier):
     def update(self):
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
 
-    def change(self):
-        super().modifierChange()
+    def change(self, active : bool = None):
+        super().modifierChange(active = active)
 
     def kill(self):
         super().kill()
@@ -98,7 +98,7 @@ class AxisMove(Modifier):
 
         super().update()
 
-    def draw(self):
+    def draw(self, scale = Vector2(1, 1)):
         if self.show:
             center_x = self.parentNode.position.x + self.parentNode.size.x // 2
             center_y = self.parentNode.position.y + self.parentNode.size.y // 2
@@ -110,10 +110,10 @@ class AxisMove(Modifier):
                 start = (center_x, center_y - self.path_len * (self.partition))
                 end = (center_x, center_y + self.path_len * (1 - self.partition))
 
-            pygame.draw.line(self.game.screen, (255, 0, 0), start, end, width = 4)
-        super().draw()
-    
-    def change(self, start : int = None, end : int = None, axis : str = None, mode : str = None, speed : float = None, strength : float = None, looping : bool = None, show_path : bool = None, sizer : Vector2 = None, active : bool = None):
+            #pygame.draw.line(self.game.screen, (255, 0, 0), int(start * scale[self.axis]), int(end * scale[self.axis]), width = 4)
+        super().draw(scale)
+
+    def change(self, start : int = None, end : int = None, axis : str = None, mode : str = None, speed : float = None, strength : float = None, looping : bool = None, show_path : bool = None, active : bool = None):
         if show_path is not None:
             self.show = show_path
         
@@ -158,10 +158,6 @@ class AxisMove(Modifier):
             }
 
             self.mode = modes.get(mode, self.linear)
-        
-        if sizer is not None:
-            self.change(speed = self.speed * sizer[self.axis])
-            return
 
         super().modifierChange(active)
 
@@ -233,7 +229,7 @@ class LinearMove(Modifier):
 
         super().update()
 
-    def draw(self):
+    def draw(self, scale = Vector2(1, 1)):
         if self.show:
             center_x = self.parentNode.position.x + self.parentNode.size.x // 2
             center_y = self.parentNode.position.y + self.parentNode.size.y // 2
@@ -241,10 +237,10 @@ class LinearMove(Modifier):
             start = (center_x - self.difference.x * self.partition, center_y - self.difference.y * self.partition)
             end = (center_x + self.difference.x * (1 - self.partition), center_y + self.difference.y * (1 - self.partition))
                 
-            pygame.draw.line(self.game.screen, (255, 0, 0), start, end, width = 4)
-        super().draw()
+            pygame.draw.line(self.game.screen, (255, 0, 0), start * scale, end * scale, width = 4)
+        super().draw(scale)
     
-    def change(self, end : Vector2 = None, start : Vector2 = None, mode : str = None, speed : int = None, strength : float = None, looping : bool = None, show_path : bool = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, end : Vector2 = None, start : Vector2 = None, mode : str = None, speed : int = None, strength : float = None, looping : bool = None, show_path : bool = None, active : bool = None):
         
         if looping is not None:
             self.looping = looping
@@ -283,10 +279,6 @@ class LinearMove(Modifier):
         
         if start is not None:
             self.parentNode.change(offset = self.start)
-        
-        if sizer is not None:
-            self.duration *= sizer.length()
-            return
         
         super().modifierChange(active)
 
@@ -344,17 +336,17 @@ class CircularMove(Modifier):
 
         super().update()
 
-    def draw(self):
+    def draw(self, scale = Vector2(1, 1)):
         if self.show:
             center = self.parentNode.position + Vector2(math.cos(self.angle) * self.radius, math.sin(self.angle) * self.radius) * -1
-            pygame.draw.circle(self.game.screen, (255, 0, 0), center, abs(self.radius), width = 4)
-        super().draw()
+            #pygame.draw.circle(self.game.screen, (255, 0, 0), center * scale, abs(self.radius) * avg(scale.x, scale.y), width = 4)
+        super().draw(scale)
 
     def kill(self):
         super().kill()
     
 
-    def change(self, relative_center : Vector2 = None, radius : float = None, clockwise : bool = None, start_deg : float = None, speed : float = None, show_path : bool = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, relative_center : Vector2 = None, radius : float = None, clockwise : bool = None, start_deg : float = None, speed : float = None, show_path : bool = None, active : bool = None):
 
         if relative_center is not None:
             self.center = self.parentNode.offset + Vector2(relative_center)
@@ -387,9 +379,6 @@ class CircularMove(Modifier):
 
         self.elapsed = (start_deg / 360) * self.duration
 
-        if sizer is not None:
-            self.change(radius = self.radius * avg(sizer.x, sizer.y), speed = self.speed * avg(sizer.x, sizer.y))
-            return
 
         super().modifierChange(active)
 
@@ -418,10 +407,10 @@ class Follow(Modifier):
             self.parentNode.change(offset = changer)
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
 
-    def change(self, follow_node : Node = None, speed : int = None, axis : str = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, follow_node : Node = None, speed : int = None, axis : str = None, active : bool = None):
         if follow_node is  not None:
             self.follow_node = follow_node
 
@@ -431,9 +420,6 @@ class Follow(Modifier):
         if axis is not None:
             axis_arr = {"x" : [0], "y" : [1], "both" : [0, 1], "all" : [0, 1]}
             self.axis = axis_arr.get(axis.lower(), [0, 1])
-        
-        if sizer is not None:
-            self.change(speed = self.speed * avg(sizer.x, sizer.y))
             
         super().modifierChange(active)
 
@@ -452,10 +438,10 @@ class Centralize(Modifier):
         self.scene.change(offset = self.game.size / 2 - (self.parentNode.position - self.scene.position))
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
 
-    def change(self, sizer : Vector2 = None, active : bool = None):
+    def change(self, active : bool = None):
         super().modifierChange(active)
 
     def kill(self):
@@ -479,10 +465,10 @@ class MouseClickMove(Modifier):
     def update(self):
         super().update()
 
-    def draw(self):
-        super().draw()
-    
-    def change(self, sizer : Vector2 = None, active : bool = None):
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
+
+    def change(self, active : bool = None):
         super().modifierChange(active)
 
     def kill(self):
@@ -524,10 +510,10 @@ class MouseDragMove(Modifier):
 
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
     
-    def change(self, physics_check = None, axis = None, sizer = None, active = None):
+    def change(self, physics_check = None, axis = None, active = None):
         axis_arr = {"x" : [0], "y" : [1], "all" : [0, 1], "both" : [0, 1], "xy" : [0, 1]}
 
         if axis is not None:
@@ -570,18 +556,16 @@ class KeyboardMove(Modifier):
 
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
 
-    def change(self, speed : float = None, leave_window : bool = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, speed : float = None, leave_window : bool = None, active : bool = None):
         if speed is not None:
             self.speed = speed
         
         if leave_window is not None:
             self.leave_window = leave_window
 
-        if sizer is not None:
-            self.change(speed = self.speed * avg(sizer.x, sizer.y))
         super().modifierChange(active)
 
     def kill(self):
@@ -604,11 +588,11 @@ class KeyboardArrowsMove(KeyboardMove):
 
         super().update(direction)
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
     
-    def change(self, speed : float = None, leave_window : bool = None, sizer : Vector2 = None, active : bool = None):
-        super().change(speed = speed, leave_window = leave_window, sizer = sizer, active = active)
+    def change(self, speed : float = None, leave_window : bool = None,  active : bool = None):
+        super().change(speed = speed, leave_window = leave_window, active = active)
 
     def kill(self):
         super().kill()
@@ -630,11 +614,11 @@ class KeyboardWASDMove(KeyboardMove):
 
         super().update(direction)
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
     
-    def change(self, speed : float = None, leave_window : bool = None, sizer : Vector2 = None, active : bool = None):
-        super().change(speed = speed, leave_window = leave_window, sizer = sizer, active = active)
+    def change(self, speed : float = None, leave_window : bool = None, active : bool = None):
+        super().change(speed = speed, leave_window = leave_window, active = active)
 
     def kill(self):
         super().kill()
@@ -671,10 +655,10 @@ class ClickOn(Modifier):
     def update(self):
         super().update()
 
-    def draw(self):
-        super().draw()
-    
-    def change(self, sizer : Vector2 = None, active : bool = None):
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
+
+    def change(self, active : bool = None):
         super().modifierChange(active)
 
     def kill(self):
@@ -712,10 +696,10 @@ class Hover(Modifier):
         self.last_frame = did
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
     
-    def change(self, physics_check = None, func = None, else_func = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, physics_check = None, func = None, else_func = None, active : bool = None):
         if physics_check is not None:
             self.physics_check = physics_check
         
@@ -764,10 +748,10 @@ class Hold(Modifier):
                 self.else_func()
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
     
-    def change(self, physics_check : int = None, func : callable = None, button : int = None, else_func : callable = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, physics_check : int = None, func : callable = None, button : int = None, else_func : callable = None, active : bool = None):
         if physics_check is not None:
             self.physics_check = physics_check
         
@@ -819,10 +803,10 @@ class Press(Modifier):
     def update(self):
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
     
-    def change(self, key = None, func : callable = None, keydown : bool = None, mouse : bool = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, key = None, func : callable = None, keydown : bool = None, mouse : bool = None, active : bool = None):
         if key is not None:
             self.key = key
         
@@ -873,10 +857,10 @@ class ForeverDo(Modifier):
         self.func()
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
 
-    def change(self, func : callable = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, func : callable = None, active : bool = None):
         if func is not None:
             self.func = func
         super().modifierChange(active)
@@ -894,15 +878,15 @@ class SignalTrigger(Modifier):
         super().event(event)
     
     def update(self):
-        if self.game.signals[self.signal_name]:
-            self.game.signals[self.signal_name] = False
+        if self.game.signals.signals[self.signal_name]:
+            self.game.signals.signals[self.signal_name] = False
             self.func()
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
 
-    def change(self, name : str = None, func : callable = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, name : str = None, func : callable = None, active : bool = None):
         if name is not None:
             self.signal_name = name
         if func is not None:
@@ -924,15 +908,15 @@ class OnCollideDo(Modifier):
         super().event(event)
     
     def update(self):
-        if self.checkForCollision(self.game.scenes[self.game.current_scene].children):
+        if self.checkForCollision(self.game.scenes.scenes[self.game.scenes.current_scene].children):
             self.func
 
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
 
-    def change(self, func : callable = None, physics_check : int = None, parent_physics_layer : int = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, func : callable = None, physics_check : int = None, parent_physics_layer : int = None, active : bool = None):
         if func is not None:
             self.func = func
 
@@ -984,16 +968,16 @@ class OnCollideBothObjects(Modifier):
         super().event(event)
     
     def update(self):
-        output = self.checkForCollision(self.game.scenes[self.game.current_scene])
+        output = self.checkForCollision(self.game.scenes.scenes[self.game.scenes.current_scene])
         if output[0]:
             self.func(output[1])
 
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
 
-    def change(self, func : callable = None, physics_check : int = None, parent_physics_layer : int = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, func : callable = None, physics_check : int = None, parent_physics_layer : int = None, active : bool = None):
         if func is not None:
             self.func = func
 
@@ -1054,10 +1038,10 @@ class Timer(Modifier):
                 self.end()
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
 
-    def change(self, time : float = None, func : callable = None, sizer : Vector2 = None, active : bool = None):
+    def change(self, time : float = None, func : callable = None, active : bool = None):
         if time is not None:
             self.time = time
         
@@ -1091,10 +1075,10 @@ class SoundEffectPlayer(Modifier):
     def update(self):
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
 
-    def change(self, sizer : Vector2 = None, active : bool = None):
+    def change(self, active : bool = None):
         super().modifierChange(active)
 
     def kill(self):

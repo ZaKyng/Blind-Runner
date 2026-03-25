@@ -43,10 +43,11 @@ class default(Node):
 #   # -- Primary -- #
 
 class Game:
-    def __init__(self, window_size, file_location, name : str = "ZaKgame window", fps : int = 120, remember_window_size : bool = False, screen_ratio : float = None):
+    def __init__(self, window_size, file_location, name : str = "ZaKgame window", fps : int = 120, remember_window_size : bool = False, screen_ratio : float = None, over_flow_hidden : bool = False):
         pygame.init()
         pygame.font.init()
         pygame.mixer.init()
+
         self.file = file_location
 
         self.running = True
@@ -55,7 +56,11 @@ class Game:
         self.position = Vector2(0, 0)
 
         self.game = self
-
+        
+        self.fonts = FontManager(self)
+        self.signals = SignalManager(self)
+        self.scenes = SceneManager(self)
+        
         if remember_window_size is not None:
             resources.SaveData(self.directory("ZaK-settings.txt"), "remember_window_size", remember_window_size)
 
@@ -66,33 +71,38 @@ class Game:
         else:
             resources.SaveDataList(self.directory("ZaK-settings.txt"), ["window_size", "remember_window_size"], [window_size, remember_window_size if remember_window_size is not None else False])
             
-
         self.size = Vector2(window_size)
         self.screen_ratio = screen_ratio
+        self.over_flow_hidden = over_flow_hidden
+        self.overflow_blocks = []
         if self.screen_ratio is None:
             self.screen_size = self.size
         else:
             if self.size.x / self.screen_ratio <= self.size.y:
                 self.screen_size = Vector2(self.size.x, self.size.x / self.screen_ratio)
+
+                if self.over_flow_hidden:
+                    for i in range(2):
+                        new_surface = pygame.surface.Surface((self.screen_size.x, (self.size.y - self.screen_size.y) / 2))
+                        new_surface.fill((0, 0, 0))
+                        self.overflow_blocks.append(new_surface)
             else:
                 self.screen_size = Vector2(self.size.y * self.screen_ratio, self.size.y)
 
+                if self.over_flow_hidden:
+                    for i in range(2):
+                        new_surface = pygame.surface.Surface(((self.size.x - self.screen_size.x) / 2, self.screen_size.y))
+                        new_surface.fill((0, 0, 0))
+                        self.overflow_blocks.append(new_surface)
+
         self.vw = self.screen_size.x / 100
         self.vh = self.screen_size.y / 100
+
+        self.original_screen_size = self.screen_size.copy()
+        self.scale = Vector2(1, 1)
         
+        Scene(self.scenes.default_scene_name, self)
 
-        self.default_scene_name = "empty"
-        self.scenes = {}
-        self.current_scene = None
-        Scene(self.default_scene_name, self)
-
-        self.fonts = {}
-
-        self.signals = {}
-
-        self.addSignal("scene_changed")
-        self.addSignal("window_size_changed")
-        
         pygame.display.set_caption(name)
 
         self.screen = pygame.display.set_mode(self.size, pygame.RESIZABLE) #pygame surface
@@ -121,15 +131,24 @@ class Game:
                 if global_input:
                     global_input(event)
             
-                self.scenes[self.current_scene].event(event)
+                self.scenes.scenes[self.scenes.current_scene].event(event)
 
             if func:
                 func()
 
             self.screen.fill((0, 0, 0))
 
-            self.scenes[self.current_scene].update()
-            self.scenes[self.current_scene].draw()
+            self.scenes.scenes[self.scenes.current_scene].update()
+            self.scenes.scenes[self.scenes.current_scene].draw(self.scale)
+
+            if self.overflow_blocks:
+                self.screen.blit(self.overflow_blocks[0], (0, 0))
+                if self.size.x / self.screen_ratio <= self.size.y:
+                    position = (0, (self.size.y + self.screen_size.y) / 2) 
+                else:
+                    position = ((self.size.x + self.screen_size.x) / 2, 0)
+
+                self.screen.blit(self.overflow_blocks[1], position)
 
             pygame.display.flip()
         
@@ -141,7 +160,6 @@ class Game:
     def end(self):
         self.running = False
     
-
     def directory(self, src : str):
         if hasattr(sys, "_MEIPASS"):
             base_path = sys._MEIPASS
@@ -151,47 +169,96 @@ class Game:
         #return os.path.join(base_path, src)
         return os.path.normpath(os.path.join(base_path, src))
 
-
     def windowResize(self, new_size):
-        self.setOffSignal("window_size_changed")
+        self.signals.setOffSignal("window_size_changed")
         if self.screen_ratio is None:
             new_screen_size = new_size
         else:
             if new_size.x / self.screen_ratio <= new_size.y:
                 new_screen_size = Vector2(new_size.x, new_size.x / self.screen_ratio)
+
+                self.overflow_blocks.clear()
+                for i in range(2):
+                    new_surface = pygame.surface.Surface((new_screen_size.x, (new_size.y - new_screen_size.y) / 2 + 5 if i == 1 else (new_size.y - new_screen_size.y) / 2))
+                    new_surface.fill((0, 0, 0))
+                    self.overflow_blocks.append(new_surface)
             else:
                 new_screen_size = Vector2(new_size.y * self.screen_ratio, new_size.y)
-            
-        
-        ratio = Vector2(0, 0)
-        ratio.x = new_screen_size.x / self.screen_size.x
-        ratio.y = new_screen_size.y / self.screen_size.y
 
+                self.overflow_blocks.clear()
+                for i in range(2):
+                    new_surface = pygame.surface.Surface(((new_size.x - new_screen_size.x) / 2 + 5 if i == 1 else (new_size.x - new_screen_size.x) / 2, new_screen_size.y))
+                    new_surface.fill((0, 0, 0))
+                    self.overflow_blocks.append(new_surface)
+        
+        print(self.overflow_blocks[0].get_size(), self.overflow_blocks[1].get_size())
+            
         self.size = new_size
+        self.scale = Vector2(new_screen_size.x / self.original_screen_size.x, new_screen_size.y / self.original_screen_size.y)
         self.screen = pygame.display.set_mode(self.size, pygame.RESIZABLE)
 
         self.screen_size = new_screen_size
         self.vw = self.screen_size.x / 100
         self.vh = self.screen_size.y / 100
-
-
-        for font_name in self.fonts.keys():
-            self.updateFont(font_name)
-
-        for scene in self.scenes.values():
-            scene.change(size = self.screen_size, offset_str = "center", offset = Vector2(0, 0))
-            for childNode in scene.children:
-                self.screenResizeChange(childNode, ratio)
-
-        
     
-    def screenResizeChange(self, node, ratio):
-        node.change(sizer = ratio)
-        if hasattr(node, "children"):
-            for childNode in node.children:
-                self.screenResizeChange(childNode, ratio)
+        for name in self.fonts.fonts.keys():
+            self.fonts.updateFont(name)
+    
+        for scene in self.scenes.scenes.values():
+            scene.change(size = self.screen_size, offset_str = "center", offset = Vector2(0, 0))
+        
+    def gameDraw(self, surface, node, scale):
+        self.screen.blit(pygame.transform.scale(surface, Vector2(node.size.x * scale.x, node.size.y * scale.y)), Vector2((node.position.x - self.scenes.scenes[self.scenes.current_scene].position.x) * scale.x + self.scenes.scenes[self.scenes.current_scene].position.x, (node.position.y - self.scenes.scenes[self.scenes.current_scene].position.y) * scale.y + self.scenes.scenes[self.scenes.current_scene].position.y))
 
 
+
+class FontManager:
+    def __init__(self, game = Game):
+        self.game = game
+        self.fonts = {}
+        
+    def addFont(self, name, path, size : float = 2):
+        font_sizes = {"xs" : int(size * self.game.vh), "s" : int((size + 1) * self.game.vh), "m" : int((size + 2) * self.game.vh), "l" : int((size + 3) * self.game.vh), "xl" : int((size + 4) * self.game.vh)}
+        new_font = {}
+        new_font["raw-font"] = path
+        new_font["size"] = size
+        new_font["font"] = {}
+        for key in font_sizes.keys():
+            new_font["font"][key] = pygame.font.Font(path, font_sizes[key])
+        self.fonts[name] = new_font
+
+    def updateFont(self, name):
+        font_sizes = {"xs" : int(self.fonts[name]["size"] * self.game.vh),
+                      "s" : int((self.fonts[name]["size"] + 1) * self.game.vh),
+                      "m" : int((self.fonts[name]["size"] + 2) * self.game.vh),
+                      "l" : int((self.fonts[name]["size"] + 3) * self.game.vh),
+                      "xl" : int((self.fonts[name]["size"] + 4) * self.game.vh)
+                      }
+        for key in self.fonts[name]["font"].keys():
+            if key != "raw-font" and key != "size":
+                self.fonts[name]["font"][key] = pygame.font.Font(self.fonts[name]["raw-font"], font_sizes[key])
+
+class SignalManager:
+    def __init__(self, game = Game):
+        self.game = game
+        self.signals = {}
+    
+    def addSignal(self, name):
+        self.signals[name] = False
+    
+    def setOffSignal(self, name):
+        self.signals[name] = True
+
+class SceneManager:
+    def __init__(self, game = Game):
+        self.game = game
+        self.scenes = {}
+        self.game.signals.addSignal("scene_changed")
+
+        self.default_scene_name = "empty"
+        self.current_scene = None
+
+    
     def addScene(self, name : str, scene):
         self.scenes[name] = scene
         if not self.current_scene:
@@ -226,7 +293,7 @@ class Game:
                 self.changeScene(changer + 1 if changer > 0 else changer - 1)
         else:
             self.changeScene(1)
-        self.setOffSignal("scene_changed")
+        self.game.signals.setOffSignal("scene_changed")
         
     def enterScene(self, scene):
         if scene.onEntry is not None:
@@ -234,35 +301,6 @@ class Game:
 
     def removeScene(self, name):
         self.scenes.pop(name)
-
-
-    def addFont(self, name, path, size : float = 2):
-        font_sizes = {"xs" : int(size * self.vh), "s" : int((size + 1) * self.vh), "m" : int((size + 2) * self.vh), "l" : int((size + 3) * self.vh), "xl" : int((size + 4) * self.vh)}
-        new_font = {}
-        new_font["raw-font"] = path
-        new_font["size"] = size
-        new_font["font"] = {}
-        for key in font_sizes.keys():
-            new_font["font"][key] = pygame.font.Font(path, font_sizes[key])
-        self.fonts[name] = new_font
-
-    def updateFont(self, name):
-        font_sizes = {"xs" : int(self.fonts[name]["size"] * self.vh),
-                      "s" : int((self.fonts[name]["size"] + 1) * self.vh),
-                      "m" : int((self.fonts[name]["size"] + 2) * self.vh),
-                      "l" : int((self.fonts[name]["size"] + 3) * self.vh),
-                      "xl" : int((self.fonts[name]["size"] + 4) * self.vh)
-                      }
-        for key in self.fonts[name]["font"].keys():
-            if key != "raw-font" and key != "size":
-                self.fonts[name]["font"][key] = pygame.font.Font(self.fonts[name]["raw-font"], font_sizes[key])
-
-
-    def addSignal(self, name):
-        self.signals[name] = False
-    
-    def setOffSignal(self, name):
-        self.signals[name] = True
 
 
 
@@ -276,7 +314,7 @@ class Scene(Node):
         self.collision = []
         
         self.name = name
-        self.game.addScene(self.name, self)
+        self.game.scenes.addScene(self.name, self)
 
         self.onEntry = None
 
@@ -288,9 +326,9 @@ class Scene(Node):
     def update(self):
         super().update()
 
-    def draw(self):
+    def draw(self, scale = Vector2(1, 1)):
         self.game.screen.blit(self.surface, self.position)
-        super().draw()
+        super().draw(scale)
     
     def kill(self):
         for child in self.children[:]:
@@ -307,7 +345,7 @@ class Scene(Node):
     def addCollision(self, newCollision):
         super().addCollision(newCollision)
 
-    def change(self, bg_color = None, size = None, offset_str = None, offset = None, onEntry = None, sizer = None, active = None):
+    def change(self, bg_color = None, size = None, offset_str = None, offset = None, onEntry = None, active = None):
         if bg_color is not None:
             self.bg_color = bg_color
             try:
@@ -318,12 +356,9 @@ class Scene(Node):
         if onEntry is not None:
             self.onEntry = onEntry
         
-        if sizer is None:
-            super().nodeChange(size = size, offset_str = offset_str, offset = offset, active = active)
-            self.surface = pygame.Surface(self.size)
-            self.surface.fill(self.bg_color)
-        else:
-            self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, active = active)
+        self.surface = pygame.Surface(self.size)
+        self.surface.fill(self.bg_color)
         
         
 
@@ -337,8 +372,8 @@ class BaseNode(Node):
     def update(self):
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
     
     def addChild(self, newChild):
         super().addChild(newChild)
@@ -416,10 +451,10 @@ class CollisionArea(Node):
     def update(self):
         super().update()
 
-    def draw(self):
+    def draw(self, scale = Vector2(1, 1)):
         if self.show_self:
-            self.game.screen.blit(self.surface, self.position)
-        super().draw()
+            self.game.gameDraw(self.surface, self, scale)
+        super().draw(scale)
     
     def addChild(self, newChild):
         super().addChild(newChild)
@@ -469,10 +504,10 @@ class CollisionBlock(Node):
     def update(self):
         super().update()
         
-    def draw(self):
+    def draw(self, scale = Vector2(1, 1)):
         if self.parentNode.show:
-            self.game.screen.blit(self.surface, self.position)
-        super().draw()
+            self.game.gameDraw(self.surface, self, scale)
+        super().draw(scale)
     
     def addChild(self, newChild):
         super().addChild(newChild)
@@ -512,9 +547,9 @@ class Label(Node):
     def update(self):
         super().update()
         
-    def draw(self):
-        self.game.screen.blit(self.surface, self.position)
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        self.game.gameDraw(self.surface, self, scale)
+        super().draw(scale)
     
     def addChild(self, newChild):
         super().addChild(newChild)
@@ -528,9 +563,9 @@ class Label(Node):
         
         if font_name is not None:
             try:
-                self.font = self.game.fonts[font_name]
+                self.font = self.game.fonts.fonts[font_name]
             except:
-                self.font = self.game.fonts["default"]
+                self.font = self.game.fonts.fonts["default"]
         
         if font_size is not None:
             self.font_size = font_size
@@ -574,9 +609,9 @@ class TextBlock(Node):
         super().update()
         
 
-    def draw(self):
-        self.game.screen.blit(self.surface, self.position)
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        self.game.gameDraw(self.surface, self, scale)
+        super().draw(scale)
     
     def addChild(self, newChild):
         super().addChild(newChild)
@@ -593,9 +628,9 @@ class TextBlock(Node):
         
         if font_name is not None:
             try:
-                self.font = self.game.fonts[font_name]
+                self.font = self.game.fonts.fonts[font_name]
             except:
-                self.font = self.game.fonts["default"]
+                self.font = self.game.fonts.fonts["default"]
             relevant_change = True
         
         if font_size is not None:
@@ -658,9 +693,9 @@ class ColorBlock(Node):
     def update(self):
         super().update()
         
-    def draw(self):
-        self.game.screen.blit(self.surface, self.position)
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        self.game.gameDraw(self.surface, self, scale)
+        super().draw(scale)
     
     def addChild(self, newChild):
         super().addChild(newChild)
@@ -709,9 +744,9 @@ class SpriteBlock(Node):
     def update(self):
         super().update()
 
-    def draw(self):
-        self.game.screen.blit(self.surface, self.position)
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        self.game.gameDraw(self.surface, self, scale)
+        super().draw(scale)
 
     def addChild(self, newChild):
         super().addChild(newChild)
@@ -771,9 +806,9 @@ class AnimatedSpriteBlock(Node):
         self.frame = self.frames[self.index]
         super().update()
 
-    def draw(self):
-        self.game.screen.blit(self.frame, self.position)
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        self.game.gameDraw(self.frame, self, scale)
+        super().draw(scale)
 
     def addChild(self, newChild):
         super().addChild(newChild)
@@ -836,9 +871,9 @@ class TileMapBlock(Node):
         
         super().update()
 
-    def draw(self):
-        self.game.screen.blit(self.surface, self.position)
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        self.game.gameDraw(self.surface, self, scale)
+        super().draw(scale)
 
     def addChild(self, newChild):
         super().addChild(newChild)
