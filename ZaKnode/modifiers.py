@@ -486,7 +486,10 @@ class MouseDragMove(Modifier):
 
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mouse = Vector2(event.pos)
+
+            position_in_screen = Vector2(event.pos) - self.game.scenes.scenes[self.game.scenes.current_scene].position
+            mouse = Vector2(int(position_in_screen.x / self.game.scale.x), int(position_in_screen.y / self.game.scale.y))
+
             for collision_area in self.parentNode.collision:
                 if collision_area.physics_layer == self.physics_check:
                     for rect in collision_area.collision_blocks:
@@ -501,7 +504,10 @@ class MouseDragMove(Modifier):
     
     def update(self):
         if self.mouse_clicked:
-            mouse = Vector2(pygame.mouse.get_pos())
+
+            position_in_screen = Vector2(pygame.mouse.get_pos()) - self.game.scenes.scenes[self.game.scenes.current_scene].position
+            mouse = Vector2(int(position_in_screen.x / self.game.scale.x), int(position_in_screen.y / self.game.scale.y))
+
             global_pos = mouse + self.mouse_offset
             new_offset = self.parentNode.offset
             for i in self.axis:
@@ -642,7 +648,10 @@ class ClickOn(Modifier):
 
     def event(self, event):
         if event.type == self.event_type and self.pressed(event):
-            mouse = pygame.mouse.get_pos()
+
+            position_in_screen = Vector2(event.pos) - self.game.scenes.scenes[self.game.scenes.current_scene].position
+            mouse = Vector2(int(position_in_screen.x / self.game.scale.x), int(position_in_screen.y / self.game.scale.y))
+
             for collision_area in self.parentNode.collision:
                 if collision_area.physics_layer == self.physics_check:
                     for rect in collision_area.collision_blocks:
@@ -682,7 +691,10 @@ class Hover(Modifier):
     
     def update(self):
         did = False
-        mouse = pygame.mouse.get_pos()
+
+        position_in_screen = Vector2(pygame.mouse.get_pos()) - self.game.scenes.scenes[self.game.scenes.current_scene].position
+        mouse = Vector2(int(position_in_screen.x / self.game.scale.x), int(position_in_screen.y / self.game.scale.y))
+
         for collision_area in self.parentNode.collision:
             if collision_area.physics_layer == self.physics_check:
                 for rect in collision_area.collision_blocks:
@@ -726,7 +738,10 @@ class Hold(Modifier):
 
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and self.pressed(event):
-            mouse = pygame.mouse.get_pos()
+
+            position_in_screen = Vector2(pygame.mouse.get_pos()) - self.game.scenes.scenes[self.game.scenes.current_scene].position
+            mouse = Vector2(int(position_in_screen.x / self.game.scale.x), int(position_in_screen.y / self.game.scale.y))
+
             for collision_area in self.parentNode.collision:
                 if collision_area.physics_layer == self.physics_check:
                     for rect in collision_area.collision_blocks:

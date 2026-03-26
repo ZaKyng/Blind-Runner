@@ -6,8 +6,8 @@ from pygame import Vector2
 class button:
     def __init__(self, parent, text, font_name, font_size, txt_color, bg_color, padding, offset_str, offset, physics_layer, func, hover_color = None):
         self.button = nodes.TextBlock(parent, text, font_name, font_size = font_size, txt_color = txt_color, bg_color = bg_color, padding = padding, offset_str = offset_str, offset = offset)
-        play_collision = nodes.CollisionArea(self.button, physics_layer, show = True)
-        play_collision.addCollisionBlock(self.button.size)
+        play_collision = nodes.CollisionArea(self.button, physics_layer, show = True, show_self = True)
+        self.collision_block = play_collision.addCollisionBlock(self.button.size)
         modifiers.ClickOn(self.button, physics_layer, func)
         hover_color = hover_color if hover_color is not None else bg_color
         modifiers.Hover(self.button, physics_layer, lambda: self.button.change(bg_color = hover_color, padding = padding + 4, offset_str = offset_str, offset = offset), lambda: self.button.change(bg_color = bg_color, padding = padding, offset_str = offset_str, offset = offset))
@@ -73,7 +73,7 @@ class bullet:
         self.collision.addCollisionBlock((self.size, self.size), offset_str = "center")
         self.end_timer = modifiers.Timer(self.bullet, 0.3, self.kill)
         
-        end = [math.cos(rads) * (self.bullet.game.screen_size[0]), math.sin(rads) * (self.bullet.game.screen_size[1])]
+        end = [math.cos(rads) * (self.bullet.game.original_screen_size[0]), math.sin(rads) * (self.bullet.game.original_screen_size[1])]
         self.mover = modifiers.LinearMove(self.bullet, end, looping = False)
 
         modifiers.ForeverDo(self.bullet, self.outOfRange)
@@ -81,7 +81,7 @@ class bullet:
         modifiers.OnCollideBothObjects(self.bullet, self.hitEnemy, 2)
     
     def outOfRange(self):
-        if -self.sprite.size.x - self.player.origin.offset.x > self.bullet.offset.x or self.bullet.offset.x > self.bullet.game.screen_size.x / 2 or -self.sprite.size.y - self.player.origin.offset.y > self.bullet.offset.y or self.bullet.offset.y > self.bullet.game.screen_size.y / 2:
+        if -self.sprite.size.x - self.player.origin.offset.x > self.bullet.offset.x or self.bullet.offset.x > self.bullet.game.original_screen_size.x / 2 or -self.sprite.size.y - self.player.origin.offset.y > self.bullet.offset.y or self.bullet.offset.y > self.bullet.game.original_screen_size.y / 2:
             self.kill()
         
     def hitEnemy(self, enemy):
@@ -180,17 +180,17 @@ class endScreen:
     def show(self):
         self.hide()
         scores = self.maxScore(self.scoreNode.score)
-        self.background = nodes.ColorBlock(self.parentNode, self.parentNode.game.screen_size, (0, 0, 0, 120), zindex = 10, alpha_channel = True)
+        self.background = nodes.ColorBlock(self.parentNode, self.parentNode.size, (0, 0, 0, 120), zindex = 10, alpha_channel = True)
         self.text = nodes.Label(self.background, "Game Over", "pixel", color = (255, 10, 10), offset_str = "center", offset = (0, -90))
         if len(scores) == 1:
             self.score = nodes.Label(self.background, scores[0], "pixel", "m", color = (255, 255, 255), offset_str = "center")
         else:
-            self.score = nodes.Label(self.background, scores[0], "pixel", "s", color = (255, 255, 255), offset_str = "center", offset = (-180, 0))
-            self.score = nodes.Label(self.background, scores[1], "pixel", "s", color = (255, 255, 255), offset_str = "center", offset = (180, 0))
+            self.score = nodes.Label(self.background, scores[0], "pixel", "s", color = (255, 255, 255), offset_str = "center", offset = (-200, 0))
+            self.score = nodes.Label(self.background, scores[1], "pixel", "s", color = (255, 255, 255), offset_str = "center", offset = (200, 0))
         self.buttons = []
-        self.buttons.append(button(self.background, "Restart", "pixel", "s", (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (-190, 120), physics_layer = 30, func = lambda: self.parentNode.game.scenes.changeScene("game")))
-        self.buttons.append(button(self.background, "Menu", "pixel", "s", (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (50, 120), physics_layer = 31, func = self.restart))
-        self.buttons.append(button(self.background, "Exit", "pixel", "s", (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (240, 120), physics_layer = 32, func = lambda: self.parentNode.game.end()))
+        self.buttons.append(button(self.background, "Restart", "pixel", "s", (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (-220, 120), physics_layer = 30, func = lambda: self.parentNode.game.scenes.changeScene("game")))
+        self.buttons.append(button(self.background, "Menu", "pixel", "s", (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (20, 120), physics_layer = 31, func = self.restart))
+        self.buttons.append(button(self.background, "Exit", "pixel", "s", (244, 244, 244), (68, 68, 68), 16, offset_str = "center", offset = (210, 120), physics_layer = 32, func = lambda: self.parentNode.game.end()))
     
     def hide(self):
         if callable(getattr(self.background, "kill", None)):

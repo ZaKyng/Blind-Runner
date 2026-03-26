@@ -171,13 +171,9 @@ def run():
         combined_offset += last_block.size.y + 10
 
     
-    final_test1 = nodes.ColorBlock(scene11, Vector2(200, 200), (240, 50, 60), offset = (20, 20))
-
-    final_test2 = nodes.ColorBlock(scene11, Vector2(200, 200), (240, 50, 60), offset_str = "bottom-left", offset = (20, -20))
-
-    final_test1_1 = modifiers.AxisMove(final_test1, 20, 400, speed = 100, mode = "linear", show_path = True)
-    final_test2_2 = modifiers.AxisMove(final_test2, 20, 400, speed = 100, mode = "linear")
-    final_test2_2.change(show_path = True)
+    final_test1 = nodes.ColorBlock(scene11, Vector2(200, 200), (240, 50, 60), offset_str = "center")
+    
+    modifiers.ForeverDo(final_test1, lambda: final_test1.change(offset_str = "center"))
 
     press_global = []
     for scene in list(my_game.scenes.scenes.values()):
@@ -191,8 +187,16 @@ def run():
                 my_game.scenes.changeScene(-1)
             elif event.key == pygame.K_DOWN:
                 my_game.scenes.changeScene()
+        
+        if event.type == pygame.MOUSEBUTTONDOWN:
+
+            position_in_screen = Vector2(event.pos) - my_game.scenes.scenes[my_game.scenes.current_scene].position
+            mouse = Vector2(int(position_in_screen.x / my_game.scale.x), int(position_in_screen.y / my_game.scale.y))
+
+            print("Calculated mouse:", mouse, "Event: ", event.pos)
 
     def test():
+        print(scene11.size, final_test1.offset)
         pass
 
     my_game.run(test, global_input = scene_changing)

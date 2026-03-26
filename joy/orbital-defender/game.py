@@ -230,7 +230,7 @@ class endScreen:
 # ----- Pygame setup ----- #
 def run():
     screen_size = (1080, 1080)
-    my_game = nodes.Game(screen_size, "Orbital Defender", fps = 120, screen_ratio = 1)
+    my_game = nodes.Game(screen_size, __file__, "Orbital Defender", fps = 120, screen_ratio = 1)
     my_game.fonts.addFont("pixel", my_game.directory("img/early_gameboy.ttf"))
 
     earth = resources.Image(my_game.directory("img/earth.png"), True)
@@ -247,7 +247,7 @@ def run():
     game = nodes.Scene("game", my_game, (5, 5, 5))
     stats = nodes.Scene("stats", my_game, (5, 5, 5))
 
-    button(menu, "Play", "pixel", "m", (8, 8, 8), (156, 156, 156), 20, "center", (0, -160), 20, lambda: my_game.scenes.changeScene("game"), hover_color = (206, 206, 206))
+    menu_button_1 = button(menu, "Play", "pixel", "m", (8, 8, 8), (156, 156, 156), 20, "center", (0, -160), 20, lambda: my_game.scenes.changeScene("game"), hover_color = (206, 206, 206))
 
     button(menu, "Stats", "pixel", "m", (8, 8, 8), (156, 156, 156), 20, "center", (0, 0), 21, lambda: my_game.scenes.changeScene("stats"), hover_color = (206, 206, 206))
 
@@ -274,7 +274,7 @@ def run():
         if element.position == menu_rocket_target.position:
             reset_rocket(element)
 
-    menu_rocket_collision = nodes.CollisionArea(menu_rocket, 67)
+    menu_rocket_collision = nodes.CollisionArea(menu_rocket, 67, show = True)
     menu_rocket_collision.addCollisionBlock((40, 40), offset_str = "center", offset = (-20, -20))
     menu_rocket_collision.addCollisionBlock((40, 40), offset_str = "center")
     menu_rocket_collision.addCollisionBlock((50, 50), offset_str = "center", offset = (20, 20))
@@ -361,6 +361,13 @@ def run():
     stats.change(onEntry = showStats)
 
     def global_input(event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+
+            position_in_screen = Vector2(event.pos) - my_game.scenes.scenes[my_game.scenes.current_scene].position
+            mouse = Vector2(int(position_in_screen.x / my_game.scale.x), int(position_in_screen.y / my_game.scale.y))
+
+            print("Calculated mouse:", mouse, "Event: ", event.pos)
+            print(menu_button_1.collision_block.parentNode.parentNode.position - my_game.scenes.scenes[my_game.scenes.current_scene].position)
         pass
 
     def test():

@@ -190,8 +190,6 @@ class Game:
                     new_surface = pygame.surface.Surface(((new_size.x - new_screen_size.x) / 2 + 5 if i == 1 else (new_size.x - new_screen_size.x) / 2, new_screen_size.y))
                     new_surface.fill((0, 0, 0))
                     self.overflow_blocks.append(new_surface)
-        
-        print(self.overflow_blocks[0].get_size(), self.overflow_blocks[1].get_size())
             
         self.size = new_size
         self.scale = Vector2(new_screen_size.x / self.original_screen_size.x, new_screen_size.y / self.original_screen_size.y)
@@ -201,11 +199,11 @@ class Game:
         self.vw = self.screen_size.x / 100
         self.vh = self.screen_size.y / 100
     
-        for name in self.fonts.fonts.keys():
-            self.fonts.updateFont(name)
-    
+        """for name in self.fonts.fonts.keys():
+            self.fonts.updateFont(name)"""
+
         for scene in self.scenes.scenes.values():
-            scene.change(size = self.screen_size, offset_str = "center", offset = Vector2(0, 0))
+            scene.change(offset = Vector2((self.size.x - self.screen_size.x) / 2, (self.size.y - self.screen_size.y) / 2))
         
     def gameDraw(self, surface, node, scale):
         self.screen.blit(pygame.transform.scale(surface, Vector2(node.size.x * scale.x, node.size.y * scale.y)), Vector2((node.position.x - self.scenes.scenes[self.scenes.current_scene].position.x) * scale.x + self.scenes.scenes[self.scenes.current_scene].position.x, (node.position.y - self.scenes.scenes[self.scenes.current_scene].position.y) * scale.y + self.scenes.scenes[self.scenes.current_scene].position.y))
@@ -327,7 +325,7 @@ class Scene(Node):
         super().update()
 
     def draw(self, scale = Vector2(1, 1)):
-        self.game.screen.blit(self.surface, self.position)
+        self.game.gameDraw(self.surface, self, scale)
         super().draw(scale)
     
     def kill(self):
@@ -518,7 +516,7 @@ class CollisionBlock(Node):
     def change(self, size = None, offset_str = None, offset = None, zindex = None, sizer = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
 
-        self.rect = pygame.Rect(self.position, self.size)
+        self.rect = pygame.Rect(Vector2(self.position.x - self.game.scenes.scenes[self.game.scenes.current_scene].position.x, self.position.y - self.game.scenes.scenes[self.game.scenes.current_scene].position.y), self.size)
         if self.parentNode.show:
             self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
             self.surface.fill("#00ff0044")

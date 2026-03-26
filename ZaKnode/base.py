@@ -124,14 +124,12 @@ class Node(Base):
             self.zindex = zindex
             self.parentNode.children.remove(self)
             self.parentNode.addChild(self)
-        
-        if offset is None:
-            offset = self.offset
 
         if (offset_str):
             self.offset = positionFromStr(offset_str.lower(), self.size, self.parentNode.size)
-            self.offset += Vector2(offset)
-        else:
+            if offset is not None:
+                self.offset += Vector2(offset)
+        elif offset is not None:
             self.offset = Vector2(offset)
         
         self.position = self.parentNode.position + self.offset
