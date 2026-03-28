@@ -274,7 +274,7 @@ def run():
         if element.position == menu_rocket_target.position:
             reset_rocket(element)
 
-    menu_rocket_collision = nodes.CollisionArea(menu_rocket, 67, show = True)
+    menu_rocket_collision = nodes.CollisionArea(menu_rocket, 67)
     menu_rocket_collision.addCollisionBlock((40, 40), offset_str = "center", offset = (-20, -20))
     menu_rocket_collision.addCollisionBlock((40, 40), offset_str = "center")
     menu_rocket_collision.addCollisionBlock((50, 50), offset_str = "center", offset = (20, 20))
@@ -298,7 +298,7 @@ def run():
     for x in range(sectors):
         for y in range(sectors):
             offset = pygame.Vector2(random.randrange(0, width) + width * x, random.randrange(0, height) + height * y)
-            new_star = nodes.ColorBlock(menu, (2, 2), color = (246, 246, 246), zindex = -1, offset = offset)
+            new_star = nodes.ColorBlock(menu, (4, 4), color = (246, 246, 246), zindex = -1, offset = offset)
             game.addChild(new_star)
             stats.addChild(new_star)
 
@@ -327,7 +327,7 @@ def run():
             character.arrow_move.change(clockwise = character.arrow_move.direction == -1)
             character.shoot(game_objects)
     
-    modifiers.Press(character.origin, pygame.K_SPACE, lambda: shoot(game_objects))
+    modifiers.PressKey(character.origin, pygame.K_SPACE, lambda: shoot(game_objects))
 
     def spawnEnemy():
         enemy(game, character, game_objects, asteroid.grid)
@@ -349,25 +349,13 @@ def run():
     stat_bg = nodes.SpriteBlock(stats, (500, 500), pygame.transform.hsl(earth.image, lightness = -0.25), offset_str = "center", offset = (0, -20))
 
     def showStats():
-        path = my_game.directory("max_score.txt")
-        with open(path, "r") as r:
-            try:
-                maxScore = r.read()
-            except:
-                maxScore = "*error*"
+        maxScore = resources.ReadData(my_game.directory("od_data.txt"), "max_score")
 
-        score_score.change(text = maxScore, offset_str = "center", offset = (0, 0))
+        score_score.change(text = str(maxScore) if maxScore is not None else "0", offset_str = "center", offset = (0, 0))
     
     stats.change(onEntry = showStats)
 
     def global_input(event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-
-            position_in_screen = Vector2(event.pos) - my_game.scenes.scenes[my_game.scenes.current_scene].position
-            mouse = Vector2(int(position_in_screen.x / my_game.scale.x), int(position_in_screen.y / my_game.scale.y))
-
-            print("Calculated mouse:", mouse, "Event: ", event.pos)
-            print(menu_button_1.collision_block.parentNode.parentNode.position - my_game.scenes.scenes[my_game.scenes.current_scene].position)
         pass
 
     def test():

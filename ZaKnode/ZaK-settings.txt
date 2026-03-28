@@ -1,1 +1,1 @@
-{"window_size": [1580.0, 352.0], "remember_window_size": false}
+{"remember_window_size": false, "window_size": [2048.0, 1209.0], "original_screen_size": [1600.0, 900.0]}

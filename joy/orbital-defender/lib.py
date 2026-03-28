@@ -6,7 +6,7 @@ from pygame import Vector2
 class button:
     def __init__(self, parent, text, font_name, font_size, txt_color, bg_color, padding, offset_str, offset, physics_layer, func, hover_color = None):
         self.button = nodes.TextBlock(parent, text, font_name, font_size = font_size, txt_color = txt_color, bg_color = bg_color, padding = padding, offset_str = offset_str, offset = offset)
-        play_collision = nodes.CollisionArea(self.button, physics_layer, show = True, show_self = True)
+        play_collision = nodes.CollisionArea(self.button, physics_layer)
         self.collision_block = play_collision.addCollisionBlock(self.button.size)
         modifiers.ClickOn(self.button, physics_layer, func)
         hover_color = hover_color if hover_color is not None else bg_color
@@ -113,11 +113,12 @@ class enemy:
         size = 100
         sizer = 6
         angle = random.randrange(0, 360) / 180 * math.pi
-        offset = [(math.cos(angle) + 1) * (parentNode.game.screen_size[0] + 2 * size) / 2 - size,
-                (math.sin(angle) + 1) * (parentNode.game.screen_size[1] + 2 * size) / 2 - size]
+        offset = [(math.cos(angle) + 1) * (parentNode.game.original_screen_size[0] + 2 * size) / 2 - size,
+                (math.sin(angle) + 1) * (parentNode.game.original_screen_size[1] + 2 * size) / 2 - size]
         self.origin = nodes.BaseNode(parentNode, offset = offset)
         self.sprite = nodes.SpriteBlock(self.origin, (sizer * 18, sizer * 15), asteroid_grid[grid_x][grid_y], offset_str = "center")
-        #modifiers.ForeverDo(self.sprite, lambda: self.sprite.change(angle = self.sprite.angle + 0.2 * self.rotate_dir))
+        self.sprite.change(angle = init_angle)
+        modifiers.ForeverDo(self.sprite, lambda: self.sprite.change(angle = self.sprite.angle + 0.2 * self.rotate_dir))
         collisionA = nodes.CollisionArea(self.origin, 2, show = False)
         nodes.CollisionBlock(collisionA, (size * 0.7, size * 0.7), offset_str = "center")
         modifiers.Follow(self.origin, player.origin, speed = 160)
@@ -203,18 +204,13 @@ class endScreen:
     def maxScore(self, score):
         scoreBigger = False
 
-        path = self.parentNode.game.directory("max_score.txt")
-        with open(path, "r") as r:
-            try:
-                maxScore = int(r.read())
-            except:
-                maxScore = 0
-            if maxScore < score:
-                scoreBigger = True
+        maxScore = resources.ReadData(self.parentNode.game.directory("od_data.txt"), "max_score")
+        
+        if maxScore is None or maxScore < score:
+            scoreBigger = True
         
         if scoreBigger:
-            with open(path, "w") as w:
-                w.write(str(score))
+            resources.SaveData(self.parentNode.game.directory("od_data.txt"), "max_score", score)
             return [f"New high score {score}"]
 
         return [f"Score: {score}", f"High score: {maxScore}"]

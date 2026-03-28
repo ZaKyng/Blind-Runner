@@ -23,17 +23,14 @@ class default(Node):
     def update(self):
         super().update()
 
-    def draw(self):
-        super().draw()
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
     
     def addChild(self, newChild):
         super().addChild(newChild)
-    
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
 
-    def change(self, size = None, offset_str = None, offset = None, zindex = None, active = None, sizer : float = None):
-        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
+    def change(self, size = None, offset_str = None, offset = None, zindex = None, active = None):
+        super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = active)
         
     def kill(self):
         super().kill()
@@ -43,7 +40,7 @@ class default(Node):
 #   # -- Primary -- #
 
 class Game:
-    def __init__(self, window_size, file_location, name : str = "ZaKgame window", fps : int = 120, remember_window_size : bool = False, screen_ratio : float = None, over_flow_hidden : bool = False):
+    def __init__(self, window_size, file_location, name : str = "ZaKgame window", fps : int = 120, screen_ratio : float = None, over_flow_hidden : bool = False):
         pygame.init()
         pygame.font.init()
         pygame.mixer.init()
@@ -61,15 +58,7 @@ class Game:
         self.signals = SignalManager(self)
         self.scenes = SceneManager(self)
         
-        if remember_window_size is not None:
-            resources.SaveData(self.directory("ZaK-settings.txt"), "remember_window_size", remember_window_size)
-
-        saved_info = resources.ReadData(self.directory("ZaK-settings.txt"))
-        if saved_info is not None:
-            if saved_info["remember_window_size"]:
-                window_size = saved_info["window_size"]
-        else:
-            resources.SaveDataList(self.directory("ZaK-settings.txt"), ["window_size", "remember_window_size"], [window_size, remember_window_size if remember_window_size is not None else False])
+        
             
         self.size = Vector2(window_size)
         self.screen_ratio = screen_ratio
@@ -98,14 +87,38 @@ class Game:
         self.vw = self.screen_size.x / 100
         self.vh = self.screen_size.y / 100
 
-        self.original_screen_size = self.screen_size.copy()
+        self.orig_screen_size = self.screen_size.copy()
         self.scale = Vector2(1, 1)
         
         Scene(self.scenes.default_scene_name, self)
 
         pygame.display.set_caption(name)
 
-        self.screen = pygame.display.set_mode(self.size, pygame.RESIZABLE) #pygame surface
+        """
+        saved_info = resources.ReadData(self.directory("ZaK-settings.txt"))
+
+        if remember_window_size is not None:
+            resources.SaveData(self.directory("ZaK-settings.txt"), "remember_window_size", remember_window_size)
+
+        if remember_window_size is True and not saved_info["remember_window_size"]:
+            index_list = ["window_size", "remember_window_size", "original_screen_size"]
+            data_list = [tuple(window_size), remember_window_size if remember_window_size is not None else False, tuple(self.screen_size) if remember_window_size is not None else tuple(self.screen_size)]
+            resources.SaveDataList(self.directory("ZaK-settings.txt"), index_list, data_list)
+        
+        saved_info = resources.ReadData(self.directory("ZaK-settings.txt"))
+
+        if saved_info is None:
+            index_list = ["window_size", "remember_window_size", "original_screen_size"]
+            data_list = [tuple(window_size), remember_window_size if remember_window_size is not None else False, tuple(self.screen_size) if remember_window_size is True else None]
+            resources.SaveDataList(self.directory("ZaK-settings.txt"), index_list, data_list)
+        else:
+            if saved_info["remember_window_size"]:
+                self.size = Vector2(saved_info["window_size"])
+                self.orig_screen_size = Vector2(saved_info["original_screen_size"])
+        """
+
+        self.windowResize(self.size)
+        
         self.clock = pygame.time.Clock()
 
         self.tick_speed = fps
@@ -177,25 +190,30 @@ class Game:
             if new_size.x / self.screen_ratio <= new_size.y:
                 new_screen_size = Vector2(new_size.x, new_size.x / self.screen_ratio)
 
-                self.overflow_blocks.clear()
-                for i in range(2):
-                    new_surface = pygame.surface.Surface((new_screen_size.x, (new_size.y - new_screen_size.y) / 2 + 5 if i == 1 else (new_size.y - new_screen_size.y) / 2))
-                    new_surface.fill((0, 0, 0))
-                    self.overflow_blocks.append(new_surface)
+                if self.over_flow_hidden:
+                    self.overflow_blocks.clear()
+                    for i in range(2):
+                        new_surface = pygame.surface.Surface((new_screen_size.x, (new_size.y - new_screen_size.y) / 2 + 5 if i == 1 else (new_size.y - new_screen_size.y) / 2))
+                        new_surface.fill((0, 0, 0))
+                        self.overflow_blocks.append(new_surface)
             else:
                 new_screen_size = Vector2(new_size.y * self.screen_ratio, new_size.y)
 
-                self.overflow_blocks.clear()
-                for i in range(2):
-                    new_surface = pygame.surface.Surface(((new_size.x - new_screen_size.x) / 2 + 5 if i == 1 else (new_size.x - new_screen_size.x) / 2, new_screen_size.y))
-                    new_surface.fill((0, 0, 0))
-                    self.overflow_blocks.append(new_surface)
+                if self.over_flow_hidden:
+                    self.overflow_blocks.clear()
+                    for i in range(2):
+                        new_surface = pygame.surface.Surface(((new_size.x - new_screen_size.x) / 2 + 5 if i == 1 else (new_size.x - new_screen_size.x) / 2, new_screen_size.y))
+                        new_surface.fill((0, 0, 0))
+                        self.overflow_blocks.append(new_surface)
             
         self.size = new_size
-        self.scale = Vector2(new_screen_size.x / self.original_screen_size.x, new_screen_size.y / self.original_screen_size.y)
+        print(self.size)
+        self.scale = Vector2(new_screen_size.x / self.orig_screen_size.x, new_screen_size.y / self.orig_screen_size.y)
+        print(self.scale)
         self.screen = pygame.display.set_mode(self.size, pygame.RESIZABLE)
 
         self.screen_size = new_screen_size
+        print(self.screen_size)
         self.vw = self.screen_size.x / 100
         self.vh = self.screen_size.y / 100
     
@@ -271,6 +289,7 @@ class SceneManager:
 
             if changer in self.scenes:
                 if self.scenes[changer].active:
+                    self.exitScene(self.scenes[self.current_scene])
                     self.current_scene = changer
                     self.enterScene(self.scenes[self.current_scene])
             else:
@@ -284,6 +303,8 @@ class SceneManager:
             index = index % len(scene_names)
 
             if self.scenes[scene_names[index]].active:
+                self.exitScene(self.scenes[self.current_scene])
+
                 self.current_scene = scene_names[index]
 
                 self.enterScene(self.scenes[self.current_scene])
@@ -297,13 +318,17 @@ class SceneManager:
         if scene.onEntry is not None:
             scene.onEntry()
 
+    def exitScene(self, scene):
+        if scene.onExit is not None:
+            scene.onExit()
+
     def removeScene(self, name):
         self.scenes.pop(name)
 
 
 
 class Scene(Node):
-    def __init__(self, name : str, game : Game, bg_color = Color(0, 0, 0), onEntry : callable = None):
+    def __init__(self, name : str, game : Game, bg_color = Color(0, 0, 0), onEntry : callable = None, onExit : callable = None):
         self.game = game
 
         self.parentNode = game
@@ -315,8 +340,9 @@ class Scene(Node):
         self.game.scenes.addScene(self.name, self)
 
         self.onEntry = None
+        self.onExit = None
 
-        self.change(Color(bg_color), self.game.screen_size, offset_str = "center", offset = Vector2(0, 0), onEntry = onEntry, active = True)
+        self.change(Color(bg_color), self.game.orig_screen_size, offset_str = "center", offset = Vector2(0, 0), onEntry = onEntry, onExit = onExit, active = True)
 
     def event(self, event):
         super().event(event)
@@ -339,11 +365,8 @@ class Scene(Node):
     
     def addChild(self, newChild):
         super().addChild(newChild)
-    
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
 
-    def change(self, bg_color = None, size = None, offset_str = None, offset = None, onEntry = None, active = None):
+    def change(self, bg_color = None, size = None, offset_str = None, offset = None, onEntry = None, onExit = None, active = None):
         if bg_color is not None:
             self.bg_color = bg_color
             try:
@@ -353,6 +376,9 @@ class Scene(Node):
         
         if onEntry is not None:
             self.onEntry = onEntry
+        
+        if onExit is not None:
+            self.onExit = onExit
         
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, active = active)
         self.surface = pygame.Surface(self.size)
@@ -376,9 +402,6 @@ class BaseNode(Node):
     def addChild(self, newChild):
         super().addChild(newChild)
     
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
-    
     def change(self, offset_str = None, offset = None, zindex = None, active = None, sizer = None):
         if sizer is not None:
             self.change(offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
@@ -388,60 +411,19 @@ class BaseNode(Node):
     def kill(self):
         super().kill()
 
-class ShowAxis():
-    def __init__(self, parentNode : Node):
-        self.parentNode = parentNode
-        self.images = resources.SpriteSheet(parentNode.game.directory("assets/axis.png"), Vector2(15, 15), alpha_channel = True)
-
-        size = Vector2(40, 40)
-        gap = 50
-
-        offsets = [Vector2(gap, size.x // -2), Vector2(size.x // -2, gap), Vector2(gap, gap)]
-        axis = ["x", "y", None]
-        lines = [lambda: pygame.draw.line(self.parentNode.game.screen, (255, 0, 0), Vector2(0, self.parentNode.position.y), Vector2(self.parentNode.game.size[0], self.parentNode.position.y), 4),
-                 lambda: pygame.draw.line(self.parentNode.game.screen, (0, 255, 0), Vector2(self.parentNode.position.x, 0), Vector2(self.parentNode.position.x, self.parentNode.game.size[1]), 4)]
-
-        self.tiles = []
-
-        self.tiles.append(TileMapBlock(self.parentNode, size, self.images, [0, 0], 600))
-
-        self.hitareas = []
-        self.modifiers = []
-
-        for i in range(3):
-            self.tiles.append(TileMapBlock(self.parentNode, size, self.images, [1 + i, 0], 600, offset = offsets[i]))
-            new_area = CollisionArea(self.parentNode, 98 + i)
-            new_area.addCollisionBlock(size, offset = offsets[i])
-            self.hitareas.append(new_area)
-
-            self.modifiers.append(modifiers.MouseDragMove(self.parentNode, 98 + i, axis = axis[i]))
-            if i < 2:
-                self.modifiers.append(modifiers.Hold(self.parentNode, 98 + i, lines[i], button = 1))
-
-
-    
-    def hide(self):
-        for tile in self.tiles:
-            tile.kill()
-        
-        for hitarea in self.hitareas:
-            hitarea.kill()
-
 
 #   # -- Logic -- #
 
 class CollisionArea(Node):
     def __init__(self, parentNode, physics_layer : int = 0, show : bool = False, show_self : bool = False):
         super().__init__(parentNode, size = parentNode.size, zindex = 100, offset_str = None, offset = Vector2(0, 0))
-        self.physics_layer = physics_layer
         
         self.collision_blocks = []
         
-        self.change(show = show, show_self = show_self, active = True)
+        self.change(physics_layer = physics_layer, show = show, show_self = show_self, active = True)
 
-        self.parentNode.addCollision(self)
+        self.parentNode.collision.append(self)
 
-        
 
     def event(self, event):
         super().event(event)
@@ -457,11 +439,11 @@ class CollisionArea(Node):
     def addChild(self, newChild):
         super().addChild(newChild)
     
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
-    
-    def change(self, show : bool = None, show_self : bool = None, size : Vector2 = None, offset_str : str = None, offset = None, zindex : int = None, sizer = None, active = None):
+    def change(self, physics_layer : int = None, show : bool = None, show_self : bool = None, size : Vector2 = None, offset_str : str = None, offset = None, zindex : int = None, active = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = active)
+
+        if physics_layer is not None:
+             self.physics_layer = physics_layer
 
         if show is not None:
             self.show = show
@@ -475,9 +457,6 @@ class CollisionArea(Node):
         if self.show_self and size is not None:
             self.surface = pygame.Surface(size, pygame.SRCALPHA)
             self.surface.fill("#ff00ff44")
-
-        if sizer is not None:
-            self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
 
 
     def kill(self):
@@ -509,9 +488,6 @@ class CollisionBlock(Node):
     
     def addChild(self, newChild):
         super().addChild(newChild)
-    
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
     
     def change(self, size = None, offset_str = None, offset = None, zindex = None, sizer = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex)
@@ -551,9 +527,6 @@ class Label(Node):
     
     def addChild(self, newChild):
         super().addChild(newChild)
-    
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
     
     def change(self, text : str = None, font_name : str = None, font_size = None, color : Color = None, offset_str = None, offset = None, zindex = None, sizer = None, active = None):
         if text is not None:
@@ -613,9 +586,6 @@ class TextBlock(Node):
     
     def addChild(self, newChild):
         super().addChild(newChild)
-    
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
     
     def change(self, text = None, font_name : str = None, font_size = None, txt_color = None, bg_color = None, padding = None, offset_str = None, offset = None, zindex = None, alpha_channel = None, sizer = None, active = None):
         relevant_change = False
@@ -681,7 +651,8 @@ class TextBlock(Node):
 class ColorBlock(Node):
     def __init__(self, parentNode, size, color = Color(255, 255, 255, 255), zindex = 0, offset_str = None, offset = Vector2(0, 0), alpha_channel = False):
         super().__init__(parentNode, size = size, offset_str = offset_str, offset = offset, zindex = zindex)
-    
+
+        self.angle = 0
         self.change(size = size, color = color, alpha_channel = alpha_channel, active = True)
 
 
@@ -698,11 +669,11 @@ class ColorBlock(Node):
     def addChild(self, newChild):
         super().addChild(newChild)
     
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
-    
-    def change(self, size = None, color = None, alpha_channel = None, offset_str = None, offset = None, zindex = None, sizer = None, active = None):
+    def change(self, size = None, color = None, alpha_channel = None, angle = None, offset_str = None, offset = None, zindex = None, sizer = None, active = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = active)
+
+        if size is not None:
+            self.orig_size = self.size
 
         if color is not None:
             self.color = color
@@ -715,8 +686,17 @@ class ColorBlock(Node):
         elif size is not None:
             self.surface = pygame.Surface(self.size)
         
-        if self.alpha_channel or size is not None or color is not None:
+        if size is not None or color is not None:
             self.surface.fill(self.color)
+
+        if angle is not None:
+            self.angle = angle
+        
+        if angle is not None or size is not None or color is not None:
+            self.surface = pygame.Surface(self.orig_size, pygame.SRCALPHA)
+            self.surface.fill(self.color)
+            self.surface = pygame.transform.rotate(self.surface, self.angle)
+            super().nodeChange(size = Vector2(self.surface.get_size()), offset_str = offset_str, offset = offset)
         
         if sizer is not None:
             self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
@@ -749,9 +729,6 @@ class SpriteBlock(Node):
     def addChild(self, newChild):
         super().addChild(newChild)
     
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
-    
     def kill(self):
         super().kill()
 
@@ -760,19 +737,22 @@ class SpriteBlock(Node):
 
         if image is not None:
             self.orig_image = image
-            self.orig_size = size
+            self.orig_size = self.size
             self.surface = pygame.transform.scale(self.orig_image, self.size)
 
         elif size is not None:
-            self.orig_size = size
+            self.orig_size = self.size
             self.surface = pygame.transform.scale(self.orig_image, self.size)
             if self.angle != 0:
                 angle = self.angle
         
         if angle is not None:
             self.angle = angle
-            self.surface = pygame.transform.rotate(pygame.transform.scale(self.orig_image, self.orig_size), angle)
-            
+        
+        if angle is not None or size is not None:
+            self.surface = pygame.transform.scale(self.orig_image, self.orig_size)
+            self.surface = pygame.transform.rotate(self.surface, self.angle)
+
             super().nodeChange(size = Vector2(self.surface.get_size()), offset_str = offset_str, offset = offset)
 
         if sizer is not None:
@@ -780,7 +760,7 @@ class SpriteBlock(Node):
 
 class AnimatedSpriteBlock(Node):
     def __init__(self, parentNode, size, framesArr, fps, angle = None, zindex = 0, offset_str = None, offset = pygame.Vector2(0, 0)):
-        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset,  active = True)
+        super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset, active = True)
 
         self.frames = []
 
@@ -810,9 +790,6 @@ class AnimatedSpriteBlock(Node):
 
     def addChild(self, newChild):
         super().addChild(newChild)
-    
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
 
     def change(self, frames_arr = None, fps = None, angle = None, size = None, offset_str = None, offset = None, zindex = None, sizer = None, active = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = active)
@@ -859,7 +836,8 @@ class TileMapBlock(Node):
     def __init__(self, parentNode, size, tile_node, coords, zindex = 0, offset_str=None, offset = pygame.Vector2(0, 0)):
         super().__init__(parentNode, size = size, zindex = zindex, offset_str = offset_str, offset = offset)
         
-        self.change(tile_node = tile_node, coords = coords, active = True)
+        self.angle = 0
+        self.change(tile_node = tile_node, coords = coords, size = size, active = True)
 
 
     def event(self, event):
@@ -875,12 +853,12 @@ class TileMapBlock(Node):
 
     def addChild(self, newChild):
         super().addChild(newChild)
-    
-    def addCollision(self, newCollision):
-        super().addCollision(newCollision)
 
-    def change(self, tile_node = None, coords = None, coords_change = None, size = None, offset_str = None, offset = None, zindex = None, sizer = None, active = None):
+    def change(self, tile_node = None, coords = None, coords_change = None, size = None, angle = None, offset_str = None, offset = None, zindex = None, sizer = None, active = None):
         super().nodeChange(size = size, offset_str = offset_str, offset = offset, zindex = zindex, active = active)
+
+        if size is not None:
+            self.orig_size = self.size.copy()
 
         if tile_node is not None:
             self.tileNode = tile_node
@@ -897,9 +875,22 @@ class TileMapBlock(Node):
         else:
             self.coords = [int(coords[0] % self.tileNode.tileCount[0]), int(coords[1] % self.tileNode.tileCount[1])]
         
-        self.surface = self.tileNode.grid[self.coords[0]][self.coords[1]]
+        if tile_node is not None or coords is not None or coords_change is not None:
+            self.surface = self.tileNode.grid[self.coords[0]][self.coords[1]]
+            self.orig_image = self.surface
 
-        self.surface = pygame.transform.scale(self.surface, self.size)
+        if size is not None:
+            self.surface = pygame.transform.scale(self.surface, self.size)
+        
+        if angle is not None:
+            self.angle = angle
+        
+        if angle is not None or size is not None or coords is not None or coords_change is not None:
+            self.surface = pygame.transform.scale(self.orig_image, self.orig_size)
+            self.surface = pygame.transform.rotate(self.surface, self.angle)
+
+            super().nodeChange(size = Vector2(self.surface.get_size()), offset_str = offset_str, offset = offset)
+
     
         if sizer is not None:
             self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
@@ -907,4 +898,117 @@ class TileMapBlock(Node):
 
     def kill(self):
         super().kill()
+
+class TileMap(Node):
+    def __init__(self, parentNode, tile_node, one_tile_size, zindex : float = 0):
+        super().__init__(parentNode, size = Vector2(0, 0), offset = Vector2(0, 0), zindex = zindex)
+
+        self.change(tile_node = tile_node, one_tile_size = one_tile_size, zindex = zindex, active = True)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
+
+    def change(self, tile_node : resources.SpriteSheet = None, one_tile_size : Vector2 = None, zindex = None, active = None):
+        if tile_node is not None:
+            self.tile_node = tile_node
+
+            for layer in self.children:
+                if isinstance(layer, TileMapLayer):
+                    for tile in layer.children:
+                        if isinstance(tile, TileMapBlock):
+                            tile.change(tile_node = self.tile_node)
+
+        if one_tile_size is not None:
+            try:
+                old_size = self.tile_size.copy()
+            except:
+                old_size = Vector2(one_tile_size)
+            self.tile_size = Vector2(one_tile_size)
+            for layer in self.children:
+                if isinstance(layer, TileMapLayer):
+                    for tile in layer.children:
+                        if isinstance(tile, TileMapBlock):
+                            tile.change(size = self.tile_size, offset = Vector2(tile.offset.x / old_size.x * self.tile_size.x, tile.offset.y / old_size.y * self.tile_size.y))
+                    
+                    for collision_block in layer.collision_blocks:
+                        collision_block.change(size = self.tile_size, offset = Vector2(tile.offset.x / old_size.x * self.tile_size.x, tile.offset.y / old_size.y * self.tile_size.y))
+
+        super().nodeChange(zindex = zindex, active = active)
+        
+    def kill(self):
+        super().kill()
+    
+
+    def addLayer(self, zindex = 0):
+        return TileMapLayer(self, zindex)
+
+class TileMapLayer(Node):
+    def __init__(self, tileMap : TileMap, physical : bool = False, physics_layer : int = 0, zindex : float = 0):
+        super().__init__(tileMap, size = Vector2(0, 0), offset = Vector2(0, 0), zindex = zindex)
+
+        self.collisionArea = CollisionArea(self, physics_layer = 0)
+        self.change(physical = physical, physics_layer = physics_layer, zindex = zindex, active = True)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
+    
+    def addChild(self, newChild):
+        super().addChild(newChild)
+
+    def change(self, physical : bool = None, physics_layer : int = 0, zindex = None, active = None):
+        if physical is not None:
+            if physical:
+                self.collisionArea.change(active = True)
+            else:
+                self.collisionArea.change(active = False)
+        
+        if physics_layer is not None:
+            self.collisionArea.change(physics_layer = physics_layer)
+
+        super().nodeChange(zindex = zindex, active = active)
+        
+    def kill(self):
+        super().kill()
+    
+
+    def addTile(self, coords, tile_coords):
+        TileMapBlock(self, self.parentNode.tile_size, self.parentNode.tile_node, tile_coords, offset = Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]))
+    
+    def changeTile(self, coords, tile_coords):
+        for tile in self.children:
+            if isinstance(tile, TileMapBlock):
+                if tile.offset == Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]):
+                    tile.chnage(coords = tile_coords)
+                    return
+    
+    def killTile(self, coords):
+        for tile in self.children:
+            if isinstance(tile, TileMapBlock):
+                if tile.offset == Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]):
+                    tile.kill()
+                    return
+    
+    def addCollision(self, coords):
+        CollisionBlock(self.collisionArea, self.parentNode.tile_size, offset = Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]))
+    
+    def killCollision(self, coords):
+        for tile in self.collisionArea.collision_blocks:
+            if tile.offset == Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]):
+                tile.kill()
+                return
 

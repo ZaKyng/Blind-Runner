@@ -40,9 +40,6 @@ def avg(*args):
 #       ## - Constant - ###
 
 
-
-# --------- PROBlEM --------- #
-
 class AxisMove(Modifier):
     def __init__(self, parentNode : Node, start : int, end : int = None, axis : str = "x", mode : str = "linear", speed : float = default_speed, strength : float = 3, looping : bool = True, show_path : bool = False):
         super().__init__(parentNode)
@@ -100,17 +97,17 @@ class AxisMove(Modifier):
 
     def draw(self, scale = Vector2(1, 1)):
         if self.show:
-            center_x = self.parentNode.position.x + self.parentNode.size.x // 2
-            center_y = self.parentNode.position.y + self.parentNode.size.y // 2
+            center_x = self.parentNode.position.x #+ self.parentNode.size.x
+            center_y = self.parentNode.position.y #+ self.parentNode.size.y
 
             if self.axis == 0:
-                start = (center_x - self.path_len * (self.partition), center_y)
-                end = (center_x + self.path_len * (1 - self.partition), center_y)
+                start = Vector2(center_x - self.path_len * (self.partition), center_y)
+                end = Vector2(center_x + self.path_len * (1 - self.partition), center_y)
             else:
-                start = (center_x, center_y - self.path_len * (self.partition))
-                end = (center_x, center_y + self.path_len * (1 - self.partition))
+                start = Vector2(center_x, center_y - self.path_len * (self.partition))
+                end = Vector2(center_x, center_y + self.path_len * (1 - self.partition))
 
-            #pygame.draw.line(self.game.screen, (255, 0, 0), int(start * scale[self.axis]), int(end * scale[self.axis]), width = 4)
+            pygame.draw.line(self.game.screen, (255, 0, 0), start * scale[self.axis], end * scale[self.axis], width = 2)
         super().draw(scale)
 
     def change(self, start : int = None, end : int = None, axis : str = None, mode : str = None, speed : float = None, strength : float = None, looping : bool = None, show_path : bool = None, active : bool = None):
@@ -382,9 +379,6 @@ class CircularMove(Modifier):
 
         super().modifierChange(active)
 
-# --------- PROBlEM END --------- #
-
-
 
 class Follow(Modifier):
     def __init__(self, parentNode : Node, follow_node : Node, axis : str = "both", speed : float = default_speed):
@@ -458,8 +452,9 @@ class MouseClickMove(Modifier):
 
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            mouse_pos = Vector2(pygame.mouse.get_pos())
-            self.parentNode.change(offset = mouse_pos - self.parentNode.parentNode.position)
+            position_in_screen = Vector2(event.pos) - self.game.scenes.scenes[self.game.scenes.current_scene].position
+            mouse = Vector2(int(position_in_screen.x / self.game.scale.x), int(position_in_screen.y / self.game.scale.y))
+            self.parentNode.change(offset = mouse - self.parentNode.parentNode.position + self.game.scenes.scenes[self.game.scenes.current_scene].position)
         super().event(event)
     
     def update(self):
@@ -632,7 +627,7 @@ class KeyboardWASDMove(KeyboardMove):
 
 #   # -- User func -- ##
 
-class ClickOn(Modifier):
+class ClickObject(Modifier):
     def __init__(self, parentNode : Node, physics_check : int, function : callable, buttondown : bool = True, button : int = None):
         super().__init__(parentNode)
         
@@ -679,54 +674,7 @@ class ClickOn(Modifier):
             return True
         return event.button == self.button
 
-class Hover(Modifier):
-    def __init__(self, parentNode : Node, physics_check : int, func : callable, else_func : callable = None):
-        super().__init__(parentNode)
-        self.last_frame = False
-        self.else_func = None
-        self.change(physics_check = physics_check, func = func, else_func = else_func)
-
-    def event(self, event):     
-        super().event(event)
-    
-    def update(self):
-        did = False
-
-        position_in_screen = Vector2(pygame.mouse.get_pos()) - self.game.scenes.scenes[self.game.scenes.current_scene].position
-        mouse = Vector2(int(position_in_screen.x / self.game.scale.x), int(position_in_screen.y / self.game.scale.y))
-
-        for collision_area in self.parentNode.collision:
-            if collision_area.physics_layer == self.physics_check:
-                for rect in collision_area.collision_blocks:
-                    if rect.rect.collidepoint(mouse):
-                        self.func()
-                        did = True
-        
-        if not did and self.last_frame and self.else_func is not None:
-            self.else_func()
-        
-        self.last_frame = did
-        super().update()
-
-    def draw(self, scale = Vector2(1, 1)):
-        super().draw(scale)
-    
-    def change(self, physics_check = None, func = None, else_func = None, active : bool = None):
-        if physics_check is not None:
-            self.physics_check = physics_check
-        
-        if func is not None:
-            self.func = func
-        
-        if else_func is not None:
-            self.else_func = else_func
-
-        super().modifierChange(active)
-
-    def kill(self):
-        super().kill()
-
-class Hold(Modifier):
+class HoldObject(Modifier):
     def __init__(self, parentNode : Node, physics_check : int, function : callable, button : int = None, else_function : callable = None):
         super().__init__(parentNode)
 
@@ -790,7 +738,54 @@ class Hold(Modifier):
             return True
         return event.button == self.button
     
-class Press(Modifier):
+class Hover(Modifier):
+    def __init__(self, parentNode : Node, physics_check : int, func : callable, else_func : callable = None):
+        super().__init__(parentNode)
+        self.last_frame = False
+        self.else_func = None
+        self.change(physics_check = physics_check, func = func, else_func = else_func)
+
+    def event(self, event):     
+        super().event(event)
+    
+    def update(self):
+        did = False
+
+        position_in_screen = Vector2(pygame.mouse.get_pos()) - self.game.scenes.scenes[self.game.scenes.current_scene].position
+        mouse = Vector2(int(position_in_screen.x / self.game.scale.x), int(position_in_screen.y / self.game.scale.y))
+
+        for collision_area in self.parentNode.collision:
+            if collision_area.physics_layer == self.physics_check:
+                for rect in collision_area.collision_blocks:
+                    if rect.rect.collidepoint(mouse):
+                        self.func()
+                        did = True
+        
+        if not did and self.last_frame and self.else_func is not None:
+            self.else_func()
+        
+        self.last_frame = did
+        super().update()
+
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
+    
+    def change(self, physics_check = None, func = None, else_func = None, active : bool = None):
+        if physics_check is not None:
+            self.physics_check = physics_check
+        
+        if func is not None:
+            self.func = func
+        
+        if else_func is not None:
+            self.else_func = else_func
+
+        super().modifierChange(active)
+
+    def kill(self):
+        super().kill()
+
+class PressKey(Modifier):
     def __init__(self, parentNode : Node, key, function : callable, keydown : bool = True, mouse : bool = False):
         super().__init__(parentNode)
         self.key = key
@@ -847,6 +842,61 @@ class Press(Modifier):
                     self.event_type = pygame.KEYDOWN
                 else:
                     self.event_type = pygame.KEYUP
+
+        super().modifierChange(active)
+
+    def kill(self):
+        super().kill()
+    
+
+    def mouse(self, event):
+        return event.button == self.key
+    
+    def keyboard(self, event):
+        return event.key == self.key
+
+class HoldKey(Modifier):
+    def __init__(self, parentNode : Node, key, function : callable, mouse : bool = False):
+        super().__init__(parentNode)
+
+        self.holding = False
+        self.change(key = key, func = function, mouse = mouse)
+
+    def event(self, event):
+        if event.type == self.event_type and self.input_type(event):
+            self.holding = True
+        elif event.type == self.else_event_type and self.input_type(event):
+            self.holding = False
+
+        super().event(event)
+    
+    def update(self):
+        if self.holding:
+            self.func()
+        super().update()
+
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
+    
+    def change(self, key = None, func : callable = None, keydown : bool = None, mouse : bool = None, active : bool = None):
+        if key is not None:
+            self.key = key
+        
+        if func is not None:
+            self.func = func
+
+        if mouse is not None:
+            self.mouse = mouse
+        
+        if mouse is not None or keydown is not None:
+            if self.mouse:
+                self.input_type = self.mouse
+                self.event_type = pygame.MOUSEBUTTONDOWN
+                self.else_event_type = pygame.MOUSEBUTTONUP
+            else:
+                self.input_type = self.keyboard
+                self.event_type = pygame.KEYDOWN
+                self.else_event_type = pygame.KEYUP
 
         super().modifierChange(active)
 
@@ -1080,9 +1130,11 @@ class Timer(Modifier):
 #   # -- Sound/Music -- ##
 
 class SoundEffectPlayer(Modifier):
-    def __init__(self, parentNode : Node):
+    def __init__(self, parentNode : Node, volume : float = 1):
         super().__init__(parentNode)
-        self.sound_effects = {}
+        self.sounds = {}
+
+        self.change(volume = volume)
 
     def event(self, event):
         super().event(event)
@@ -1093,16 +1145,56 @@ class SoundEffectPlayer(Modifier):
     def draw(self, scale = Vector2(1, 1)):
         super().draw(scale)
 
-    def change(self, active : bool = None):
+    def change(self, volume : float = None, active : bool = None):
+        if volume is not None:
+            self.volume = max(0, min(volume, 1))
+            for track in self.sounds:
+                track.sound.set_volume(track.volume * self.volume)
         super().modifierChange(active)
 
     def kill(self):
         super().kill()
 
     def add(self, name : str, sound):
-        self.sound_effects[name] = sound
+        self.sounds[name] = sound
     
     def play(self, name : str):
-        self.sound_effects[name].play()
+        self.sounds[name].sound.play()
 
+    def stop(self, name : str):
+        self.sounds[name].sound.stop()
 
+class MusicPlayer(Modifier):
+    def __init__(self, parentNode : Node, volume = 1):
+        super().__init__(parentNode)
+        self.tracks = {}
+
+        self.change(volume = volume)
+
+    def event(self, event):
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
+
+    def change(self, volume : float = None, active : bool = None):
+        if volume is not None:
+            self.volume = max(0, min(volume, 1))
+            for track in self.tracks:
+                track.sound.set_volume(track.volume * self.volume)
+        super().modifierChange(active)
+
+    def kill(self):
+        super().kill()
+
+    def add(self, name : str, sound):
+        self.tracks[name] = sound
+    
+    def play(self, name : str):
+        self.tracks[name].sound.play(loops = -1)
+
+    def stop(self, name : str):
+        self.tracks[name].sound.stop()

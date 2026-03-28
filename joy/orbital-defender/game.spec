@@ -6,7 +6,7 @@ a = Analysis(
     ['game.py'],
     pathex=[],
     binaries=[],
-    datas=[('img', 'img'), ('max_score.txt', '.')],
+    datas=[('img', 'img')],
     hiddenimports=['lib'],
     hookspath=[],
     runtime_hooks=[],
