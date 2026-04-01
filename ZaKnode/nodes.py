@@ -118,6 +118,8 @@ class Game:
         """
 
         self.windowResize(self.size)
+        self.vw = self.screen_size.x / 100
+        self.vh = self.screen_size.y / 100
         
         self.clock = pygame.time.Clock()
 
@@ -207,15 +209,10 @@ class Game:
                         self.overflow_blocks.append(new_surface)
             
         self.size = new_size
-        print(self.size)
         self.scale = Vector2(new_screen_size.x / self.orig_screen_size.x, new_screen_size.y / self.orig_screen_size.y)
-        print(self.scale)
         self.screen = pygame.display.set_mode(self.size, pygame.RESIZABLE)
 
         self.screen_size = new_screen_size
-        print(self.screen_size)
-        self.vw = self.screen_size.x / 100
-        self.vh = self.screen_size.y / 100
     
         """for name in self.fonts.fonts.keys():
             self.fonts.updateFont(name)"""
@@ -225,8 +222,6 @@ class Game:
         
     def gameDraw(self, surface, node, scale):
         self.screen.blit(pygame.transform.scale(surface, Vector2(node.size.x * scale.x, node.size.y * scale.y)), Vector2((node.position.x - self.scenes.scenes[self.scenes.current_scene].position.x) * scale.x + self.scenes.scenes[self.scenes.current_scene].position.x, (node.position.y - self.scenes.scenes[self.scenes.current_scene].position.y) * scale.y + self.scenes.scenes[self.scenes.current_scene].position.y))
-
-
 
 class FontManager:
     def __init__(self, game = Game):
@@ -250,9 +245,10 @@ class FontManager:
                       "l" : int((self.fonts[name]["size"] + 3) * self.game.vh),
                       "xl" : int((self.fonts[name]["size"] + 4) * self.game.vh)
                       }
-        for key in self.fonts[name]["font"].keys():
-            if key != "raw-font" and key != "size":
-                self.fonts[name]["font"][key] = pygame.font.Font(self.fonts[name]["raw-font"], font_sizes[key])
+        if self.fonts[name]["raw-font"] is not None:
+            for key in self.fonts[name]["font"].keys():
+                if key != "raw-font" and key != "size":
+                    self.fonts[name]["font"][key] = pygame.font.Font(self.fonts[name]["raw-font"], font_sizes[key])
 
 class SignalManager:
     def __init__(self, game = Game):
@@ -326,7 +322,6 @@ class SceneManager:
         self.scenes.pop(name)
 
 
-
 class Scene(Node):
     def __init__(self, name : str, game : Game, bg_color = Color(0, 0, 0), onEntry : callable = None, onExit : callable = None):
         self.game = game
@@ -384,8 +379,6 @@ class Scene(Node):
         self.surface = pygame.Surface(self.size)
         self.surface.fill(self.bg_color)
         
-        
-
 class BaseNode(Node):
     def __init__(self, parentNode,  zindex : float = 0, offset_str : str = None, offset : Vector2 = Vector2(0, 0)):
         super().__init__(parentNode, size = Vector2(0, 0), zindex = zindex, offset_str = offset_str, offset = offset, active = True)
@@ -503,7 +496,6 @@ class CollisionBlock(Node):
     def kill(self):
         self.parentNode.collision_blocks.remove(self)
         super().kill()
-
 
 
 #   # -- Visuals -- #
@@ -1011,4 +1003,9 @@ class TileMapLayer(Node):
             if tile.offset == Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]):
                 tile.kill()
                 return
+
+
+
+
+
 

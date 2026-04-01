@@ -45,12 +45,12 @@ Changes:
 
 Nodes:
     1. InfiniteBackgroundSprite
-    2. Button
+    2. Button 1/2
     3. Particles
     4. TileMap ✅
 
 Modifiers:
-    1. LoopingMusic
+    1. LoopingMusic✅
     2. Timer (do something after a time (recallable))✅
 
 Resources:

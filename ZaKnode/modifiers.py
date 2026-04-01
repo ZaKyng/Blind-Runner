@@ -662,7 +662,22 @@ class ClickObject(Modifier):
     def draw(self, scale = Vector2(1, 1)):
         super().draw(scale)
 
-    def change(self, active : bool = None):
+    def change(self, physics_check : int = None, func = None, buttondown : bool = None, button : int = None, active : bool = None):
+        if physics_check is not None:
+            self.physics_check = physics_check
+
+        if func is not None:
+            self.func = func
+        
+        if buttondown is not None:
+            if buttondown:
+                self.event_type = pygame.MOUSEBUTTONDOWN
+            else:
+                self.event_type = pygame.MOUSEBUTTONUP
+
+        if button is not None:
+            self.button = button
+        
         super().modifierChange(active)
 
     def kill(self):

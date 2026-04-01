@@ -1,0 +1,1 @@
+{"level1":{"icon": 1, "offset": [350, 240], "locked": false}, "level2": {"icon": 2, "offset": [700, 620], "locked": true}}

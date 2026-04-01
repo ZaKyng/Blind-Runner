@@ -10,6 +10,12 @@ from pygame import Vector2
 
 ## ----- Visual ----- ##
 
+
+def directory(file, src : str):
+    base_path = os.path.dirname(os.path.abspath(file))
+
+    return os.path.normpath(os.path.join(base_path, src))
+
 class Image:
     def __init__(self, path, alpha_channel = False):
         self.path = path

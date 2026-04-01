@@ -185,7 +185,6 @@ def run():
 
 
     tile_positioner = nodes.BaseNode(scene12, offset = (-25, -25))
-    print(tile_positioner.position)
     tile_map_test = nodes.TileMap(tile_positioner, bonsai_grid, Vector2(50, 50))
 
     layer1 = tile_map_test.addLayer()
@@ -222,12 +221,11 @@ def run():
             elif event.key == pygame.K_DOWN:
                 my_game.scenes.changeScene()
         
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        """if event.type == pygame.MOUSEBUTTONDOWN:
 
             position_in_screen = Vector2(event.pos) - my_game.scenes.scenes[my_game.scenes.current_scene].position
-            mouse = Vector2(int(position_in_screen.x / my_game.scale.x), int(position_in_screen.y / my_game.scale.y))
+            mouse = Vector2(int(position_in_screen.x / my_game.scale.x), int(position_in_screen.y / my_game.scale.y))"""
 
-            print(position_in_screen, mouse, event.pos)
 
     def test():
         pass
