@@ -2,7 +2,7 @@ import pygame
 import os
 from ZaKnode import *
 
-from .lib import Button
+from ..lib import Button
 
 
 class Level:
@@ -11,6 +11,5 @@ class Level:
 
     def load(self, name):
         level_data = resources.ReadData(self.scene.game.directory("test-levels.txt"), name)
-        print(level_data["offset"])
 
 

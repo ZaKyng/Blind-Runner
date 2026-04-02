@@ -420,6 +420,8 @@ class Follow(Modifier):
     def kill(self):
         super().kill()
 
+
+# -- PROBLEEEEM -- #
 class Centralize(Modifier):
     def __init__(self, parentNode : Node, scene : Node):
         super().__init__(parentNode, zindex = 100)
@@ -441,7 +443,7 @@ class Centralize(Modifier):
     def kill(self):
         self.scene.change(offset = Vector2(0, 0))
         super().kill()
-
+# -- ---- -- #
 
 #       ## - Mouse - ###
 
@@ -648,11 +650,18 @@ class ClickObject(Modifier):
             mouse = Vector2(int(position_in_screen.x / self.game.scale.x), int(position_in_screen.y / self.game.scale.y))
 
             for collision_area in self.parentNode.collision:
-                if collision_area.physics_layer == self.physics_check:
-                    for rect in collision_area.collision_blocks:
-                        if rect.rect.collidepoint(mouse):
-                            self.func()
-                            return
+                if not collision_area.active:
+                    continue
+
+                if collision_area.physics_layer != self.physics_check:
+                    continue
+
+                for rect in collision_area.collision_blocks:
+                    if not rect.active:
+                        continue
+                    if rect.rect.collidepoint(mouse):
+                        self.func()
+                        return
 
         super().event(event)
     
@@ -702,16 +711,21 @@ class HoldObject(Modifier):
     def event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and self.pressed(event):
 
-            position_in_screen = Vector2(pygame.mouse.get_pos()) - self.game.scenes.scenes[self.game.scenes.current_scene].position
+            position_in_screen = Vector2(event.pos) - self.game.scenes.scenes[self.game.scenes.current_scene].position
             mouse = Vector2(int(position_in_screen.x / self.game.scale.x), int(position_in_screen.y / self.game.scale.y))
 
             for collision_area in self.parentNode.collision:
-                if collision_area.physics_layer == self.physics_check:
-                    for rect in collision_area.collision_blocks:
-                        if rect.rect.collidepoint(mouse):
-                            self.holding = True
-                            return
-        
+                if not collision_area.active:
+                    continue
+
+                if collision_area.physics_layer != self.physics_check:
+                    continue
+
+                for rect in collision_area.collision_blocks:
+                    if rect.rect.collidepoint(mouse):
+                        self.holding = True
+                        return
+    
         elif event.type == pygame.MOUSEBUTTONUP and self.pressed(event):
             self.holding = False
             return
@@ -770,11 +784,14 @@ class Hover(Modifier):
         mouse = Vector2(int(position_in_screen.x / self.game.scale.x), int(position_in_screen.y / self.game.scale.y))
 
         for collision_area in self.parentNode.collision:
-            if collision_area.physics_layer == self.physics_check:
-                for rect in collision_area.collision_blocks:
-                    if rect.rect.collidepoint(mouse):
-                        self.func()
-                        did = True
+            if not collision_area.active:
+                continue
+            if collision_area.physics_layer != self.physics_check:
+                continue
+            for rect in collision_area.collision_blocks:
+                if rect.rect.collidepoint(mouse):
+                    self.func()
+                    did = True
         
         if not did and self.last_frame and self.else_func is not None:
             self.else_func()
@@ -803,21 +820,8 @@ class Hover(Modifier):
 class PressKey(Modifier):
     def __init__(self, parentNode : Node, key, function : callable, keydown : bool = True, mouse : bool = False):
         super().__init__(parentNode)
-        self.key = key
-        self.func = function
-
-        if mouse:
-            self.input_type = self.mouse
-            if keydown:
-                self.event_type = pygame.MOUSEBUTTONDOWN
-            else:
-                self.event_type = pygame.MOUSEBUTTONUP
-        else:
-            self.input_type = self.keyboard
-            if keydown:
-                self.event_type = pygame.KEYDOWN
-            else:
-                self.event_type = pygame.KEYUP
+        
+        self.change(key = key, func = function, keydown = keydown, mouse = mouse, active = True)
 
     def event(self, event):
         if event.type == self.event_type and self.input_type(event):
@@ -836,7 +840,7 @@ class PressKey(Modifier):
             self.key = key
         
         if func is not None:
-            self.func = function
+            self.func = func
 
         if keydown is not None:
             self.keydown = keydown
@@ -988,8 +992,8 @@ class OnCollideDo(Modifier):
         super().event(event)
     
     def update(self):
-        if self.checkForCollision(self.game.scenes.scenes[self.game.scenes.current_scene].children):
-            self.func
+        if self.checkForCollision(self.game.scenes.scenes[self.game.scenes.current_scene]):
+            self.func()
 
         super().update()
 
@@ -1023,18 +1027,41 @@ class OnCollideDo(Modifier):
         return collision_area.physics_layer in self.parent_physics
 
     def checkForCollision(self, parentNode):
-        for node in parentNode:
+        if not parentNode.active:
+            return False
+        
+        for node in parentNode.children:
+            if not node.active:
+                continue
+
             if hasattr(node, "collision"):
                 for collisionArea in node.collision:
-                    if collisionArea.physics_layer == self.physics_check:
-                        for collisionBlock in collisionArea.collision_blocks:
-                            for parentColArea in self.parentNode.collision:
-                                if self.parent_physics_check(parentColArea):
-                                    for parentRect in parentColArea.collision_blocks:
-                                        if parentRect.rect.colliderect(collisionBlock.rect):
-                                            return True
+                    if not collisionArea.active:
+                        continue
+
+                    if collisionArea.physics_layer != self.physics_check:
+                        continue
+
+                    for collisionBlock in collisionArea.collision_blocks:
+                        if not collisionBlock.active:
+                            continue
+
+                        for parentColArea in self.parentNode.collision:
+                            if not parentColArea.active:
+                                continue
+
+                            if not self.parent_physics_check(parentColArea):
+                                continue
+
+                            for parentRect in parentColArea.collision_blocks:
+                                if parentRect.rect.colliderect(collisionBlock.rect):
+                                    return True
+                                
             if hasattr(node, "children"):
-                self.checkForCollision(node)
+                if self.checkForCollision(node):
+                    return True
+            
+        return False
 
 class OnCollideBothObjects(Modifier):
     def __init__(self, parentNode : Node, func : callable, physics_check : int, parent_physics_layer : int = None):
@@ -1084,19 +1111,46 @@ class OnCollideBothObjects(Modifier):
         return collision_area.physics_layer in self.parent_physics
 
     def checkForCollision(self, parentNode):
-        if hasattr(parentNode, "children"):
-            for node in parentNode.children:
-                if hasattr(node, "collision"):
-                    for collisionArea in node.collision:
-                        if collisionArea.physics_layer == self.physics_check:
-                            for collisionBlock in collisionArea.collision_blocks:
-                                for parentColArea in self.parentNode.collision:
-                                    if self.parent_physics_check(parentColArea):
-                                        for parentRect in parentColArea.collision_blocks:
-                                            if parentRect.rect.colliderect(collisionBlock.rect):
-                                                return [True, node]
-                if hasattr(node, "children"):
-                    self.checkForCollision(node)
+        if not parentNode.active:
+            return False
+        
+        if not hasattr(parentNode, "children"):
+            return [False, None]
+        
+        for node in parentNode.children:
+            if not node.active:
+                continue
+
+            if not hasattr(node, "collision"):
+                continue
+
+            for collisionArea in node.collision:
+                if not collisionArea.active:
+                    continue
+
+                if collisionArea.physics_layer != self.physics_check:
+                    continue
+
+                for collisionBlock in collisionArea.collision_blocks:
+                    if not collisionBlock.active:
+                        continue
+                        
+                    for parentColArea in self.parentNode.collision:
+                        if not parentColArea.active:
+                            continue
+                        
+                        if not self.parent_physics_check(parentColArea):
+                            continue
+
+                        for parentRect in parentColArea.collision_blocks:
+                            if not parentRect.rect.colliderect(collisionBlock.rect):
+                                continue
+                            return [True, node]
+                                    
+            if hasattr(node, "children"):
+                found, collisionParent =  self.checkForCollision(node)
+                if found:
+                    return [True, collisionParent]
 
         return [False, None]
 

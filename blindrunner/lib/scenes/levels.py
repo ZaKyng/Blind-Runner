@@ -2,7 +2,7 @@ import pygame
 import os
 from ZaKnode import *
 
-from .lib import Button
+from ..lib import Button
 
 
 class Levels:
@@ -13,8 +13,10 @@ class Levels:
         self.background = nodes.SpriteBlock(self.scene, (300 * game.vw, 200 * game.vh), self.bg_image.image)
         collision = nodes.CollisionArea(self.background, 12)
         collision.addCollisionBlock(self.background.size)
-        modifiers.MouseDragMove(self.background, 12)
+        self.drag_move = modifiers.MouseDragMove(self.background, 12)
         modifiers.ForeverDo(self.background, self.snapBackground)
+
+        self.scene.change(onEntry = self.enterScene, onExit = self.exitScene)
 
         unlocked = resources.SpriteSheet(game.directory("assets/level_icons.png"), [32, 32], alpha_channel = True)
         locked = resources.SpriteSheet(game.directory("assets/locked_icons.png"), [32, 32], alpha_channel = True)
@@ -25,8 +27,17 @@ class Levels:
             oneLevel(self.background, key, level_node, levels[key], unlocked, locked, lock)
 
     def snapBackground(self):
-        self.background.change(offset = pygame.Vector2(min(0, max(self.background.offset.x, self.scene.game.orig_screen_size.x - self.background.size.x)), min(0, max(self.background.offset.y, self.scene.game.orig_screen_size.y - self.background.size.y))))
+        if 0 > self.background.offset.x or self.background.offset.x > self.scene.game.orig_screen_size.x - self.background.size.x or 0 >  self.background.offset.y or self.background.offset.y > self.scene.game.orig_screen_size.y - self.background.size.y:
+            self.background.change(offset = pygame.Vector2(min(0, max(self.background.offset.x, self.scene.game.orig_screen_size.x - self.background.size.x)), min(0, max(self.background.offset.y, self.scene.game.orig_screen_size.y - self.background.size.y))))
 
+
+    def enterScene(self):
+        self.drag_move.mouse_clicked = False
+        self.drag_move.change(active = True)
+        
+    def exitScene(self):
+        self.drag_move.mouse_clicked = False
+        self.drag_move.change(active = False)
 
 
 
@@ -37,6 +48,7 @@ class oneLevel:
         self.origin = nodes.BaseNode(parentNode, offset = self.level_data["offset"])
         self.sprite = nodes.TileMapBlock(self.origin, (self.origin.game.vh * 15, self.origin.game.vh * 15), icons1, [self.level_data["icon"], 0], offset_str = "center")
         self.collision = nodes.CollisionArea(self.origin, 7)
+        self.collision.addCollisionBlock(self.sprite.size, offset_str = "center")
         self.collision.addCollisionBlock(self.sprite.size - pygame.Vector2(0, self.sprite.size.y / 16 * 2), offset_str = "center")
         self.collision.addCollisionBlock(self.sprite.size - pygame.Vector2(self.sprite.size.y / 16 * 2, 0), offset_str = "center")
 
