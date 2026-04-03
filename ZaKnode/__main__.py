@@ -199,6 +199,8 @@ def run():
     for position in tiles:
         layer1.addTile(position, [0, 1])
 
+    modifiers.PressKey(tile_map_test, pygame.K_r, lambda: tile_map_test.change(one_tile_size = tile_map_test.tile_size + Vector2(2, 2)))
+
     
     music_player = modifiers.MusicPlayer(scene12)
 

@@ -931,7 +931,7 @@ class TileMap(Node):
                         if isinstance(tile, TileMapBlock):
                             tile.change(size = self.tile_size, offset = Vector2(tile.offset.x / old_size.x * self.tile_size.x, tile.offset.y / old_size.y * self.tile_size.y))
                     
-                    for collision_block in layer.collision_blocks:
+                    for collision_block in layer.collisionArea.collision_blocks:
                         collision_block.change(size = self.tile_size, offset = Vector2(tile.offset.x / old_size.x * self.tile_size.x, tile.offset.y / old_size.y * self.tile_size.y))
 
         super().nodeChange(zindex = zindex, active = active)

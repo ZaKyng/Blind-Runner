@@ -19,15 +19,16 @@ def run():
     menu.Menu(my_game)
     
     one_level = level.Level(my_game)
-    lib.ButtonText(my_game.scenes.scenes["level"], "Back", "main", lambda: my_game.scenes.changeScene("levels"), offset_str = "bottom-left", offset = [60, -30])
+    lib.ButtonText(my_game.scenes.scenes["level"], "Back", "main", lambda: my_game.scenes.changeScene("levels"), offset_str = "bottom-left")
     
     level_map = levels.Levels(my_game, one_level)
-    lib.ButtonText(my_game.scenes.scenes["levels"], "Back", "main", lambda: my_game.scenes.changeScene("menu"), offset_str = "bottom-left", offset = [60, -30])
+    lib.ButtonText(my_game.scenes.scenes["levels"], "Back", "main", lambda: my_game.scenes.changeScene("menu"), offset_str = "bottom-left")
 
     settings_scene = settings.Settings(my_game)
-    lib.ButtonText(my_game.scenes.scenes["settings"], "Back", "main", lambda: my_game.scenes.changeScene("menu"), offset_str = "bottom-left", offset = [60, -30])
+    lib.ButtonText(my_game.scenes.scenes["settings"], "Back", "main", lambda: my_game.scenes.changeScene("menu"), offset_str = "bottom-left")
 
     settings_scene.addFPSToScenes()
+
 
     def global_input(event):
         pass

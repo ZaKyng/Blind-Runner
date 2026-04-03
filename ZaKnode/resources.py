@@ -77,14 +77,17 @@ def SaveData(path, index, value):
             data[str(index)] = value
 
         with open(path, "w") as f:
-            json.dump(data, f)
+            json.dump(data, f, indent = 4)
     except:
         with open(path, "w") as f:
             data = {}
-            data[index] = value
-            json.dump(data, f)
+            data[str(index)] = value
+            json.dump(data, f, indent = 4)
 
 def SaveDataList(path, index : list, value : list):
+    if len(index) != len(value):
+        print("number of indexes and values doesnt match")
+        return "error"
     try:
         with open(path, "r") as f:
             data = json.load(f)
@@ -92,20 +95,20 @@ def SaveDataList(path, index : list, value : list):
                 data[str(index[num])] = value[num]
 
         with open(path, "w") as f:
-            json.dump(data, f)
+            json.dump(data, f, indent = 4)
     except:
         with open(path, "w") as f:
             data = {}
             for num in range(len(index)):
                 data[str(index[num])] = value[num]
-            json.dump(data, f)
+            json.dump(data, f, indent = 4)
 
 def ReadData(path, index = None):
     try:
         with open(path, "r") as f:
             data = json.load(f)
             if index is not None:
-                return data[index]
+                return data[str(index)]
             else:
                 return data
     except:

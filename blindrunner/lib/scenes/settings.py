@@ -8,15 +8,15 @@ class Settings:
     def __init__(self, game):
         self.scene = nodes.Scene("settings", game, bg_color = (26, 26, 26))
         self.changers = []
-        self.changers.append(IntChanger(self.scene, "FPS cap", game.tick_speed, self.changeFPS, offset = (0, 120)))
+        self.changers.append(IntChanger(self.scene, "FPS cap", game.tick_speed, self.changeFPS, step = 25, offset = (0, 120)))
         self.changers.append(Toggle(self.scene, "Show FPS", self.showFPS, offset = (0, 360)))
 
         self.fps_display = nodes.Label(self.scene, f"{1 / self.scene.game.delta} FPS", "main", "s", color = (10, 250, 10), zindex = 100, offset_str = "top-right")
         self.fps_display.change(active = False)
-        modifiers.ForeverDo(self.fps_display, lambda: self.fps_display.change(text = f"{int(1 / self.scene.game.delta)} FPS", offset_str = "top-right", offset = (-10, 10)))
+        modifiers.ForeverDo(self.fps_display, lambda: self.fps_display.change(text = f"{int(1 / max(self.scene.game.delta, 0.001))} FPS", offset_str = "top-right", offset = (-10, 10)))
     
     def changeFPS(self, num):
-        max_value = 300
+        max_value = 600
         if num < 0 and self.scene.game.tick_speed > max_value:
             self.scene.game.tick_speed = max_value
         else:
@@ -33,6 +33,7 @@ class Settings:
     def addFPSToScenes(self):
         for scene in list(self.scene.game.scenes.scenes.values()):
             scene.addChild(self.fps_display)
+            
 
 
 class IntChanger:

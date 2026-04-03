@@ -1,6 +1,10 @@
 import pygame
 from ZaKnode import *
-from ..lib import Button
+from ..lib import *
+
+
+
+
 
 
 class Menu:
@@ -19,10 +23,13 @@ class Menu:
         modifiers.AxisMove(self.image_node, start = self.image_node.offset.y - 20, end = self.image_node.offset.y + 20, axis = "y", speed = 10, mode = "ease-both", strength = 1.6)
 
 
-        special_button = pygame.Surface([120, 60])
-        special_button.fill((185, 20, 30))
-        special_button.blit(self.sprites.grid[0][1])
-        Button(self.scene, (120, 60), special_button, lambda: game.scenes.changeScene("dev_editor"), offset_str = "bottom-right", offset = (-60, -30))
+        ButtonText(self.scene, "reset", "main", lambda: hardReset(game), white_txt = False, offset_str = "bottom-right", offset = (-60, -30))
 
 
-        
+
+
+
+def hardReset(game):
+    backup = resources.ReadData(game.directory("levels_backup.txt"))
+
+    resources.SaveDataList(game.directory("test-levels.txt"), list(backup.keys()), list(backup.values()))
