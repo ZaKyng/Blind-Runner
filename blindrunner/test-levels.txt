@@ -7,7 +7,7 @@
             40
         ],
         "locked_by": [],
-        "finished": true,
+        "finished": false,
         "unlock": [
             2,
             3

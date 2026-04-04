@@ -9,7 +9,7 @@ from . import *
 # ----- Pygame setup ----- #
 def run():
     window_size = (1600, 900)
-    my_game = nodes.Game(window_size, __file__, fps = 120, screen_ratio = 16/9, over_flow_hidden = True)
+    my_game = nodes.Game(window_size, __file__, fps = 120, screen_ratio = 16/9, overflow_hidden = True)
     my_game.fonts.addFont("default", my_game.directory("assets/font1.ttf"))
 
     bonsai = resources.Image(my_game.directory("assets/bonsai.png"), alpha_channel = True)
@@ -218,8 +218,12 @@ def run():
 
     def scene_changing(event):
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                my_game.end()
+
             if event.key == pygame.K_UP:
                 my_game.scenes.changeScene(-1)
+                
             elif event.key == pygame.K_DOWN:
                 my_game.scenes.changeScene()
         

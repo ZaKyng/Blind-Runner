@@ -16,18 +16,20 @@ class Levels:
         collision.addCollisionBlock(self.background.size)
         self.drag_move = modifiers.MouseDragMove(self.background, 12)
         modifiers.ForeverDo(self.background, self.snapBackground)
+        modifiers.PressKey(self.scene, pygame.K_ESCAPE, lambda: game.scenes.changeScene("menu"))
 
         self.scene.change(onEntry = self.enterScene, onExit = self.exitScene)
 
-        unlocked = resources.SpriteSheet(game.directory("assets/level_icons.png"), [32, 32], alpha_channel = True)
-        locked = resources.SpriteSheet(game.directory("assets/locked_icons.png"), [32, 32], alpha_channel = True)
+        unlocked = resources.SpriteSheet(game.directory("assets/level-icons.png"), [32, 32], alpha_channel = True)
+        locked = resources.SpriteSheet(game.directory("assets/locked-icons.png"), [32, 32], alpha_channel = True)
+        check = resources.Image(game.directory("assets/level-check.png"), alpha_channel = True)
         lock = resources.Image(game.directory("assets/lock.png"), alpha_channel = True)
 
         self.level_array = []
         levels = resources.ReadData(game.directory("test-levels.txt"))
         if levels is not None and len(levels) > 0:
             for key in list(levels.keys()):
-                self.level_array.append(oneLevel(self.background, key, level_node, unlocked, locked, lock))
+                self.level_array.append(oneLevel(self.background, key, level_node, unlocked, locked, check, lock))
 
     def snapBackground(self):
         outside = False
@@ -65,7 +67,7 @@ class Levels:
 
 
 class oneLevel:
-    def __init__(self, parentNode, name, level_node, icons1, icons2, lock):
+    def __init__(self, parentNode, name, level_node, icons1, icons2, check, lock):
         self.parentNode = parentNode
         self.level_node = level_node
         self.name = name
@@ -77,6 +79,8 @@ class oneLevel:
         
         self.click_modifier = modifiers.ClickObject(self.origin, 7, lambda: self.enterLevel(name), button = 1)
         self.sprite = nodes.TileMapBlock(self.origin, (self.origin.game.vh * 15, self.origin.game.vh * 15), icons1, [level_data["icon"], 0], offset_str = "center")
+
+        self.check = nodes.SpriteBlock(self.origin, (self.origin.game.vh * 7.5, self.origin.game.vh * 5), check.image, zindex = 5, offset = (self.origin.game.vh * 2.5, self.origin.game.vh * 3))
 
         self.collision = nodes.CollisionArea(self.origin, 7)
         self.collision.addCollisionBlock(self.sprite.size - pygame.Vector2(0, self.sprite.size.y / 16 * 2), offset_str = "center")
@@ -119,6 +123,8 @@ class oneLevel:
             self.click_modifier.change(func = lambda: self.enterLevel(self.name))
 
             self.lock_node.change(active = False)
+
+        self.check.change(active = level_data["finished"])
     
 
 

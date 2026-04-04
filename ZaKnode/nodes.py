@@ -40,7 +40,7 @@ class default(Node):
 #   # -- Primary -- #
 
 class Game:
-    def __init__(self, window_size, file_location, name : str = "ZaKgame window", fps : int = 120, screen_ratio : float = None, over_flow_hidden : bool = False):
+    def __init__(self, window_size, file_location, name : str = "ZaKgame window", fps : int = 120, screen_ratio : float = None, overflow_hidden : bool = False):
         pygame.init()
         pygame.font.init()
         pygame.mixer.init()
@@ -57,32 +57,29 @@ class Game:
         self.fonts = FontManager(self)
         self.signals = SignalManager(self)
         self.scenes = SceneManager(self)
+        self.overflow = OverflowManager(self)
         
         
             
         self.size = Vector2(window_size)
         self.screen_ratio = screen_ratio
-        self.over_flow_hidden = over_flow_hidden
-        self.overflow_blocks = []
+        self.overflow.hidden = overflow_hidden
+
         if self.screen_ratio is None:
             self.screen_size = self.size
         else:
             if self.size.x / self.screen_ratio <= self.size.y:
                 self.screen_size = Vector2(self.size.x, self.size.x / self.screen_ratio)
 
-                if self.over_flow_hidden:
-                    for i in range(2):
-                        new_surface = pygame.surface.Surface((self.screen_size.x, (self.size.y - self.screen_size.y) / 2))
-                        new_surface.fill((0, 0, 0))
-                        self.overflow_blocks.append(new_surface)
+                self.overflow.updateOverflow(False)
+
             else:
                 self.screen_size = Vector2(self.size.y * self.screen_ratio, self.size.y)
 
-                if self.over_flow_hidden:
-                    for i in range(2):
-                        new_surface = pygame.surface.Surface(((self.size.x - self.screen_size.x) / 2, self.screen_size.y))
-                        new_surface.fill((0, 0, 0))
-                        self.overflow_blocks.append(new_surface)
+                self.overflow.updateOverflow(True)
+
+        
+        self.overflow_func = self.overflow.displayOverflow if self.overflow.overflow_blocks else self.nothing
 
         self.vw = self.screen_size.x / 100
         self.vh = self.screen_size.y / 100
@@ -136,9 +133,6 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        self.running = False
 
                 elif event.type == pygame.VIDEORESIZE:
                     self.windowResize(Vector2(event.size))
@@ -156,14 +150,7 @@ class Game:
             self.scenes.scenes[self.scenes.current_scene].update()
             self.scenes.scenes[self.scenes.current_scene].draw(self.scale)
 
-            if self.overflow_blocks:
-                self.screen.blit(self.overflow_blocks[0], (0, 0))
-                if self.size.x / self.screen_ratio <= self.size.y:
-                    position = (0, (self.size.y + self.screen_size.y) / 2) 
-                else:
-                    position = ((self.size.x + self.screen_size.x) / 2, 0)
-
-                self.screen.blit(self.overflow_blocks[1], position)
+            self.overflow_func()
 
             pygame.display.flip()
         
@@ -186,33 +173,28 @@ class Game:
 
     def windowResize(self, new_size):
         self.signals.setOffSignal("window_size_changed")
+    
+        self.size = new_size
+        self.screen = pygame.display.set_mode(self.size, pygame.RESIZABLE)
+
         if self.screen_ratio is None:
             new_screen_size = new_size
         else:
             if new_size.x / self.screen_ratio <= new_size.y:
                 new_screen_size = Vector2(new_size.x, new_size.x / self.screen_ratio)
+                self.screen_size = new_screen_size
+                
+                self.overflow.updateOverflow(False)
 
-                if self.over_flow_hidden:
-                    self.overflow_blocks.clear()
-                    for i in range(2):
-                        new_surface = pygame.surface.Surface((new_screen_size.x, (new_size.y - new_screen_size.y) / 2 + 5 if i == 1 else (new_size.y - new_screen_size.y) / 2))
-                        new_surface.fill((0, 0, 0))
-                        self.overflow_blocks.append(new_surface)
             else:
                 new_screen_size = Vector2(new_size.y * self.screen_ratio, new_size.y)
+                self.screen_size = new_screen_size
 
-                if self.over_flow_hidden:
-                    self.overflow_blocks.clear()
-                    for i in range(2):
-                        new_surface = pygame.surface.Surface(((new_size.x - new_screen_size.x) / 2 + 5 if i == 1 else (new_size.x - new_screen_size.x) / 2, new_screen_size.y))
-                        new_surface.fill((0, 0, 0))
-                        self.overflow_blocks.append(new_surface)
-            
-        self.size = new_size
+                self.overflow.updateOverflow(True)
+        
+
+        
         self.scale = Vector2(new_screen_size.x / self.orig_screen_size.x, new_screen_size.y / self.orig_screen_size.y)
-        self.screen = pygame.display.set_mode(self.size, pygame.RESIZABLE)
-
-        self.screen_size = new_screen_size
     
         """for name in self.fonts.fonts.keys():
             self.fonts.updateFont(name)"""
@@ -220,6 +202,9 @@ class Game:
         for scene in self.scenes.scenes.values():
             scene.change(offset = Vector2((self.size.x - self.screen_size.x) / 2, (self.size.y - self.screen_size.y) / 2))
         
+    def nothing(self):
+        pass
+
     def gameDraw(self, surface, node, scale):
         self.screen.blit(pygame.transform.scale(surface, Vector2(node.size.x * scale.x, node.size.y * scale.y)), Vector2((node.position.x - self.scenes.scenes[self.scenes.current_scene].position.x) * scale.x + self.scenes.scenes[self.scenes.current_scene].position.x, (node.position.y - self.scenes.scenes[self.scenes.current_scene].position.y) * scale.y + self.scenes.scenes[self.scenes.current_scene].position.y))
 
@@ -320,6 +305,39 @@ class SceneManager:
 
     def removeScene(self, name):
         self.scenes.pop(name)
+
+class OverflowManager:
+    def __init__(self, game = Game):
+        self.game = game
+        self.hidden = False
+
+        self.overflow_blocks = []
+    
+    def updateOverflow(self, wider = True):
+        if not self.hidden:
+            return
+        
+        if wider:
+            size = ((self.game.size.x - self.game.screen_size.x) / 2, self.game.screen_size.y)
+        else:
+            size = (self.game.screen_size.x, (self.game.size.y - self.game.screen_size.y) / 2)
+
+        self.overflow_blocks.clear()
+
+        for i in range(2):
+            new_surface = pygame.surface.Surface(size)
+            new_surface.fill((0, 0, 0))
+            self.overflow_blocks.append(new_surface)
+    
+    def displayOverflow(self):
+        self.game.screen.blit(self.overflow_blocks[0], (0, 0))
+
+        if self.game.size.x / self.game.screen_ratio <= self.game.size.y:
+            position = (0, (self.game.size.y + self.game.screen_size.y) / 2) 
+        else:
+            position = ((self.game.size.x + self.game.screen_size.x) / 2, 0)
+
+        self.game.screen.blit(self.overflow_blocks[1], position)
 
 
 class Scene(Node):
@@ -673,8 +691,8 @@ class ColorBlock(Node):
         if alpha_channel is not None:
             self.alpha_channel = alpha_channel
 
-        if self.alpha_channel:
-            self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
+        if alpha_channel is not None:
+            self.surface = pygame.Surface(self.size, pygame.SRCALPHA if self.alpha_channel else None)
         elif size is not None:
             self.surface = pygame.Surface(self.size)
         

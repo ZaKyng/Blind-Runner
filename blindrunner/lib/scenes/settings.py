@@ -1,6 +1,7 @@
 import pygame
 from ZaKnode import *
 from ..lib import Button
+from ..lib import ButtonText
 
 
 
@@ -9,11 +10,15 @@ class Settings:
         self.scene = nodes.Scene("settings", game, bg_color = (26, 26, 26))
         self.changers = []
         self.changers.append(IntChanger(self.scene, "FPS cap", game.tick_speed, self.changeFPS, step = 25, offset = (0, 120)))
-        self.changers.append(Toggle(self.scene, "Show FPS", self.showFPS, offset = (0, 360)))
+        self.changers.append(Toggle(self.scene, "Show FPS", self.showFPS, offset = (0, 280)))
+        self.changers.append(ButtonText(self.scene, "Factory reset", "main", lambda: self.hardReset(game), white_txt = False, offset_str = "top", offset = (0, 420)))
 
         self.fps_display = nodes.Label(self.scene, f"{1 / self.scene.game.delta} FPS", "main", "s", color = (10, 250, 10), zindex = 100, offset_str = "top-right")
         self.fps_display.change(active = False)
         modifiers.ForeverDo(self.fps_display, lambda: self.fps_display.change(text = f"{int(1 / max(self.scene.game.delta, 0.001))} FPS", offset_str = "top-right", offset = (-10, 10)))
+
+        
+        modifiers.PressKey(self.scene, pygame.K_ESCAPE, lambda: game.scenes.changeScene("menu"))
     
     def changeFPS(self, num):
         max_value = 600
@@ -33,6 +38,11 @@ class Settings:
     def addFPSToScenes(self):
         for scene in list(self.scene.game.scenes.scenes.values()):
             scene.addChild(self.fps_display)
+
+    def hardReset(self, game):
+        backup = resources.ReadData(game.directory("levels_backup.txt"))
+
+        resources.SaveDataList(game.directory("test-levels.txt"), list(backup.keys()), list(backup.values()))
             
 
 

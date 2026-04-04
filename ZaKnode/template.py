@@ -1,3 +1,4 @@
+import pygame
 from ZaKnode import *
 
 # ----- Pygame setup ----- #
@@ -6,6 +7,9 @@ def run():
     my_game = nodes.Game(screen_size, __file__, fps = 120)
 
     def global_input(event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                my_game.end()
         pass
 
     def test():
