@@ -1,6 +1,6 @@
 [project]
 name = "BlindRunner"
-version = "0.1"
+version = "0.2"
 authors = [
   { name="Olievr Jan Pohl", email="zakyng32@gmail.com" },
 ]
@@ -22,7 +22,7 @@ packages = ["blindrunner", "ZaKnode"]
 dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools.package-data]
-"*" = ["img/*"]
+"*" = ["assets/*"]
 
 [project.scripts]
 game = "blindrunner.__main__:run"
