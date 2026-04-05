@@ -1,0 +1,1 @@
+{"name": "nigga", "icon": 1, "offset": [250, 300], "locked": True}

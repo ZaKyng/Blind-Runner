@@ -8,5 +8,5 @@ a = {
   "rank": "A"
 }
 
-with open("txt_test/level.txt", "w") as f:
+with open("level.txt", "w") as f:
     json.dump(a, f)

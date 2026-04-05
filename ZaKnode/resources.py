@@ -1,4 +1,6 @@
 import os
+import sys
+import json
 import pygame
 from pygame import Vector2
 
@@ -8,10 +10,13 @@ from pygame import Vector2
 
 ## ----- Visual ----- ##
 
-def directory(src):
-    return os.path.join(os.path.dirname(__file__), src)
 
-class LoadImage:
+def directory(file, src : str):
+    base_path = os.path.dirname(os.path.abspath(file))
+
+    return os.path.normpath(os.path.join(base_path, src))
+
+class Image:
     def __init__(self, path, alpha_channel = False):
         self.path = path
         self.rawImage = pygame.image.load(path)
@@ -25,7 +30,7 @@ class LoadImage:
 
         self.rawImage = None
 
-class LoadImageGrid:
+class SpriteSheet:
     def __init__(self, path, oneFrameSize, alpha_channel = False):
         self.path = path
         self.rawImage = pygame.image.load(path)
@@ -49,14 +54,62 @@ class LoadImageGrid:
 class Animation:
     def __init__(self, framesArr, start, end):
         if start > end:
-            temp = end
-            end = start
-            start = temp
+            end, start = start, end
 
         self.frames = []
         for i in range(end - start + 1):
             frame = i + start
             x = frame % max(len(framesArr), 1)
-            y = frame // max(len(framesArr[0]), 1)
+            y = frame / max(len(framesArr), 1)
             self.frames.append(framesArr[int(x)][int(y)])
 
+class Sound:
+    def __init__(self, path, volume : float = 1):
+        self.sound = pygame.mixer.Sound(path)
+        self.volume = max(0, min(volume, 1))
+        self.sound.set_volume(self.volume)
+
+
+def SaveData(path, index, value):
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+            data[str(index)] = value
+
+        with open(path, "w") as f:
+            json.dump(data, f, indent = 4)
+    except:
+        with open(path, "w") as f:
+            data = {}
+            data[str(index)] = value
+            json.dump(data, f, indent = 4)
+
+def SaveDataList(path, index : list, value : list):
+    if len(index) != len(value):
+        print("number of indexes and values doesnt match")
+        return "error"
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+            for num in range(len(index)):
+                data[str(index[num])] = value[num]
+
+        with open(path, "w") as f:
+            json.dump(data, f, indent = 4)
+    except:
+        with open(path, "w") as f:
+            data = {}
+            for num in range(len(index)):
+                data[str(index[num])] = value[num]
+            json.dump(data, f, indent = 4)
+
+def ReadData(path, index = None):
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+            if index is not None:
+                return data[str(index)]
+            else:
+                return data
+    except:
+        return None
