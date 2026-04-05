@@ -206,7 +206,16 @@ class Game:
         pass
 
     def gameDraw(self, surface, node, scale):
-        self.screen.blit(pygame.transform.scale(surface, Vector2(node.size.x * scale.x, node.size.y * scale.y)), Vector2((node.position.x - self.scenes.scenes[self.scenes.current_scene].position.x) * scale.x + self.scenes.scenes[self.scenes.current_scene].position.x, (node.position.y - self.scenes.scenes[self.scenes.current_scene].position.y) * scale.y + self.scenes.scenes[self.scenes.current_scene].position.y))
+        scene = self.scenes.scenes[self.scenes.current_scene]
+
+        position = Vector2((node.position.x - scene.position.x) * scale.x + scene.position.x, (node.position.y - scene.position.y) * scale.y + scene.position.y)
+
+        size = Vector2(node.size.x * scale.x, node.size.y * scale.y)
+
+        if position.x + size.x < scene.position.x or position.y + size.y < scene.position.y or position.x > self.screen_size.x + scene.position.x or position.y > self.screen_size.y + scene.position.y:
+            return
+        
+        self.screen.blit(pygame.transform.scale(surface, size), position)
 
 class FontManager:
     def __init__(self, game = Game):
@@ -686,15 +695,13 @@ class ColorBlock(Node):
             self.orig_size = self.size
 
         if color is not None:
-            self.color = color
+            self.color = Color(color)
         
         if alpha_channel is not None:
             self.alpha_channel = alpha_channel
 
-        if alpha_channel is not None:
-            self.surface = pygame.Surface(self.size, pygame.SRCALPHA if self.alpha_channel else None)
-        elif size is not None:
-            self.surface = pygame.Surface(self.size)
+        if size is not None or alpha_channel is not None:
+            self.surface = pygame.Surface(self.size, pygame.SRCALPHA if self.alpha_channel else 0)
         
         if size is not None or color is not None:
             self.surface.fill(self.color)
@@ -1003,7 +1010,7 @@ class TileMapLayer(Node):
         for tile in self.children:
             if isinstance(tile, TileMapBlock):
                 if tile.offset == Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]):
-                    tile.chnage(coords = tile_coords)
+                    tile.change(coords = tile_coords)
                     return
     
     def killTile(self, coords):

@@ -5,21 +5,27 @@ from ZaKnode import *
 from ..lib import *
 
 
-class PlayerLevels:
+class LevelEditor:
     def __init__(self, game : nodes.Game):
-        self.scene = nodes.Scene("level_lib", game, bg_color = (30, 176, 57))
+        self.scene = nodes.Scene("level_editor", game, bg_color = (150, 60, 105))
 
+        self.name = None
+        self.label = nodes.Label(self.scene, "Editor", "main", "xl", offset_str = "top")
 
-        modifiers.PressKey(self.scene, pygame.K_ESCAPE, lambda: game.scenes.changeScene("menu"))
+        modifiers.PressKey(self.scene, pygame.K_ESCAPE, lambda: self.scene.game.scenes.changeScene("editor_menu"))
 
 
 
     def load(self, name):
-        self.pause_menu.change(active = False)
-        self.name = name
+        if isinstance(name, str):
+            self.name = name
+            level_data = resources.ReadData(self.scene.game.directory("player_levels/" + name))
 
-        level_data = resources.ReadData(self.scene.game.directory("test-levels.txt"), name)
-        
-        self.label.change(text = str(name))
+
+        else:
+            self.name = "new_level.txt"
+
+        self.label.change(text = "Editing " + self.name.removesuffix(".txt"), offset_str = "top")
+    
 
 

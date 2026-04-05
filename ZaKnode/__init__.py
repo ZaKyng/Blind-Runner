@@ -3,5 +3,5 @@ from .nodes import *
 from .resources import *
 from .objects import *
 
-__all__ = ["nodes", "modifiers", "resources", "objects"]
+__all__ = ["nodes", "modifiers", "resources", "objects"] # controls import * (intended)(fail safe)
 

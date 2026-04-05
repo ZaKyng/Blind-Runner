@@ -4,11 +4,8 @@ import pygame
 from pygame import Vector2
 from ZaKnode import *
 from .lib import lib
-from .lib.scenes import menu
-from .lib.scenes import level
-from .lib.scenes import levels
-from .lib.scenes import level_editor
-from .lib.scenes import settings
+from .lib.scenes import *
+
 
 # ----- Pygame setup ----- #
 def run():
@@ -17,17 +14,24 @@ def run():
 
     my_game.fonts.addFont("main", my_game.directory("assets/starfish_font.ttf"), 4)
 
-    menu.Menu(my_game)
-    
-    one_level = level.Level(my_game)
-    
-    level_map = levels.Levels(my_game, one_level)
-
-    level_editor.PlayerLevels(my_game)
-
     settings_scene = settings.Settings(my_game)
 
+    menu.Menu(my_game, settings_scene)
+    
+    one_story_level = ingame_level_play.Level(my_game, settings_scene)
+    
+    level_map.Levels(my_game, one_story_level)
+
+    one_player_level = player_level_play.Level(my_game, settings_scene)
+
+    editor = level_editor.LevelEditor(my_game)
+
+    editor_menu.PlayerLevels(my_game, one_player_level, editor)
+
     settings_scene.addFPSToScenes()
+
+
+    my_game.scenes.current_scene = "menu"
 
 
     def global_input(event):

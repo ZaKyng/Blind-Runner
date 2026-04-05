@@ -7,7 +7,9 @@ from ..lib import Button
 
 class Levels:
     def __init__(self, game : nodes.Game, level_node):
-        self.scene = nodes.Scene("levels", game, bg_color = (0, 0, 0))
+        self.name = "levels"
+
+        self.scene = nodes.Scene(self.name, game, bg_color = (0, 0, 0))
 
         self.bg_image = resources.Image(game.directory("assets/blindrunner-map.png"))
         self.background = nodes.SpriteBlock(self.scene, (296 * game.vh, 184 * game.vh), self.bg_image.image, offset = (-20 * game.vh, -20 * game.vh))
@@ -99,7 +101,7 @@ class oneLevel:
     
     def enterLevel(self, name):
         self.level_node.load(name)
-        self.origin.game.scenes.changeScene("level")
+        self.origin.game.scenes.changeScene("ingame_level")
             
     def clickLocked(self):
         self.resetLock()

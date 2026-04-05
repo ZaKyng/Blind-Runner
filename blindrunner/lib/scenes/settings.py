@@ -7,7 +7,11 @@ from ..lib import ButtonText
 
 class Settings:
     def __init__(self, game):
-        self.scene = nodes.Scene("settings", game, bg_color = (26, 26, 26))
+        self.last_scene = "main"
+
+        self.name = "settings"
+
+        self.scene = nodes.Scene(self.name, game, bg_color = (26, 26, 26))
         self.changers = []
         self.changers.append(IntChanger(self.scene, "FPS cap", game.tick_speed, self.changeFPS, step = 25, offset = (0, 120)))
         self.changers.append(Toggle(self.scene, "Show FPS", self.showFPS, offset = (0, 280)))
@@ -18,7 +22,7 @@ class Settings:
         modifiers.ForeverDo(self.fps_display, lambda: self.fps_display.change(text = f"{int(1 / max(self.scene.game.delta, 0.001))} FPS", offset_str = "top-right", offset = (-10, 10)))
 
         
-        modifiers.PressKey(self.scene, pygame.K_ESCAPE, lambda: game.scenes.changeScene("menu"))
+        modifiers.PressKey(self.scene, pygame.K_ESCAPE, lambda: game.scenes.changeScene(self.last_scene))
     
     def changeFPS(self, num):
         max_value = 600
@@ -43,6 +47,12 @@ class Settings:
         backup = resources.ReadData(game.directory("levels_backup.txt"))
 
         resources.SaveDataList(game.directory("test-levels.txt"), list(backup.keys()), list(backup.values()))
+
+        self.scene.game.scenes.changeScene("menu")
+    
+    def open(self, scene):
+        self.last_scene = scene
+        self.scene.game.scenes.changeScene(self.name)
             
 
 
