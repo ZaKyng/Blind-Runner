@@ -19,7 +19,8 @@ class Settings:
 
         self.fps_display = nodes.Label(self.scene, f"{1 / self.scene.game.delta} FPS", "main", "s", color = (10, 250, 10), zindex = 100, offset_str = "top-right")
         self.fps_display.change(active = False)
-        modifiers.ForeverDo(self.fps_display, lambda: self.fps_display.change(text = f"{int(1 / max(self.scene.game.delta, 0.001))} FPS", offset_str = "top-right", offset = (-10, 10)))
+        modifiers.ForeverDo(self.fps_display, self.updateFPS)
+        self.display_update = 0.0
 
         
         modifiers.PressKey(self.scene, pygame.K_ESCAPE, lambda: game.scenes.changeScene(self.last_scene))
@@ -38,6 +39,13 @@ class Settings:
 
     def showFPS(self, state):
         self.fps_display.change(active = state)
+    
+    def updateFPS(self):
+        self.display_update += self.scene.game.delta
+        if self.display_update >= 0.4:
+            self.fps_display.change(text = f"{int(1 / max(self.scene.game.delta, 0.0001))} FPS", offset_str = "top-right", offset = (-10, 10))
+            self.display_update = 0
+
     
     def addFPSToScenes(self):
         for scene in list(self.scene.game.scenes.scenes.values()):

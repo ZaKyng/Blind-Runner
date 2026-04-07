@@ -32,6 +32,6 @@ class Level:
         self.label.change(text = name.removesuffix(".txt"), offset_str = "top")
     
     def finish(self):
-        print(str(self.level_name) + "is finished")
+        print(str(self.level_name) + " is finished")
 
 

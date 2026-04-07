@@ -75,7 +75,6 @@
         ],
         "finished": false,
         "unlock": [
-            4,
             5
         ],
         "level": {

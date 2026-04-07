@@ -22,7 +22,15 @@ packages = ["blindrunner", "ZaKnode"]
 dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools.package-data]
-"*" = ["img/*"]
+blindrunner = [
+    "assets/*",
+    "ingame_levels/*",
+    "player_levels/*",
+    "lib/**/*",
+    "*.txt"
+]
+
+Zaknode = ["assets/**/*"]
 
 [project.scripts]
 game = "blindrunner.__main__:run"
