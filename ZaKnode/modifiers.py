@@ -929,6 +929,30 @@ class HoldKey(Modifier):
     def keyboard(self, event):
         return event.key == self.key
 
+class OnEventFunc(Modifier):
+    def __init__(self, parentNode : Node, func : callable):
+        super().__init__(parentNode)
+        self.change(func = func)
+
+    def event(self, event):
+        self.func(event)
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
+
+    def change(self, func : callable = None, active : bool = None):
+        if func is not None:
+            self.func = func
+
+        super().modifierChange(active)
+
+    def kill(self):
+        super().kill()
+
 class ForeverDo(Modifier):
     def __init__(self, parentNode : Node, func : callable):
         super().__init__(parentNode)
