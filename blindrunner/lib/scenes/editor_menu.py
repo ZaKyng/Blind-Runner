@@ -14,6 +14,8 @@ class PlayerLevels:
         self.gap = 60
         self.button_size = (65 * game.vw, 12 * game.vh)
 
+        self.buttons_list = []
+
         self.scene = nodes.Scene(self.name, game, bg_color = (0, 0, 0), onEntry = self.enterScene, onExit = self.exitScene)
 
         modifiers.PressKey(self.scene, pygame.K_ESCAPE, lambda: game.scenes.changeScene("menu"))
@@ -42,17 +44,24 @@ class PlayerLevels:
         self.drag_move.change(active = False)
 
     def load(self):
+        for button in self.buttons_list[:]:
+            button.body.kill()
+
         offset_y = self.gap + self.label.size.y + self.gap
 
         levels_folder = self.scene.game.directory("player_levels")
 
+        last_y_size = 0
+
         for file_name in os.listdir(levels_folder):
             last_level = levelButton(self, file_name, offset_y)
+            self.buttons_list.append(last_level)
+            last_y_size = last_level.body.size.y
             offset_y += last_level.body.size.y + self.gap
 
         self.add_button.origin.change(offset_str = "top", offset = (0, offset_y + self.button_size[1] / 2))
 
-        offset_y += last_level.body.size.y + self.gap
+        offset_y += last_y_size + self.gap
         
         self.background.change(size = (self.background.size.x, max(offset_y + self.gap, self.background.game.vh * 100)))
         self.background.collision[0].collision_blocks[0].change(size = self.background.size)

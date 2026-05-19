@@ -7,7 +7,7 @@
             40
         ],
         "locked_by": [],
-        "finished": false,
+        "finished": true,
         "unlock": [
             2,
             3
@@ -26,9 +26,7 @@
             36,
             87
         ],
-        "locked_by": [
-            1
-        ],
+        "locked_by": [],
         "finished": false,
         "unlock": [
             4
@@ -47,9 +45,7 @@
             100,
             40
         ],
-        "locked_by": [
-            1
-        ],
+        "locked_by": [],
         "finished": false,
         "unlock": [
             4,
