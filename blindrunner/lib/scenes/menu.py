@@ -11,7 +11,7 @@ class Menu:
     def __init__(self, game, settings_node):
         self.name = "menu"
 
-        self.scene = nodes.Scene(self.name, game, bg_color = (30, 64, 210))
+        self.scene = nodes.Scene(self.name, game, bg_color = (130, 50, 50))
 
         self.buttons = nodes.BaseNode(self.scene, offset_str = "center", offset = (520, -300))
         self.sprites = resources.SpriteSheet(game.directory("assets/buttons1.png"), (128, 64), alpha_channel = True)

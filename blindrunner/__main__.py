@@ -9,7 +9,7 @@ from .lib.scenes import *
 
 # ----- Pygame setup ----- #
 def run():
-    screen_size = (1980, 1080)
+    screen_size = (1920, 1080)
     my_game = nodes.Game(screen_size, __file__, fps = 240, screen_ratio = 16/9, overflow_hidden = True)
 
     my_game.fonts.addFont("main", my_game.directory("assets/starfish_font.ttf"), 4)
