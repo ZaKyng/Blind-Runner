@@ -6,21 +6,34 @@ from ..lib import *
 
 
 class LevelEditor:
-    def __init__(self, game : nodes.Game):
-        self.scene = nodes.Scene("level_editor", game, bg_color = (150, 60, 105))
+    def __init__(self, game : nodes.Game, global_assets : dict):
+        self.scene = nodes.Scene("level_editor", game, bg_color = (224, 130, 185))
 
         modifiers.OnEventFunc(self.scene, self.nameChanger)
 
-        self.level_node = EditorWindow(self.scene)
+        self.default_data = {
+            "tile_count_x" : 20,
+            "tile_set" : 0,
+            "player_spawn" : [1, 1],
+            "finish" : [2, 1],
+            "possible" : False,
+            "finished" : False,
+            "spikes" : [],
+            "ground" : [],
+            "g_enemy" : [],
+            "f_enemy" : []
+        }
+
+        self.level_node = EditorWindow(self.scene, self.default_data, global_assets)
 
         self.name = None
         self.old_name = None
         self.changing_name = False
 
-        self.top_bar = nodes.ColorBlock(self.scene, (self.scene.size[0], 140), color = (132, 66, 244), offset = (0, 0), zindex = 5)
+        self.top_bar = nodes.ColorBlock(self.scene, (self.scene.size[0], 180), color = (132, 66, 244), offset = (0, 0), zindex = 5)
         
-        self.little_label = nodes.Label(self.scene, "Editor", "main", "s", offset_str = "top", offset = (0, 0), zindex = 10)
-        self.label = nodes.Label(self.scene, "Editor", "main", "l", offset_str = "top", offset = (0, 50), zindex = 10)
+        self.little_label = nodes.Label(self.scene, "Editor", "main", "s", offset_str = "top", offset = (0, 30), zindex = 10)
+        self.label = nodes.Label(self.scene, "Editor", "main", "l", offset_str = "top", offset = (0, 90), zindex = 10)
         nodes.CollisionArea(self.label, 18).addCollisionBlock((self.label.size[0] + 20, self.label.size[1] + 20), offset_str = "center")
 
         modifiers.ClickObject(self.label, 18, function = self.changeName, button = 1)
@@ -39,25 +52,16 @@ class LevelEditor:
                     self.name += "_"
             self.name += ".txt"
 
-            default_data = {
-                "tile_count_x" : 20,
-                "tile_set" : 0,
-                "player_spawn" : [1, 1],
-                "finish" : [2, 1],
-                "possible" : False,
-                "finished" : False,
-                "spikes" : [],
-                "ground" : []
-            }
+            level_data = self.default_data
 
-            for index in list(default_data.keys()):
-                resources.SaveData(self.scene.game.directory("player_levels/" + self.name), index, default_data[index])
+            for index in list(level_data.keys()):
+                resources.SaveData(self.scene.game.directory("player_levels/" + self.name), index, level_data[index])
             
-            level_data = default_data
+            
             
         self.level_node.load(level_data, self.name)
 
-        self.label.change(text = self.name.removesuffix(".txt"), offset_str = "top", offset = (0, 50))
+        self.label.change(text = self.name.removesuffix(".txt").upper(), offset_str = "top", offset = (0, 90))
         self.label.collision[0].change(size = self.label.size, offset_str = "center")
         self.label.collision[0].children[0].change(size = (self.label.size[0] + 20, self.label.size[1] + 20), offset_str = "center")
     
@@ -76,7 +80,9 @@ class LevelEditor:
     def changeName(self):
         pygame.key.start_text_input()
         self.changing_name = True
-        self.old_name = self.name
+        self.old_name = "new_level.txt"
+        if self.name != "":
+            self.old_name = self.name
         self.name = ""
         self.label.change(color = (90, 190, 90))
     
@@ -112,7 +118,7 @@ class LevelEditor:
                 if os.path.exists(self.scene.game.directory(old_file)):
                     os.rename(self.scene.game.directory(old_file), self.scene.game.directory("player_levels/" + self.name.lower()))
 
-                self.label.change(text = self.name.removesuffix(".txt"), color = (255, 255, 255), offset_str = "top", offset = (0, 50))
+                self.label.change(text = self.name.removesuffix(".txt").upper(), color = (255, 255, 255), offset_str = "top", offset = (0, 90))
                 self.nameCollisionUpdate()
 
                 self.level_node.name = self.name
@@ -122,7 +128,7 @@ class LevelEditor:
                 self.name = self.name[:-1]
         
         if update:
-            self.label.change(text = self.name, offset_str = "top", offset = (0, 50))
+            self.label.change(text = self.name.upper(), offset_str = "top", offset = (0, 90))
             self.nameCollisionUpdate()
             
 
@@ -131,37 +137,26 @@ class LevelEditor:
         self.label.collision[0].children[0].change(size = (self.label.size[0] + 20, self.label.size[1] + 20), offset_str = "center")
 
 class EditorWindow:
-    def __init__(self, parentNode):
+    def __init__(self, parentNode, default_data, global_assets):
         self.parentNode = parentNode
+        self.level_data = default_data
 
-        self.level_data = {
-            "tile_count_x" : 20,
-            "tile_set" : 0,
-            "player_spawn" : [1, 1],
-            "finish" : [2, 1],
-            "possible" : False,
-            "finished" : False,
-            "spikes" : [],
-            "ground" : []
-        }
+        self.global_assets = global_assets
 
         self.loading = False
 
-        self.window = nodes.ColorBlock(parentNode, (parentNode.size[0], parentNode.size[1] - 140), color = (0, 0, 0, 200), alpha_channel = True, offset = (0, 140))
+        self.window = nodes.ColorBlock(parentNode, (parentNode.size[0], parentNode.size[1] - 180), color = (0, 0, 0, 0), alpha_channel = True, offset = (0, 180))
 
-        self.tile_node = []
-        self.tile_node.append(resources.SpriteSheet(self.parentNode.game.directory("assets/test_tiles1.png"), (4, 4)))
-        self.tile_node.append(resources.SpriteSheet(self.parentNode.game.directory("assets/test_tiles2.png"), (4, 4)))
-        self.tile_node.append(resources.SpriteSheet(self.parentNode.game.directory("assets/test_tiles3.png"), (4, 4)))
-
+        self.side_panel = nodes.ColorBlock(self.window, (320, self.window.size[1]), color = (80, 80, 80), offset_str = "right", zindex = 10)
+        self.background = nodes.SpriteBlock(self.window, (self.window.size[0] - self.side_panel.size[0], self.window.size[1]), self.global_assets["backgrounds"][0].image, zindex = -10)
 
         self.grid_encloser = nodes.BaseNode(self.window, zindex = 4)
-        self.grid_maxs = (self.window.size[0] - 400, self.window.size[1])
+        self.grid_maxs = self.background.size.copy()
 
-        self.level_grid = nodes.TileMap(self.grid_encloser, self.tile_node[0], (10, 10), zindex = 4)
+        self.level_grid = nodes.TileMap(self.grid_encloser, self.global_assets["tile_maps"][0], (10, 10), zindex = 4)
         self.ground = self.level_grid.addLayer()
 
-        self.blocks = ["ground", "player_spawn", "finish", "spike", "enemy_1"]
+        self.blocks = ["ground", "player_spawn", "finish", "spike", "g_enemy", "f_enemy"]
         self.noneditible = []
         self.selected_block = 0
 
@@ -180,40 +175,39 @@ class EditorWindow:
 
         arrows = resources.SpriteSheet(self.parentNode.game.directory("assets/arrows.png"), (16, 16), True)
 
-        self.side_panel = nodes.ColorBlock(self.window, (400, self.window.size[1]), color = (80, 80, 80), offset_str = "right", zindex = 10)
-
-        self.tile_resize = {"box" : nodes.BaseNode(self.side_panel, zindex = 1)}
-
-        self.tile_resize["label"] = nodes.Label(self.tile_resize["box"], "Tile Size", "main", "xs", offset = (140, 10), zindex = 2)
-        self.tile_resize["bigger"] = Button(self.tile_resize["box"], (75, 75), arrows.grid[0][0], lambda: self.changeTileCount(self.level_data["tile_count_x"] + 1), higherBy = 2, offset = (64, 64))
-        self.tile_resize["text"] = nodes.Label(self.tile_resize["box"], str(self.level_data["tile_count_x"]), "main", "l", offset = (140, 45), zindex = 2)
-        self.tile_resize["smaller"] = Button(self.tile_resize["box"], (75, 75), arrows.grid[0][1], lambda: self.changeTileCount(self.level_data["tile_count_x"] - 1), higherBy = 2, offset = (340, 64))
-
-
-        separator = []
-        separator.append(nodes.ColorBlock(self.side_panel, (380, 4), color = (40, 40, 40), offset_str = "top", offset = (0, 130), zindex = 10))
-        separator.append(nodes.ColorBlock(self.side_panel, (380, 4), color = (40, 40, 40), offset_str = "top", offset = (0, 200), zindex = 10))
-
-        self.design_changer = {"box" : nodes.BaseNode(self.side_panel, zindex = 1, offset = (30, 170))}
-        self.level_icons = resources.SpriteSheet(self.parentNode.game.directory("assets/level-icons.png"), (32, 32), True)
-        self.design_changer["icon"] = nodes.SpriteBlock(self.design_changer["box"], (55, 55), self.level_icons.grid[0][0], offset_str = "left", zindex = 2)
-        self.design_changer["label"] = nodes.Label(self.design_changer["box"], "Tile Set", "main", "s", offset = (75, 0), offset_str = "left", zindex = 2)
-        self.design_changer["button"] = Button(self.design_changer["box"], (50, 50), arrows.grid[0][1], self.changeTileSet, higherBy = 2, offset_str = "right", offset = (290, 0))
-
-
-        self.block_select = {"box" : nodes.BaseNode(self.side_panel, zindex = 1, offset = (0, 210))}
         
-        self.block_select["label"] = nodes.Label(self.block_select["box"], "Blocks:", "main", "xs", offset = (140, 10), zindex = 2)
+
+        self.tile_resize = {"box" : nodes.BaseNode(self.side_panel, zindex = 1, offset_str = "top", offset = (0, 0))}
+
+        self.tile_resize["label"] = nodes.Label(self.tile_resize["box"], "Tile Count", "main", "xs", offset_str = "top", offset = (0, 8), zindex = 2)
+        self.tile_resize["bigger"] = Button(self.tile_resize["box"], (60, 60), arrows.grid[0][0], lambda: self.changeTileCount(self.level_data["tile_count_x"] + 1), higherBy = 2, offset_str = "top", offset = (110, 64))
+        self.tile_resize["text"] = nodes.Label(self.tile_resize["box"], str(self.level_data["tile_count_x"]), "main", "l", offset_str = "top", offset = (0, 45), zindex = 2)
+        self.tile_resize["smaller"] = Button(self.tile_resize["box"], (60, 60), arrows.grid[0][1], lambda: self.changeTileCount(self.level_data["tile_count_x"] - 1), higherBy = 2, offset_str = "top", offset = (-110, 64))
+
+
+        separators = []
+        separators.append(nodes.ColorBlock(self.side_panel, (self.side_panel.size[0] * 0.9, 4), color = (40, 40, 40), offset_str = "top", offset = (0, 130), zindex = 10))
+        separators.append(nodes.ColorBlock(self.side_panel, (self.side_panel.size[0] * 0.9, 4), color = (40, 40, 40), offset_str = "top", offset = (0, 200), zindex = 10))
+
+        self.design_changer = {"box" : nodes.BaseNode(self.side_panel, zindex = 1, offset_str = "top", offset = (0, 170))}
+        self.level_icons = resources.SpriteSheet(self.parentNode.game.directory("assets/level-icons.png"), (32, 32), True)
+        self.design_changer["icon"] = nodes.SpriteBlock(self.design_changer["box"], (55, 55), self.level_icons.grid[0][0], offset_str = "center", offset = (-110, 0), zindex = 2)
+        self.design_changer["label"] = nodes.Label(self.design_changer["box"], "Tile Set", "main", "s", offset = (0, 10), offset_str = "center", zindex = 2)
+        self.design_changer["button"] = Button(self.design_changer["box"], (50, 50), arrows.grid[0][1], self.changeTileSet, higherBy = 2, offset_str = "center", offset = (110, 0))
+
+
+        self.block_select = {"box" : nodes.BaseNode(self.side_panel, zindex = 1, offset_str = "top", offset = (0, 225))}
+        
+        self.block_select["label"] = nodes.Label(self.block_select["box"], "Blocks:", "main", "xs", offset_str = "center", offset = (0, 10), zindex = 2)
 
         self.block_select["cards"] = []
-        card_icons = [self.tile_node[0].grid[1][0], self.tile_node[0].grid[0][3], self.tile_node[0].grid[3][3], self.tile_node[0].grid[3][4], self.tile_node[0].grid[0][3]]
 
         for i in range(len(self.blocks)):
-            self.block_select["cards"].append(BlockCard(self.block_select["box"], i, card_icons[i], offset = ((i % 2 * 140) + 80, (i // 2 * 180) + 80), changerFunc = self.changeSelectedBlock))
+            self.block_select["cards"].append(BlockCard(self.block_select["box"], i, self.global_assets["tile_maps"][0].grid[0][3], offset = (((((i % 2) * 2) - 1) * 70) - 60 , (i // 2 * 180) + 40), changerFunc = self.changeSelectedBlock))
 
-        self.bottom_buttons = {"box" : nodes.BaseNode(self.side_panel, zindex = 1, offset_str = "bottom-left", offset = (0, -60))}
-        self.bottom_buttons["save"] = ButtonText(self.bottom_buttons["box"], "Save", "main", self.save, offset_str = "left", offset = (40, 0))
-        self.bottom_buttons["delete"] = ButtonText(self.bottom_buttons["box"], "Delete", "main", self.showDeleteWindow, offset_str = "left", offset = (205, 0))
+        self.bottom_buttons = {"box" : nodes.BaseNode(self.side_panel, zindex = 1, offset_str = "bottom", offset = (0, -20))}
+        self.bottom_buttons["save"] = ButtonText(self.bottom_buttons["box"], "Save", "main", self.save, offset_str = "bottom", offset = (-90, 0))
+        self.bottom_buttons["delete"] = ButtonText(self.bottom_buttons["box"], "Delete", "main", self.showDeleteWindow, offset_str = "bottom", offset = (70, 0))
 
         self.delete_window = nodes.ColorBlock(self.parentNode, (self.parentNode.size), color = (0, 0, 0, 200), alpha_channel = True, zindex = 999)
         nodes.Label(self.delete_window, "Are you sure you want to delete this level?", "main", "l", offset_str = "center", offset = (0, -50))
@@ -234,7 +228,7 @@ class EditorWindow:
         # Apply tile size first (may recreate internal structures)
         self.changeTileCount(self.level_data.get("tile_count_x", 20))
         self.changeTileSet(level_data.get("tile_set", 0)) # Apply tile set (may also recreate structures)
-        self.level_grid.change(tile_node = self.tile_node[self.level_data["tile_set"]])
+        self.level_grid.change(tile_node = self.global_assets["tile_maps"][self.level_data["tile_set"]])
 
         # Clear existing tiles quickly
         for i in list(self.ground.blocks.keys()):
@@ -251,7 +245,7 @@ class EditorWindow:
         for block in list(self.level_data["ground"]):
             coords = tuple(block)
             if coords not in self.ground.blocks.keys():
-                self.ground.addTile(coords, [3, 0])
+                self.ground.addTile(coords, self.global_assets["tile_placement"]["ground"])
 
         # Player spawn: ensure the tile is present and marked
         pcoords = tuple(self.level_data["player_spawn"])
@@ -260,9 +254,9 @@ class EditorWindow:
         except Exception:
             pass
         if pcoords in self.ground.blocks.keys():
-            self.ground.changeTile(pcoords, [0, 3])
+            self.ground.changeTile(pcoords, self.global_assets["tile_placement"]["player_spawn"])
         else:
-            self.ground.addTile(pcoords, [0, 3])
+            self.ground.addTile(pcoords, self.global_assets["tile_placement"]["player_spawn"])
 
         # Finish
         fcoords = tuple(self.level_data["finish"])
@@ -271,9 +265,9 @@ class EditorWindow:
         except Exception:
             pass
         if fcoords in self.ground.blocks.keys():
-            self.ground.changeTile(fcoords, [3, 3])
+            self.ground.changeTile(fcoords, self.global_assets["tile_placement"]["finish"])
         else:
-            self.ground.addTile(fcoords, [3, 3])
+            self.ground.addTile(fcoords, self.global_assets["tile_placement"]["finish"])
 
         # Spikes
         for spike in list(self.level_data["spikes"]):
@@ -281,9 +275,27 @@ class EditorWindow:
             if scoords in self.level_data["player_spawn"] or scoords in self.level_data["finish"]:
                 continue
             if scoords in self.ground.blocks.keys():
-                self.ground.changeTile(scoords, [3, 4])
+                self.ground.changeTile(scoords, self.global_assets["tile_placement"]["spikes"])
             else:
-                self.ground.addTile(scoords, [3, 4])
+                self.ground.addTile(scoords, self.global_assets["tile_placement"]["spikes"])
+        
+        for g_enemy in list(self.level_data["g_enemy"]):
+            ecoords = tuple(g_enemy)
+            if ecoords in self.level_data["player_spawn"] or ecoords in self.level_data["finish"]:
+                continue
+            if ecoords in self.ground.blocks.keys():
+                self.ground.changeTile(ecoords, self.global_assets["tile_placement"]["g_enemy"])
+            else:
+                self.ground.addTile(ecoords, self.global_assets["tile_placement"]["g_enemy"])
+
+        for f_enemy in list(self.level_data["f_enemy"]):
+            ecoords = tuple(f_enemy)
+            if ecoords in self.level_data["player_spawn"] or ecoords in self.level_data["finish"]:
+                continue
+            if ecoords in self.ground.blocks.keys():
+                self.ground.changeTile(ecoords, self.global_assets["tile_placement"]["f_enemy"])
+            else:
+                self.ground.addTile(ecoords, self.global_assets["tile_placement"]["f_enemy"])
 
         # Restore update functions and run a single neighbor update per tile
         self.updateBlock = orig_updateBlock
@@ -352,9 +364,12 @@ class EditorWindow:
             return
         
         position_in_screen = pygame.mouse.get_pos() - self.grid_encloser.game.scenes.scenes[self.grid_encloser.game.scenes.current_scene].position
-        mouse_pos = pygame.Vector2(int(position_in_screen.x / self.grid_encloser.game.scale.x), int(position_in_screen.y / self.grid_encloser.game.scale.y)) - (self.grid_encloser.position - self.grid_encloser.game.scenes.scenes[self.grid_encloser.game.scenes.current_scene].position)
 
-        if mouse_pos.x < 0 or mouse_pos.y < 0 or mouse_pos.x > self.grid_maxs[0] or mouse_pos.y > self.grid_maxs[1]:
+        error_correction = (self.grid_encloser.position - self.grid_encloser.game.scenes.scenes[self.grid_encloser.game.scenes.current_scene].position)
+
+        mouse_pos = pygame.Vector2(int(position_in_screen.x / self.grid_encloser.game.scale.x), int(position_in_screen.y / self.grid_encloser.game.scale.y)) - error_correction
+
+        if mouse_pos.x < 0 or mouse_pos.y < 0 or mouse_pos.x > (self.grid_maxs[0] - self.grid_encloser.offset[0]) or mouse_pos.y > (self.grid_maxs[1] - self.grid_encloser.offset[1]):
             return
 
         coords = [int(mouse_pos.x // self.level_grid.tile_size[0]), int(mouse_pos.y // self.level_grid.tile_size[1])]
@@ -370,12 +385,10 @@ class EditorWindow:
             if coords in self.noneditible:
                 return
             
-            print(self.placing)
-            
             if self.placing:
                 if list(coords) in self.level_data["ground"]:
                     return
-                self.ground.addTile(coords, [3, 0])
+                self.ground.addTile(coords, self.global_assets["tile_placement"]["ground"])
                 self.level_data["ground"].append(list(coords))
             else:
                 if not list(coords) in self.level_data["ground"]:
@@ -394,11 +407,11 @@ class EditorWindow:
             self.ground.killTile(tuple(self.level_data["player_spawn"]))
 
             if list(coords) in self.level_data["ground"]:
-                self.ground.changeTile(coords, [0, 3])
+                self.ground.changeTile(coords, self.global_assets["tile_placement"]["player_spawn"])
                 self.level_data["ground"].remove(list(coords))
                 self.updateSurrounding(coords)
             else:
-                self.ground.addTile(coords, [0, 3])
+                self.ground.addTile(coords, self.global_assets["tile_placement"]["player_spawn"])
 
             self.level_data["player_spawn"] = list(coords)
 
@@ -412,11 +425,11 @@ class EditorWindow:
             self.ground.killTile(tuple(self.level_data["finish"]))
 
             if list(coords) in self.level_data["ground"]:
-                self.ground.changeTile(coords, [3, 3])
+                self.ground.changeTile(coords, self.global_assets["tile_placement"]["finish"])
                 self.level_data["ground"].remove(list(coords))
                 self.updateSurrounding(coords)
             else:
-                self.ground.addTile(coords, [3, 3])
+                self.ground.addTile(coords, self.global_assets["tile_placement"]["finish"])
 
             self.level_data["finish"] = list(coords)
 
@@ -424,7 +437,7 @@ class EditorWindow:
 
         
         elif self.selected_block == 3: #spikes
-            if list(coords) == self.level_data["player_spawn"] or list(coords) == self.level_data["finish"]: # to be able to edit spikes
+            if list(coords) == self.level_data["player_spawn"] or list(coords) == self.level_data["finish"]:
                 return
             
             if self.placing:
@@ -432,17 +445,62 @@ class EditorWindow:
                     return
                 
                 if list(coords) in self.level_data["ground"]:
-                    self.ground.changeTile(coords, [3, 4])
+                    self.ground.changeTile(coords, self.global_assets["tile_placement"]["spikes"])
                     self.level_data["ground"].remove(list(coords))
                     self.updateSurrounding(coords)
                 else:
-                    self.ground.addTile(coords, [3, 4])
+                    self.ground.addTile(coords, self.global_assets["tile_placement"]["spikes"])
                 self.level_data["spikes"].append(list(coords))
 
             else:
                 if not list(coords) in self.level_data["spikes"]:
                     return
                 self.level_data["spikes"].remove(list(coords))
+                self.ground.killTile(coords)
+        
+        elif self.selected_block == 4: #ground_walking_enemy
+            if list(coords) == self.level_data["player_spawn"] or list(coords) == self.level_data["finish"]:
+                return
+            
+            if self.placing:
+                if list(coords) in self.level_data["g_enemy"]:
+                    return
+                
+                if list(coords) in self.level_data["ground"]:
+                    self.ground.changeTile(coords, self.global_assets["tile_placement"]["g_enemy"])
+                    self.level_data["ground"].remove(list(coords))
+                    self.updateSurrounding(coords)
+                else:
+                    self.ground.addTile(coords, self.global_assets["tile_placement"]["g_enemy"])
+                self.level_data["g_enemy"].append(list(coords))
+
+            else:
+                if not list(coords) in self.level_data["g_enemy"]:
+                    return
+                self.level_data["g_enemy"].remove(list(coords))
+                self.ground.killTile(coords)
+                
+        
+        elif self.selected_block == 5: #flying_enemy
+            if list(coords) == self.level_data["player_spawn"] or list(coords) == self.level_data["finish"]:
+                return
+            
+            if self.placing:
+                if list(coords) in self.level_data["f_enemy"]:
+                    return
+                
+                if list(coords) in self.level_data["ground"]:
+                    self.ground.changeTile(coords, self.global_assets["tile_placement"]["f_enemy"])
+                    self.level_data["ground"].remove(list(coords))
+                    self.updateSurrounding(coords)
+                else:
+                    self.ground.addTile(coords, self.global_assets["tile_placement"]["f_enemy"])
+                self.level_data["f_enemy"].append(list(coords))
+
+            else:
+                if not list(coords) in self.level_data["f_enemy"]:
+                    return
+                self.level_data["f_enemy"].remove(list(coords))
                 self.ground.killTile(coords)
             
 
@@ -457,51 +515,21 @@ class EditorWindow:
         self.updateBlock([coords[0], coords[1] - 1])
 
     def updateBlock(self, coords):
-        coords = tuple(coords)
-
-        if not list(coords) in self.level_data["ground"] or not coords in self.ground.blocks.keys():
-            return
-
-        coord_check = [[0, -1], [1, 0], [0, 1], [-1, 0]]
-        checks = []
-
-        states = {
-            (False, False, False, False) : [4, 0],
-            (False, False, False, True) : [3, 1],
-            (False, False, True, False) : [4, 2],
-            (False, False, True, True) : [2, 0],
-            (False, True, False, False) : [3, 2],
-            (False, True, False, True) : [3, 0],
-            (False, True, True, False) : [0, 0],
-            (False, True, True, True) : [1, 0],
-            (True, False, False, False) : [4, 1],
-            (True, False, False, True) : [2, 2],
-            (True, False, True, False) : [5, 0],
-            (True, False, True, True) : [2, 1],
-            (True, True, False, False) : [0, 2],
-            (True, True, False, True) : [1, 2],
-            (True, True, True, False) : [0, 1],
-            (True, True, True, True) : [1, 1]
-        }
-
-        for checked in coord_check:
-            temp = [coords[0] + checked[0], coords[1] + checked[1]]
-
-            checks.append(temp in self.level_data["ground"])
-        
-        self.ground.changeTile(coords, states[tuple(checks)])
+        changeTileApearance(coords,self.global_assets, self.level_data, self.ground)
         
 
     def changeTileCount(self, count_x):
         last_count = self.level_data["tile_count_x"]
         tile_count = max(10, min(count_x, 90))
-        size = ((self.window.size[0] - 400) // (tile_count), (self.window.size[0] - 400) // (tile_count))
+        size = (self.grid_maxs[0] // (tile_count - 1), self.grid_maxs[0] // (tile_count - 1))
+        print(self.grid_maxs, size[0])
         self.level_grid.change(one_tile_size = size)
         self.level_data["tile_count_x"] = tile_count
         self.tile_resize["text"].change(text = str(int(tile_count)))
 
-        self.grid_maxs = [((self.window.size[0] - 400) // self.level_grid.tile_size[0] + 1) * self.level_grid.tile_size[0], (self.window.size[1] // self.level_grid.tile_size[1] + 1) * self.level_grid.tile_size[1]]
-        self.grid_encloser.change(offset = ((self.grid_maxs[0] - (self.window.size[0] - 400)) // -2, (self.grid_maxs[1] - self.window.size[1]) // -2))
+        self.grid_encloser.change(offset = (-size[0] // 2, (size[1] - (self.grid_maxs[1] % size[1])) // -2))
+
+        print(self.grid_encloser.offset)
 
         if last_count < tile_count:
             for block in list(self.ground.blocks.keys()):
@@ -528,16 +556,21 @@ class EditorWindow:
         self.noneditible = []
         for spikes in self.level_data["spikes"]:
             self.noneditible.append(tuple(spikes))
+        for enemy_1 in self.level_data["g_enemy"]:
+            self.noneditible.append(tuple(enemy_1))
+        for enemy_2 in self.level_data["f_enemy"]:
+            self.noneditible.append(tuple(enemy_2))
         self.noneditible.append(tuple(self.level_data["player_spawn"]))
         self.noneditible.append(tuple(self.level_data["finish"]))
     
 
     def changeTileSet(self, index = None):
         if index is not None:
-            self.level_data["tile_set"] = index % len(self.tile_node)
+            self.level_data["tile_set"] = index % len(self.global_assets["tile_maps"])
         else:
-            self.level_data["tile_set"] = (self.level_data.get("tile_set", 0) + 1) % len(self.tile_node)
-        self.level_grid.change(tile_node = self.tile_node[self.level_data["tile_set"]])
+            self.level_data["tile_set"] = (self.level_data.get("tile_set", 0) + 1) % len(self.global_assets["tile_maps"])
+        self.level_grid.change(tile_node = self.global_assets["tile_maps"][self.level_data["tile_set"]])
+        self.background.change(image = self.global_assets["backgrounds"][self.level_data["tile_set"]].image)
 
         self.design_changer["icon"].change(image = self.level_icons.grid[self.level_data["tile_set"]][0])
 
@@ -545,7 +578,14 @@ class EditorWindow:
 
     
     def updateCards(self):
-        card_icons = [self.tile_node[self.level_data["tile_set"]].grid[1][0], self.tile_node[self.level_data["tile_set"]].grid[0][3], self.tile_node[self.level_data["tile_set"]].grid[3][3], self.tile_node[self.level_data["tile_set"]].grid[3][4], self.tile_node[self.level_data["tile_set"]].grid[0][3]]
+        card_icons = [
+            self.global_assets["tile_maps"][self.level_data["tile_set"]].grid[self.global_assets["tile_placement"]["ground"][0]][self.global_assets["tile_placement"]["ground"][1]], 
+            self.global_assets["tile_maps"][self.level_data["tile_set"]].grid[self.global_assets["tile_placement"]["player_spawn"][0]][self.global_assets["tile_placement"]["player_spawn"][1]], 
+            self.global_assets["tile_maps"][self.level_data["tile_set"]].grid[self.global_assets["tile_placement"]["finish"][0]][self.global_assets["tile_placement"]["finish"][1]], 
+            self.global_assets["tile_maps"][self.level_data["tile_set"]].grid[self.global_assets["tile_placement"]["spikes"][0]][self.global_assets["tile_placement"]["spikes"][1]], 
+            self.global_assets["tile_maps"][self.level_data["tile_set"]].grid[self.global_assets["tile_placement"]["g_enemy"][0]][self.global_assets["tile_placement"]["g_enemy"][1]], 
+            self.global_assets["tile_maps"][self.level_data["tile_set"]].grid[self.global_assets["tile_placement"]["f_enemy"][0]][self.global_assets["tile_placement"]["f_enemy"][1]]
+        ]
         for i in range(len(self.blocks)):
             self.block_select["cards"][i].changeImage(card_icons[i])
 

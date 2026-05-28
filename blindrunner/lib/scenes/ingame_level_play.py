@@ -6,7 +6,7 @@ from .. import lib
 
 
 class Level:
-    def __init__(self, game : nodes.Game, settings_node):
+    def __init__(self, game : nodes.Game, settings_node, global_assets):
         self.name = "ingame_level"
 
         self.scene = nodes.Scene(self.name, game, bg_color = (150, 60, 105))
@@ -16,6 +16,9 @@ class Level:
         self.label = nodes.Label(self.scene, "none", "main", "xl", offset_str = "top")
 
         self.pause_menu = lib.PauseMenu(self.scene, self, self.level_name, settings_node, self.name, "levels")
+
+        self.level = lib.GameLevel(self.scene, global_assets, self.finish)
+
         # --- TEMP --- #
         lib.ButtonText(self.pause_menu.pause_menu, "Finish", "main", self.finish, offset_str = "bottom-right", offset = (-20, -20))
 

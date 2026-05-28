@@ -91,7 +91,7 @@ class PlayerLevels:
 class levelButton:
     def __init__(self, window, file_name, offset_y):
         self.body = nodes.ColorBlock(window.background, window.button_size, (60, 140, 45), offset_str = "top", offset = (0, offset_y))
-        nodes.Label(self.body, file_name.removesuffix(".txt"), "main", "m", offset_str = "left", offset = (30, 0))
+        nodes.Label(self.body, file_name.removesuffix(".txt").upper(), "main", "m", offset_str = "left", offset = (30, 0))
         ButtonText(self.body, "Play", "main", lambda: window.playLevel(file_name), offset_str = "right", offset = (-220, 0))
         ButtonText(self.body, "Edit", "main", lambda: window.edit(file_name), offset_str = "right", offset = (-50, 0))
 

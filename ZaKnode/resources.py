@@ -52,7 +52,7 @@ class SpriteSheet:
         self.rawImage = None
 
 class Animation:
-    def __init__(self, framesArr, start, end):
+    def __init__(self, framesArr, start : int, end : int):
         if start > end:
             end, start = start, end
 
