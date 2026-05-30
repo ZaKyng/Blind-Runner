@@ -14,19 +14,13 @@ class Level:
         self.level_name = None
         self.label = nodes.Label(self.scene, "none", "main", "xl", offset_str = "top", offset = (0, 20),  zindex = 100)
 
-        self.pause_menu = lib.PauseMenu(self.scene, self, self.level_name, settings_node, self.name, "editor_menu")
+        self.level = lib.GameLevel(self.scene, global_assets, self.finish, settings_node, self.name, self.level_name, self, "editor_menu")
 
-        self.level = lib.GameLevel(self.scene, global_assets, self.finish)
-
-        # --- TEMP --- #
-        lib.ButtonText(self.pause_menu.pause_menu, "Finish", "main", self.finish, offset_str = "bottom-right", offset = (-20, -20))
-
-        # --- ---- --- #
 
 
     def load(self, name):
-        self.pause_menu.update(name)
-        self.pause_menu.change(active = False)
+        self.level.pause_menu.update(name)
+        self.level.pause_menu.change(active = False)
         self.level_name = name
 
         self.level.load(self.scene.game.directory("player_levels/" + name))

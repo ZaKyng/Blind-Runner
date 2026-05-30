@@ -42,17 +42,48 @@ def run():
         "tile_maps" : [],
         "backgrounds" : [],
     
-        "animations" : {
-            "player" : {
-            
+        "animations" : [
+            {
+                "player" : {
+                },
+                "g_enemy" : {
+                
+                },
+                "f_enemy" : {
+                
+                }
             },
-            "g_enemy" : {
-            
+            {
+                "player" : {
+                },
+                "g_enemy" : {
+                
+                },
+                "f_enemy" : {
+                
+                }
             },
-            "f_enemy" : {
-            
+            {
+                "player" : {
+                },
+                "g_enemy" : {
+                
+                },
+                "f_enemy" : {
+                
+                }
+            },
+            {
+                "player" : {
+                },
+                "g_enemy" : {
+                
+                },
+                "f_enemy" : {
+                
+                }
             }
-        }
+        ]
     }
     
 
@@ -67,20 +98,67 @@ def run():
     global_assets["backgrounds"].append(resources.Image(my_game.directory("assets/backgrounds-3-test.png")))
     global_assets["backgrounds"].append(resources.Image(my_game.directory("assets/backgrounds-4-test.png")))
 
-    player_idle_animation_r = [[global_assets["tile_maps"][0].grid[0][3], global_assets["tile_maps"][0].grid[0][4]]]
-    global_assets["animations"]["player"]["idle_r"] = resources.Animation(player_idle_animation_r, 0, 1)
+    for tile_set in range(4):
+        global_assets["animations"][tile_set]["player"]["idle"] = {}
 
-    player_idle_animation_l = [[global_assets["tile_maps"][0].grid[0][5], global_assets["tile_maps"][0].grid[0][6]]]
-    global_assets["animations"]["player"]["idle_l"] = resources.Animation(player_idle_animation_l, 0, 1)
+        player_idle_animation_r = [[global_assets["tile_maps"][tile_set].grid[0][3], global_assets["tile_maps"][tile_set].grid[0][4]]]
+        global_assets["animations"][tile_set]["player"]["idle"]["right"] = resources.Animation(player_idle_animation_r, 0, 1)
 
-    player_run_animation_r = [[global_assets["tile_maps"][0].grid[1][3], global_assets["tile_maps"][0].grid[1][4]]]
-    global_assets["animations"]["player"]["run_r"] = resources.Animation(player_run_animation_r, 0, 1)
+        player_idle_animation_l = [[global_assets["tile_maps"][tile_set].grid[0][5], global_assets["tile_maps"][tile_set].grid[0][6]]]
+        global_assets["animations"][tile_set]["player"]["idle"]["left"] = resources.Animation(player_idle_animation_l, 0, 1)
 
-    player_run_animation_l = [[global_assets["tile_maps"][0].grid[1][5], global_assets["tile_maps"][0].grid[1][6]]]
-    global_assets["animations"]["player"]["run_l"] = resources.Animation(player_run_animation_l, 0, 1)
+        global_assets["animations"][tile_set]["player"]["run"] = {}
 
-    player_idle_animation = [[global_assets["tile_maps"][0].grid[0][3], global_assets["tile_maps"][0].grid[1][3]]]
-    global_assets["animations"]["player"]["none"] = resources.Animation(player_idle_animation, 0, 1)
+        player_run_animation_r = [[global_assets["tile_maps"][tile_set].grid[1][3], global_assets["tile_maps"][tile_set].grid[1][4]]]
+        global_assets["animations"][tile_set]["player"]["run"]["right"] = resources.Animation(player_run_animation_r, 0, 1)
+
+        player_run_animation_l = [[global_assets["tile_maps"][tile_set].grid[1][5], global_assets["tile_maps"][tile_set].grid[1][6]]]
+        global_assets["animations"][tile_set]["player"]["run"]["left"] = resources.Animation(player_run_animation_l, 0, 1)
+
+        global_assets["animations"][tile_set]["player"]["jump"] = {}
+
+        player_jump_animation_r = [[global_assets["tile_maps"][tile_set].grid[2][3]], [global_assets["tile_maps"][tile_set].grid[2][3]]]
+        global_assets["animations"][tile_set]["player"]["jump"]["right"] = resources.Animation(player_jump_animation_r, 0, 1)
+
+        player_jump_animation_l = [[global_assets["tile_maps"][tile_set].grid[2][5]], [global_assets["tile_maps"][tile_set].grid[2][5]]]
+        global_assets["animations"][tile_set]["player"]["jump"]["left"] = resources.Animation(player_jump_animation_l, 0, 1)
+
+        global_assets["animations"][tile_set]["player"]["fall"] = {}
+
+        player_fall_animation_r = [[global_assets["tile_maps"][tile_set].grid[2][3], global_assets["tile_maps"][tile_set].grid[2][4]]]
+        global_assets["animations"][tile_set]["player"]["fall"]["right"] = resources.Animation(player_fall_animation_r, 0, 1)
+
+        player_fall_animation_l = [[global_assets["tile_maps"][tile_set].grid[2][5], global_assets["tile_maps"][tile_set].grid[2][6]]]
+        global_assets["animations"][tile_set]["player"]["fall"]["left"] = resources.Animation(player_fall_animation_l, 0, 1)
+
+
+        global_assets["animations"][tile_set]["g_enemy"]["idle"] = {}
+
+        g_enemy_idle_animation_r = [[global_assets["tile_maps"][tile_set].grid[5][1], global_assets["tile_maps"][tile_set].grid[5][1]]]
+        global_assets["animations"][tile_set]["g_enemy"]["idle"]["right"] = resources.Animation(g_enemy_idle_animation_r, 0, 1)
+
+        g_enemy_idle_animation_l = [[global_assets["tile_maps"][tile_set].grid[5][3], global_assets["tile_maps"][tile_set].grid[5][3]]]
+        global_assets["animations"][tile_set]["g_enemy"]["idle"]["left"] = resources.Animation(g_enemy_idle_animation_l, 0, 1)
+
+        global_assets["animations"][tile_set]["g_enemy"]["run"] = {}
+
+        g_enemy_run_animation_r = [[global_assets["tile_maps"][tile_set].grid[5][1], global_assets["tile_maps"][tile_set].grid[5][2]]]
+        global_assets["animations"][tile_set]["g_enemy"]["run"]["right"] = resources.Animation(g_enemy_run_animation_r, 0, 1)
+
+        g_enemy_run_animation_l = [[global_assets["tile_maps"][tile_set].grid[5][3], global_assets["tile_maps"][tile_set].grid[5][4]]]
+        global_assets["animations"][tile_set]["g_enemy"]["run"]["left"] = resources.Animation(g_enemy_run_animation_l, 0, 1)
+
+
+        global_assets["animations"][tile_set]["f_enemy"]["idle"] = {}
+
+        f_enemy_idle_animation_r = [[global_assets["tile_maps"][tile_set].grid[4][5], global_assets["tile_maps"][tile_set].grid[4][6]]]
+        global_assets["animations"][tile_set]["f_enemy"]["idle"]["right"] = resources.Animation(f_enemy_idle_animation_r, 0, 1)
+
+        f_enemy_idle_animation_l = [[global_assets["tile_maps"][tile_set].grid[5][5], global_assets["tile_maps"][tile_set].grid[5][6]]]
+        global_assets["animations"][tile_set]["f_enemy"]["idle"]["left"] = resources.Animation(f_enemy_idle_animation_l, 0, 1)
+
+
+
 
     settings_scene = settings.Settings(my_game)
 

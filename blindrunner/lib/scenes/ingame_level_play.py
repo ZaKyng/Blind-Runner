@@ -9,25 +9,17 @@ class Level:
     def __init__(self, game : nodes.Game, settings_node, global_assets):
         self.name = "ingame_level"
 
-        self.scene = nodes.Scene(self.name, game, bg_color = (150, 60, 105))
+        self.scene = nodes.Scene(self.name, game, bg_color = (32, 32, 32))
 
         self.level_name = None
+        self.label = nodes.Label(self.scene, "none", "main", "xl", offset_str = "top", offset = (0, 20),  zindex = 100)
 
-        self.label = nodes.Label(self.scene, "none", "main", "xl", offset_str = "top")
-
-        self.pause_menu = lib.PauseMenu(self.scene, self, self.level_name, settings_node, self.name, "levels")
-
-        self.level = lib.GameLevel(self.scene, global_assets, self.finish)
-
-        # --- TEMP --- #
-        lib.ButtonText(self.pause_menu.pause_menu, "Finish", "main", self.finish, offset_str = "bottom-right", offset = (-20, -20))
-
-        # --- ---- --- #
+        self.level = lib.GameLevel(self.scene, global_assets, self.finish, settings_node, self.name, self.level_name, self, "editor_menu")
 
 
     def load(self, name):
-        self.pause_menu.update(name)
-        self.pause_menu.change(active = False)
+        self.level.pause_menu.update(name)
+        self.level.pause_menu.change(active = False)
         self.level_name = name
 
         level_data = resources.ReadData(self.scene.game.directory("test-levels.txt"), name)
