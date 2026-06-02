@@ -9,9 +9,22 @@
         17,
         9
     ],
-    "possible": false,
-    "finished": false,
-    "spikes": [],
+    "possible": true,
+    "finished": true,
+    "spikes": [
+        [
+            12,
+            9
+        ],
+        [
+            13,
+            9
+        ],
+        [
+            14,
+            9
+        ]
+    ],
     "ground": [
         [
             0,

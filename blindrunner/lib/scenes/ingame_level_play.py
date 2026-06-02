@@ -12,19 +12,14 @@ class Level:
         self.scene = nodes.Scene(self.name, game, bg_color = (32, 32, 32))
 
         self.level_name = None
-        self.label = nodes.Label(self.scene, "none", "main", "xl", offset_str = "top", offset = (0, 20),  zindex = 100)
 
-        self.level = lib.GameLevel(self.scene, global_assets, self.finish, settings_node, self.name, self.level_name, self, "editor_menu")
+        self.level = lib.GameLevel(self.scene, global_assets, self.finish, settings_node, self.name, self.level_name, self, "levels")
 
 
     def load(self, name):
-        self.level.pause_menu.update(name)
-        self.level.pause_menu.change(active = False)
         self.level_name = name
 
-        level_data = resources.ReadData(self.scene.game.directory("test-levels.txt"), name)
-        
-        self.label.change(text = str(name))
+        self.level.load(self.scene.game.directory("player_levels/" + name), name)
 
 
     def finish(self):

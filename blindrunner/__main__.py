@@ -41,6 +41,10 @@ def run():
         },
         "tile_maps" : [],
         "backgrounds" : [],
+
+        "levels" : {
+
+        },
     
         "animations" : [
             {
@@ -83,7 +87,9 @@ def run():
                 
                 }
             }
-        ]
+        ],
+
+        "music" : []
     }
     
 
@@ -97,6 +103,21 @@ def run():
     global_assets["backgrounds"].append(resources.Image(my_game.directory("assets/backgrounds-2-test.png")))
     global_assets["backgrounds"].append(resources.Image(my_game.directory("assets/backgrounds-3-test.png")))
     global_assets["backgrounds"].append(resources.Image(my_game.directory("assets/backgrounds-4-test.png")))
+
+    global_assets["buttons"] = resources.SpriteSheet(my_game.directory("assets/buttons2.png"), (64, 32), alpha_channel = True)
+
+    global_assets["level_card"] = resources.Image(my_game.directory("assets/player_level_card.png"), alpha_channel = True)
+
+    global_assets["add_button"] = resources.Image(my_game.directory("assets/add_button.png"), alpha_channel = True)
+
+    global_assets["arrows"] = resources.SpriteSheet(my_game.directory("assets/arrows.png"), (16, 16), alpha_channel = True)
+
+    global_assets["fps_buttons"] = resources.SpriteSheet(my_game.directory("assets/fps-buttons.png"), (16, 8), alpha_channel = True)
+
+    global_assets["levels"]["unlocked"] = resources.SpriteSheet(my_game.directory("assets/level-icons.png"), (32, 32), alpha_channel = True)
+    global_assets["levels"]["locked"] = resources.SpriteSheet(my_game.directory("assets/locked-icons.png"), (32, 32), alpha_channel = True)
+    global_assets["levels"]["check"] = resources.Image(my_game.directory("assets/level-check.png"), alpha_channel = True)
+    global_assets["levels"]["lock"] = resources.Image(my_game.directory("assets/lock.png"), alpha_channel = True)
 
     for tile_set in range(4):
         global_assets["animations"][tile_set]["player"]["idle"] = {}
@@ -131,6 +152,12 @@ def run():
         player_fall_animation_l = [[global_assets["tile_maps"][tile_set].grid[2][5], global_assets["tile_maps"][tile_set].grid[2][6]]]
         global_assets["animations"][tile_set]["player"]["fall"]["left"] = resources.Animation(player_fall_animation_l, 0, 1)
 
+        global_assets["animations"][tile_set]["player"]["finish"] = {}
+
+        player_finish_animation_r = [[global_assets["tile_maps"][tile_set].grid[3][3], global_assets["tile_maps"][tile_set].grid[3][4], global_assets["tile_maps"][tile_set].grid[3][5], global_assets["tile_maps"][tile_set].grid[3][6]]]
+        global_assets["animations"][tile_set]["player"]["finish"] = resources.Animation(player_finish_animation_r, 0, 3)
+
+
 
         global_assets["animations"][tile_set]["g_enemy"]["idle"] = {}
 
@@ -158,23 +185,34 @@ def run():
         global_assets["animations"][tile_set]["f_enemy"]["idle"]["left"] = resources.Animation(f_enemy_idle_animation_l, 0, 1)
 
 
+    global_assets["music"].append(resources.Sound(my_game.directory("assets/test-music-1.mp3")))
+    global_assets["music"].append(resources.Sound(my_game.directory("assets/test-music-2.mp3")))
+    global_assets["music"].append(resources.Sound(my_game.directory("assets/test-music-3.mp3")))
 
 
-    settings_scene = settings.Settings(my_game)
 
-    menu.Menu(my_game, settings_scene)
+    settings_scene = settings.Settings(my_game, global_assets)
+
+    menu_node = menu.Menu(my_game, settings_scene, global_assets)
     
     one_story_level = ingame_level_play.Level(my_game, settings_scene, global_assets)
     
-    level_map.Levels(my_game, one_story_level)
+    level_map.Levels(my_game, one_story_level, global_assets)
 
     one_player_level = player_level_play.Level(my_game, settings_scene, global_assets)
 
     editor = level_editor.LevelEditor(my_game, global_assets)
 
-    editor_menu.PlayerLevels(my_game, one_player_level, editor)
+    editor_menu.PlayerLevels(my_game, one_player_level, editor, global_assets)
 
     settings_scene.addFPSToScenes()
+    
+    
+    my_game.audio_player = modifiers.MusicPlayer(menu_node.scene)
+
+    my_game.audio_player.add("menu-music", global_assets["music"][0])
+    my_game.audio_player.add("level-music", global_assets["music"][1])
+    my_game.audio_player.add("running-music", global_assets["music"][2])
 
 
     my_game.scenes.current_scene = "menu"
@@ -183,11 +221,65 @@ def run():
     def global_input(event):
         pass
 
-    def test():
-        
-        pass
+    not_menu = [one_story_level.name, one_player_level.name, editor.name]
+    my_game.last_scene = "none"
 
-    my_game.run(test, global_input = global_input)
+    my_game.music_playing = "none"
+
+    def always(my_game, global_assets = global_assets):
+
+        current_scene = my_game.scenes.current_scene
+
+        if my_game.last_scene != current_scene:
+            print("scene changed to:", current_scene)
+            if current_scene in not_menu:
+                
+                print("playing level music")
+                my_game.audio_player.stop("menu-music")
+                if current_scene == one_story_level.name:
+                    my_game.audio_player.stop("menu-music")
+                    my_game.audio_player.play("level-music")
+                    my_game.audio_player.play("running-music")
+                    if not one_story_level.level.cover.active:
+                        if my_game.music_playing != "level-music":
+                            global_assets["music"][1].changeVolume(1)
+                            global_assets["music"][2].changeVolume(0)
+                            my_game.audio_player.change()
+                            my_game.music_playing = "level-music"
+                    else:
+                        if my_game.music_playing != "running-music":
+                            global_assets["music"][2].changeVolume(1)
+                            global_assets["music"][1].changeVolume(0)
+                            my_game.audio_player.change()
+                            my_game.music_playing = "running-music"
+                elif current_scene == one_player_level.name:
+                    my_game.audio_player.stop("menu-music")
+                    my_game.audio_player.play("level-music")
+                    my_game.audio_player.play("running-music")
+                    if not one_player_level.level.cover.active:
+                        if my_game.music_playing != "level-music":
+                            global_assets["music"][1].changeVolume(1)
+                            global_assets["music"][2].changeVolume(0)
+                            my_game.audio_player.change()
+                            my_game.music_playing = "level-music"
+                    else:
+                        if my_game.music_playing != "running-music":
+                            global_assets["music"][2].changeVolume(1)
+                            global_assets["music"][1].changeVolume(0)
+                            my_game.audio_player.change()
+                            my_game.music_playing = "running-music"
+            else:
+                print("playing menu music")
+                if my_game.music_playing != "menu-music":
+                    my_game.audio_player.stop("level-music")
+                    my_game.audio_player.stop("running-music")
+                    my_game.audio_player.play("menu-music")
+                    my_game.music_playing = "menu-music"
+        my_game.last_scene = my_game.scenes.current_scene
+
+
+
+    my_game.run(lambda : always(my_game), global_input = global_input)
 
 if __name__ == "__main__":
     run()

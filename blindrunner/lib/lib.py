@@ -38,17 +38,17 @@ class ButtonText:
 
 
 class PauseMenu:
-    def __init__(self, game_level_node, parentNode, level_node, name, settings_node, scene_name, parent_scene_name):
+    def __init__(self, game_level_node, parentNode, level_node, settings_node, scene_name, parent_scene_name):
         self.level_node = level_node
         self.game_level_node = game_level_node
 
         self.pause_menu = nodes.ColorBlock(parentNode, parentNode.size, color = (0, 0, 0, 200), zindex = 100, alpha_channel = True)
 
         nodes.Label(self.pause_menu, "Paused", "main", "xl", offset_str = "center", offset = (0, -300))
-        ButtonText(self.pause_menu, "Return", "main", self.pause, white_txt = False, offset_str = "center", offset = (-330, 0))
-        self.reset_button = ButtonText(self.pause_menu, "Reset", "main", self.reset, white_txt = False, offset_str = "center", offset = (-130, 0))
-        ButtonText(self.pause_menu, "Settings", "main", lambda: settings_node.open(scene_name), white_txt = False, offset_str = "center", offset = (105, 0))
-        ButtonText(self.pause_menu, "Leave", "main", lambda: parentNode.game.scenes.changeScene(parent_scene_name), white_txt = False, offset_str = "center", offset = (330, 0))
+        Button(self.pause_menu, [110, 110], self.game_level_node.global_assets["arrows"].grid[0][6], self.pause, offset_str = "center", offset = (-330, 0))
+        self.reset_button = Button(self.pause_menu, [110, 110], self.game_level_node.global_assets["arrows"].grid[0][4], self.reset, offset_str = "center", offset = (-130, 0))
+        Button(self.pause_menu, [110, 110], self.game_level_node.global_assets["arrows"].grid[0][10], lambda: settings_node.open(scene_name), offset_str = "center", offset = (105, 0))
+        Button(self.pause_menu, [110, 110], self.game_level_node.global_assets["arrows"].grid[0][11], lambda: parentNode.game.scenes.changeScene(parent_scene_name), offset_str = "center", offset = (330, 0))
 
         self.pause_menu.change(active = False)
 
@@ -56,9 +56,7 @@ class PauseMenu:
     
     def change(self, active = False):
         self.pause_menu.change(active = active)
-    
-    def update(self, name):
-        self.reset_button.click_mod.change(func = lambda: self.level_node.load(name))
+
     
     def pause(self):
         if not self.pause_menu.active:
@@ -485,6 +483,8 @@ class GameLevel:
         self.global_assets = global_assets
         self.finish_func = finish_func
 
+        self.level_name = level_name
+
         self.level_data = {
             "tile_count_x": 20,
             "tile_set": 0,
@@ -506,7 +506,9 @@ class GameLevel:
 
         self.background = nodes.SpriteBlock(self.scene, self.scene.size, self.global_assets["backgrounds"][0].image, offset = (0, 0), zindex = -5)
 
-        self.pause_menu = PauseMenu(self, self.scene, level_node, level_name, settings_node, scene_name, previous_scene)
+        self.label = nodes.Label(self.scene, "none", "main", "xl", offset_str = "top", offset = (0, 20),  zindex = 100)
+
+        self.pause_menu = PauseMenu(self, self.scene, level_node, settings_node, scene_name, previous_scene)
 
         self.player = {
             "box" : nodes.BaseNode(self.scene, zindex = 100, offset = (400, 0))
@@ -532,8 +534,11 @@ class GameLevel:
         self.finish["sprite"] = nodes.SpriteBlock(self.finish["box"], (40, 40), self.global_assets["tile_maps"][0].grid[finish_tile[0]][finish_tile[1]], offset = [0, 0])
         self.finish["collision"] = nodes.CollisionArea(self.finish["box"], 4)
         self.finish["collision"].addCollisionBlock((40, 40), offset = [0, 0])
+        self.finish["timer"] = modifiers.Timer(self.finish["box"], 2.5, lambda: self.scene.game.scenes.changeScene(previous_scene))
 
-        modifiers.OnCollideDo(self.finish["box"], self.finish_func, 1)
+        modifiers.OnCollideDo(self.finish["box"], self.finish_level, 1)
+
+        self.finished = False
 
         self.enemys = []
 
@@ -551,8 +556,13 @@ class GameLevel:
 
 
 
-    def load(self, directory):
+    def load(self, directory, name):
         level_data = resources.ReadData(directory)
+
+        self.level_name = name
+        self.pause_menu.change(active = False)
+        
+        self.label.change(text = name.removesuffix(".txt").upper(), offset_str = "top", offset = (0, 20), zindex = 100)
 
         tile_size = self.scene.size[0] / (level_data["tile_count_x"] - 1)
         tile_for_y = int(tile_size)
@@ -599,32 +609,44 @@ class GameLevel:
         self.player["init_offset"] = (level_data["player_spawn"][0] * tile_size + self.grid_encloser.offset[0], level_data["player_spawn"][1] * tile_size + self.grid_encloser.offset[1])
         self.player["box"].change(offset = self.player["init_offset"])
         self.player["sprite"].change(size = self.grid.tile_size)
+        self.player["sprite"].change(frames_arr = self.global_assets["animations"][level_data["tile_set"]]["player"]["idle"]["right"].frames, fps = 3)
+
         self.player["collision"].collision_blocks[0].change(size = (self.grid.tile_size[0] * 0.7, self.grid.tile_size[1] * 0.8), offset = (self.grid.tile_size[0] * 0.15, self.grid.tile_size[1] * 0.2))
-        self.player["move"].change(gravity = 600 * (self.grid.tile_size[1] / 40), speed = 200 * (self.grid.tile_size[0] / 40), jump_power = 320 * (self.grid.tile_size[1] / 40))
+        self.player["move"].change(gravity = 600 * (self.grid.tile_size[1] / 40), speed = 200 * (self.grid.tile_size[0] / 40), jump_power = 320 * (self.grid.tile_size[1] / 40), active = True)
+
+        self.player["move"].a_pressed = False
+        self.player["move"].d_pressed = False
+        self.player["move"].jump = False
+        self.player["move"].direction = pygame.Vector2(0, 0)
+        self.player["move"].velocity = pygame.Vector2(0, 0)
 
         self.finish["box"].change(offset = (level_data["finish"][0] * self.grid.tile_size[0] + self.grid_encloser.offset[0], level_data["finish"][1] * self.grid.tile_size[1] + self.grid_encloser.offset[1]))
         self.finish["sprite"].change(size = self.grid.tile_size)
         self.finish["collision"].collision_blocks[0].change(size = (self.grid.tile_size[0] * 0.8, self.grid.tile_size[1] * 0.8), offset = (self.grid.tile_size[0] * 0.1, self.grid.tile_size[1] * 0.1))
+        self.finish["timer"].end()
+
+        self.finished = False
 
         self.level_data = level_data
 
     def coverSight(self):
-        if self.player["dead"]:
+        if self.player["dead"] or self.finished:
             return
+        
         self.new_pos = pygame.Vector2(int(self.player["box"].offset[0]), int(self.player["box"].offset[1]))
 
-        if self.new_pos.x > self.scene.size[0] or self.new_pos.x < 0 or self.new_pos.y > self.scene.size[1] or self.new_pos.y < 0:
+        if self.new_pos.x + self.player["sprite"].size[0] > self.scene.size[0] or self.new_pos.x < 0 or self.new_pos.y + self.player["sprite"].size[1] > self.scene.size[1]:
             self.playerDeath()
             return
 
-        """if self.new_pos.distance_to(self.last_pos) > 4 or not self.player["move"].on_ground:
+        if self.new_pos.distance_to(self.last_pos) > 2 or not self.player["move"].on_ground:
             self.cover.change(active = True)
             #self.transparency = max(0, self.transparency - 40)
         else:
             self.cover.change(active = False)
             #self.transparency = min(255, self.transparency + 50)
 
-        #new_background = self.global_assets["backgrounds"][self.level_data["tile_set"]].image.copy()
+        """#new_background = self.global_assets["backgrounds"][self.level_data["tile_set"]].image.copy()
         #self.cover.change(image = new_background.set_alpha(self.transparency))"""
         
         x_dif = self.new_pos.x - self.last_pos.x
@@ -653,7 +675,7 @@ class GameLevel:
                     self.player["current_anim"] = "idle"
             else:
                 if self.player["current_anim"] != "run" or dir_changed:
-                    self.player["sprite"].change(frames_arr = self.global_assets["animations"][self.level_data["tile_set"]]["player"]["run"][self.player["last_dir"]].frames, fps = 40)
+                    self.player["sprite"].change(frames_arr = self.global_assets["animations"][self.level_data["tile_set"]]["player"]["run"][self.player["last_dir"]].frames, fps = 20)
                     self.player["current_anim"] = "run"
         else:
             if y_dif < 0:
@@ -662,12 +684,13 @@ class GameLevel:
                     self.player["current_anim"] = "jump"
             else:
                 if self.player["current_anim"] != "fall" or dir_changed:
-                    self.player["sprite"].change(frames_arr = self.global_assets["animations"][self.level_data["tile_set"]]["player"]["fall"][self.player["last_dir"]].frames, fps = 30)
+                    self.player["sprite"].change(frames_arr = self.global_assets["animations"][self.level_data["tile_set"]]["player"]["fall"][self.player["last_dir"]].frames, fps = 20)
                     self.player["current_anim"] = "fall"
 
 
     def reset(self):
-        print(self.enemys)
+        self.finished = False
+        
         for enemy in self.enemys:
             enemy.active = True
             enemy.box.change(offset = enemy.init_offset, active = True)
@@ -687,8 +710,12 @@ class GameLevel:
         self.player["dead"] = False
     
     def pause(self):
+        if self.player["dead"] or self.finished:
+            self.pause_menu.change(active = False)
+            return
+        
         self.player["move"].change(active = False)
-        print(self.player["move"].active)
+        
         for enemy in self.enemys:
             enemy.active = False
 
@@ -710,7 +737,7 @@ class GameLevel:
         self.player["move"].change(active = False)
         self.player["move"].a_pressed = False
         self.player["move"].d_pressed = False
-        self.player["sprite"].change(frames_arr = self.global_assets["animations"][self.level_data["tile_set"]]["player"]["fall"][self.player["last_dir"]].frames, fps = 50)
+        self.player["sprite"].change(frames_arr = self.global_assets["animations"][self.level_data["tile_set"]]["player"]["fall"][self.player["last_dir"]].frames, fps = 40)
         self.player["collision"].change(active = False)
         self.player["current_anim"] = "fall"
         
@@ -722,6 +749,27 @@ class GameLevel:
                 enemy.move.change(active = False)
 
         self.reset_timer.start()
+    
+    def finish_level(self):
+        if self.finished:
+            return
+
+        self.finished = True
+
+        self.finish_func()
+
+        self.player["sprite"].change(frames_arr = self.global_assets["animations"][self.level_data["tile_set"]]["player"]["finish"].frames, fps = 20)
+        self.player["move"].change(active = False)
+
+        self.cover.change(active = False)
+
+        for enemy in self.enemys:
+            enemy.active = False
+
+            if hasattr(enemy, "move"):
+                enemy.move.change(active = False)
+
+        self.finish["timer"].start()
 
 
 class Spike:
@@ -755,7 +803,7 @@ class G_Enemy:
 
         self.box = nodes.BaseNode(self.scene, zindex = 100, offset = self.init_offset)
         self.sprite = nodes.AnimatedSpriteBlock(self.box, size, self.global_assets["animations"][tile_set]["g_enemy"]["idle"]["right"].frames, fps = 1, offset = [0, 0])
-        self.collision = nodes.CollisionArea(self.box, 3, show = True)
+        self.collision = nodes.CollisionArea(self.box, 3)
         self.collision.addCollisionBlock([size[0] * 0.8, size[1] * 0.6], offset = [size[0] * 0.1, size[1] * 0.4])
         self.move = EnemyMove(self.box, colide_with = 2, gravity = 240 * (size[1] / 40), speed = 40 * (size[0] / 40))
 
@@ -819,7 +867,7 @@ class F_Enemy:
 
         self.box = nodes.BaseNode(self.scene, zindex = 100, offset = self.init_offset)
         self.sprite = nodes.AnimatedSpriteBlock(self.box, size, self.global_assets["animations"][tile_set]["f_enemy"]["idle"]["right"].frames, fps = 20, offset = [0, 0])
-        self.collision = nodes.CollisionArea(self.box, 3, show = True)
+        self.collision = nodes.CollisionArea(self.box, 3)
         self.collision.addCollisionBlock([size[0] * 0.7, size[1] * 0.7], offset = [size[0] * 0.15, size[1] * 0.15])
         self.move = EnemyMove(self.box, colide_with = 2, gravity = 0, speed = 55 * (size[0] / 40))
 

@@ -1215,6 +1215,9 @@ class Timer(Modifier):
         self.elapsed = 0.0
         self.active = True
     
+    def pause(self):
+        self.active = self.active == False
+    
     def end(self):
         self.active = False
 
@@ -1287,6 +1290,7 @@ class MusicPlayer(Modifier):
         self.tracks[name] = sound
     
     def play(self, name : str):
+        print("Playing music:", name)
         self.tracks[name].sound.play(loops = -1)
 
     def stop(self, name : str):

@@ -6,7 +6,7 @@ from ..lib import Button
 
 
 class Levels:
-    def __init__(self, game : nodes.Game, level_node):
+    def __init__(self, game : nodes.Game, level_node, global_assets):
         self.name = "levels"
 
         self.scene = nodes.Scene(self.name, game, bg_color = (0, 0, 0))
@@ -22,10 +22,10 @@ class Levels:
 
         self.scene.change(onEntry = self.enterScene, onExit = self.exitScene)
 
-        unlocked = resources.SpriteSheet(game.directory("assets/level-icons.png"), [32, 32], alpha_channel = True)
-        locked = resources.SpriteSheet(game.directory("assets/locked-icons.png"), [32, 32], alpha_channel = True)
-        check = resources.Image(game.directory("assets/level-check.png"), alpha_channel = True)
-        lock = resources.Image(game.directory("assets/lock.png"), alpha_channel = True)
+        unlocked = global_assets["levels"]["unlocked"]
+        locked = global_assets["levels"]["locked"]
+        check = global_assets["levels"]["check"]
+        lock = global_assets["levels"]["lock"]
 
         self.level_array = []
         levels = resources.ReadData(game.directory("test-levels.txt"))

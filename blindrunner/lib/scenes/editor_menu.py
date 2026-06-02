@@ -6,13 +6,14 @@ from ..lib import *
 
 
 class PlayerLevels:
-    def __init__(self, game : nodes.Game, play_node, edit_node):
+    def __init__(self, game : nodes.Game, play_node, edit_node, global_assets):
         self.name = "editor_menu"
         self.play_node = play_node
         self.edit_node = edit_node
+        self.global_assets = global_assets
 
         self.gap = 60
-        self.button_size = (65 * game.vw, 12 * game.vh)
+        self.button_size = (1250, 125)
 
         self.buttons_list = []
 
@@ -28,10 +29,7 @@ class PlayerLevels:
 
         self.label = nodes.Label(self.background, "Your levels:", "main", "xl", offset_str = "top", offset = (0, self.gap))
 
-        temp_surface = pygame.Surface(self.button_size)
-        temp_surface.fill((30, 40, 170))
-        self.add_button = Button(self.background, self.button_size, temp_surface, func = self.edit, offset_str = "center")
-        nodes.Label(self.add_button.origin, "Create new", "main", zindex = 5, offset_str = "center")
+        self.add_button = Button(self.background, self.button_size, self.global_assets["add_button"].image, func = self.edit, offset_str = "center")
 
     def enterScene(self):
         self.drag_move.mouse_clicked = False
@@ -54,7 +52,8 @@ class PlayerLevels:
         last_y_size = 0
 
         for file_name in os.listdir(levels_folder):
-            last_level = levelButton(self, file_name, offset_y)
+            level_data = resources.ReadData(levels_folder + "/" + file_name)
+            last_level = levelButton(self, file_name, offset_y, level_data.get("tile_set", 0), level_data.get("finished", False), level_data.get("possible", False), self.global_assets)
             self.buttons_list.append(last_level)
             last_y_size = last_level.body.size.y
             offset_y += last_level.body.size.y + self.gap
@@ -89,9 +88,23 @@ class PlayerLevels:
     
     
 class levelButton:
-    def __init__(self, window, file_name, offset_y):
-        self.body = nodes.ColorBlock(window.background, window.button_size, (60, 140, 45), offset_str = "top", offset = (0, offset_y))
-        nodes.Label(self.body, file_name.removesuffix(".txt").upper(), "main", "m", offset_str = "left", offset = (30, 0))
-        ButtonText(self.body, "Play", "main", lambda: window.playLevel(file_name), offset_str = "right", offset = (-220, 0))
-        ButtonText(self.body, "Edit", "main", lambda: window.edit(file_name), offset_str = "right", offset = (-50, 0))
+    def __init__(self, window, file_name, offset_y, tile_set : int, finished : bool, possible : bool, global_assets):
+        if possible:
+            possible_str = "possible"
+            possible_color = (0, 255, 0)
+        else:
+            possible_str = "impossible"
+            possible_color = (200, 200, 200)
+
+        self.body = nodes.SpriteBlock(window.background, window.button_size, global_assets["level_card"].image, offset_str = "top", offset = (0, offset_y))
+        nodes.SpriteBlock(self.body, (80, 80), global_assets["levels"]["unlocked"].grid[tile_set][0], offset_str = "left", offset = (20, 0))
+
+        nodes.Label(self.body, file_name.removesuffix(".txt").upper(), "main", "m", offset_str = "left", offset = (120, 10))
+        nodes.Label(self.body, possible_str, "main", "xs", color = possible_color, offset_str = "bottom-right", offset = (-380, 20))
+
+        if finished:
+            nodes.SpriteBlock(self.body, (90, 60), global_assets["levels"]["check"].image, offset_str = "bottom-right", offset = (20, 18))
+
+        Button(self.body, (160, 80), global_assets["buttons"].grid[4][0], lambda: window.playLevel(file_name), offset_str = "right", offset = (-290, 0))
+        Button(self.body, (160, 80), global_assets["buttons"].grid[5][0], lambda: window.edit(file_name), offset_str = "right", offset = (-110, 0))
 

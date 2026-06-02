@@ -6,15 +6,17 @@ from ..lib import ButtonText
 
 
 class Settings:
-    def __init__(self, game):
+    def __init__(self, game, global_assets):
         self.last_scene = "main"
 
         self.name = "settings"
 
+        self.global_assets = global_assets
+
         self.scene = nodes.Scene(self.name, game, bg_color = (26, 26, 26))
         self.changers = []
-        self.changers.append(IntChanger(self.scene, "FPS cap", game.tick_speed, self.changeFPS, step = 25, offset = (0, 120)))
-        self.changers.append(Toggle(self.scene, "Show FPS", self.showFPS, offset = (0, 280)))
+        self.changers.append(IntChanger(self.scene, "FPS cap", game.tick_speed, self.changeFPS, self.global_assets, step = 25, offset = (0, 120)))
+        self.changers.append(Toggle(self.scene, "Show FPS", self.showFPS, self.global_assets, offset = (0, 280), ))
         self.changers.append(ButtonText(self.scene, "Factory reset", "main", lambda: self.hardReset(game), white_txt = False, offset_str = "top", offset = (0, 420)))
 
         self.fps_display = nodes.Label(self.scene, f"{1 / self.scene.game.delta} FPS", "main", "s", color = (10, 250, 10), zindex = 100, offset_str = "top-right")
@@ -65,39 +67,38 @@ class Settings:
 
 
 class IntChanger:
-    def __init__(self, parentNode, title, value, func, step = 10, offset = pygame.Vector2(0, 0)):
+    def __init__(self, parentNode, title, value, func, global_assets, step = 10, offset = pygame.Vector2(0, 0)):
         self.func = func
+
+        self.global_assets = global_assets
 
         self.origin = nodes.BaseNode(parentNode, offset_str = "top", offset = offset)
         self.text = nodes.Label(self.origin, title, "main", "l", offset_str = "bottom", offset = [0, -20])
-        self.value_txt = nodes.Label(self.origin, str(value), "main", "m", offset_str = "right")
-        surface = pygame.Surface([90, 80])
-        surface.fill((60, 230, 50))
-        self.arrow_up = Button(self.origin, [90, 30], surface.copy(), lambda: self.addValue(step), offset = [65, -20])
-        surface.fill((240, 30, 50))
-        self.arrow_down = Button(self.origin, [90, 30], surface, lambda: self.addValue(-step), offset = [65, 20])
+        self.value_txt = nodes.Label(self.origin, str(value), "main", "m", offset_str = "right", offset = (0, 10))
+        self.arrow_up = Button(self.origin, [60, 30], self.global_assets["fps_buttons"].grid[0][0], lambda: self.addValue(step), offset = [65, -18])
+        self.arrow_down = Button(self.origin, [60, 30], self.global_assets["fps_buttons"].grid[0][1], lambda: self.addValue(-step), offset = [65, 18])
 
     def addValue(self, num):
-        self.value_txt.change(text = self.func(num), offset_str = "right")
+        self.value_txt.change(text = self.func(num), offset_str = "right", offset = (0, 10))
         
 
 class Toggle:
-    def __init__(self, parentNode, title, func, init = False, offset = pygame.Vector2(0, 0)):
+    def __init__(self, parentNode, title, func, global_assets, init = False, offset = pygame.Vector2(0, 0)):
         self.func = func
+
+        self.state = init
+
+        self.global_assets = global_assets
 
         self.origin = nodes.BaseNode(parentNode, offset_str = "top", offset = offset)
 
         self.text = nodes.Label(self.origin, title, "main", "l", offset_str = "right")
-        self.surface = pygame.Surface((self.text.size.y * 0.7, self.text.size.y * 0.7))
 
-        self.state = init
-        self.surface.fill((25, 255, 25) if self.state else (255, 25, 25))
-       
-        self.toggle = Button(self.origin, (self.text.size.y * 0.7, self.text.size.y * 0.7), self.surface, self.changeState, offset_str = "left")
+        self.toggle = Button(self.origin, (100, 100), self.global_assets["arrows"].grid[0][9], self.changeState, offset_str = "left", offset = (80, -10))
     
     def changeState(self):
         self.state = self.state == False
-        self.surface.fill((25, 255, 25) if self.state else (255, 25, 25))
+        self.toggle.sprite.change(image = self.global_assets["arrows"].grid[0][8 if self.state else 9])
         self.func(self.state)
 
 

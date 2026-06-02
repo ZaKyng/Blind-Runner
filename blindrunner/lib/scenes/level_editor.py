@@ -50,12 +50,14 @@ class LevelEditor:
             self.name = "new_level"
             while os.path.exists(self.scene.game.directory("player_levels/" + self.name + ".txt")):
                     self.name += "_"
+
             self.name += ".txt"
 
-            level_data = self.default_data
 
-            for index in list(level_data.keys()):
-                resources.SaveData(self.scene.game.directory("player_levels/" + self.name), index, level_data[index])
+            for index in list(self.default_data.keys()):
+                resources.SaveData(self.scene.game.directory("player_levels/" + self.name), index, self.default_data[index])
+
+            level_data = resources.ReadData(self.scene.game.directory("player_levels/" + self.name))
             
             
             
@@ -74,7 +76,14 @@ class LevelEditor:
             resources.SaveData(self.scene.game.directory("player_levels/" + self.name), index, level_data[index])
 
     def leave(self):
+        
+        if self.changing_name:
+            self.rename(pygame.K_RETURN)
+            
         self.save()
+
+        
+
         self.scene.game.scenes.changeScene("editor_menu")
 
     def changeName(self):
@@ -98,38 +107,42 @@ class LevelEditor:
             update = True
         elif event.type == pygame.KEYDOWN:
             update = True
-            if event.key == pygame.K_RETURN:
-                pygame.key.stop_text_input()
-                self.changing_name = False
-
-                if self.name == "":
-                    self.name = "_"
-                
-                self.name = self.name.replace(" ", "_")
-                self.name = self.name.replace("/", "")
-                self.name = self.name.replace("\\", "")
-                
-                while os.path.exists(self.scene.game.directory("player_levels/" + self.name + ".txt")):
-                    self.name += "_"
-                self.name += ".txt"
-
-                old_file = "player_levels/" + self.old_name
-                
-                if os.path.exists(self.scene.game.directory(old_file)):
-                    os.rename(self.scene.game.directory(old_file), self.scene.game.directory("player_levels/" + self.name.lower()))
-
-                self.label.change(text = self.name.removesuffix(".txt").upper(), color = (255, 255, 255), offset_str = "top", offset = (0, 90))
-                self.nameCollisionUpdate()
-
-                self.level_node.name = self.name
+            if self.rename(event.key):
                 return
             
-            elif event.key == pygame.K_BACKSPACE:
+            if event.key == pygame.K_BACKSPACE:
                 self.name = self.name[:-1]
         
         if update:
             self.label.change(text = self.name.upper(), offset_str = "top", offset = (0, 90))
             self.nameCollisionUpdate()
+        
+    def rename(self, event_key):
+        if event_key == pygame.K_RETURN:
+            pygame.key.stop_text_input()
+            self.changing_name = False
+
+            if self.name == "":
+                self.name = "_"
+            
+            self.name = self.name.replace(" ", "_")
+            self.name = self.name.replace("/", "")
+            self.name = self.name.replace("\\", "")
+            
+            while os.path.exists(self.scene.game.directory("player_levels/" + self.name + ".txt")):
+                self.name += "_"
+            self.name += ".txt"
+
+            old_file = "player_levels/" + self.old_name
+            
+            if os.path.exists(self.scene.game.directory(old_file)):
+                os.rename(self.scene.game.directory(old_file), self.scene.game.directory("player_levels/" + self.name.lower()))
+
+            self.label.change(text = self.name.removesuffix(".txt").upper(), color = (255, 255, 255), offset_str = "top", offset = (0, 90))
+            self.nameCollisionUpdate()
+
+            self.level_node.name = self.name
+            return True
             
 
     def nameCollisionUpdate(self):
@@ -139,7 +152,7 @@ class LevelEditor:
 class EditorWindow:
     def __init__(self, parentNode, default_data, global_assets):
         self.parentNode = parentNode
-        self.level_data = default_data
+        self.level_data = default_data.copy()
 
         self.global_assets = global_assets
 
@@ -163,6 +176,8 @@ class EditorWindow:
         self.place_holding = False
         self.placing = True
 
+        self.changed = False
+
         self.click_area = nodes.CollisionArea(self.window, physics_layer = 16)
         self.click_area.addCollisionBlock(self.window.size)
 
@@ -171,11 +186,7 @@ class EditorWindow:
 
         modifiers.ForeverDo(self.window, self.mousePlace)
 
-
-
-        arrows = resources.SpriteSheet(self.parentNode.game.directory("assets/arrows.png"), (16, 16), True)
-
-        
+        arrows = self.global_assets["arrows"]
 
         self.tile_resize = {"box" : nodes.BaseNode(self.side_panel, zindex = 1, offset_str = "top", offset = (0, 0))}
 
@@ -193,7 +204,7 @@ class EditorWindow:
         self.level_icons = resources.SpriteSheet(self.parentNode.game.directory("assets/level-icons.png"), (32, 32), True)
         self.design_changer["icon"] = nodes.SpriteBlock(self.design_changer["box"], (55, 55), self.level_icons.grid[0][0], offset_str = "center", offset = (-110, 0), zindex = 2)
         self.design_changer["label"] = nodes.Label(self.design_changer["box"], "Tile Set", "main", "s", offset = (0, 10), offset_str = "center", zindex = 2)
-        self.design_changer["button"] = Button(self.design_changer["box"], (50, 50), arrows.grid[0][1], self.changeTileSet, higherBy = 2, offset_str = "center", offset = (110, 0))
+        self.design_changer["button"] = Button(self.design_changer["box"], (50, 50), arrows.grid[0][2], self.changeTileSet, higherBy = 2, offset_str = "center", offset = (110, 0))
 
 
         self.block_select = {"box" : nodes.BaseNode(self.side_panel, zindex = 1, offset_str = "top", offset = (0, 225))}
@@ -206,13 +217,14 @@ class EditorWindow:
             self.block_select["cards"].append(BlockCard(self.block_select["box"], i, self.global_assets["tile_maps"][0].grid[0][3], offset = (((((i % 2) * 2) - 1) * 70) - 60 , (i // 2 * 180) + 40), changerFunc = self.changeSelectedBlock))
 
         self.bottom_buttons = {"box" : nodes.BaseNode(self.side_panel, zindex = 1, offset_str = "bottom", offset = (0, -20))}
-        self.bottom_buttons["save"] = ButtonText(self.bottom_buttons["box"], "Save", "main", self.save, offset_str = "bottom", offset = (-90, 0))
-        self.bottom_buttons["delete"] = ButtonText(self.bottom_buttons["box"], "Delete", "main", self.showDeleteWindow, offset_str = "bottom", offset = (70, 0))
+        self.bottom_buttons["save"] = Button(self.bottom_buttons["box"], (130, 65), self.global_assets["buttons"].grid[6][0], self.saveButton, offset_str = "bottom", offset = (-80, -45))
+        self.bottom_buttons["save_timer"] = modifiers.Timer(self.bottom_buttons["save"].origin, 1.5, lambda: self.bottom_buttons["save"].sprite.change(image = self.global_assets["buttons"].grid[6][0]))
+        self.bottom_buttons["delete"] = Button(self.bottom_buttons["box"], (130, 65), self.global_assets["buttons"].grid[8][0], self.showDeleteWindow, offset_str = "bottom", offset = (80, -45))
 
         self.delete_window = nodes.ColorBlock(self.parentNode, (self.parentNode.size), color = (0, 0, 0, 200), alpha_channel = True, zindex = 999)
         nodes.Label(self.delete_window, "Are you sure you want to delete this level?", "main", "l", offset_str = "center", offset = (0, -50))
-        ButtonText(self.delete_window, "Yes", "main", self.delete, white_txt = False, offset_str = "center", offset = (-100, 50))
-        ButtonText(self.delete_window, "No", "main", lambda: self.showDeleteWindow(False), offset_str = "center", offset = (100, 50))
+        Button(self.delete_window, (100, 100), self.global_assets["arrows"].grid[0][6], self.delete, offset_str = "center", offset = (-100, 50))
+        Button(self.delete_window, (100, 100), self.global_assets["arrows"].grid[0][5], lambda: self.showDeleteWindow(False), offset_str = "center", offset = (100, 50))
 
         self.delete_window.change(active = False)
 
@@ -221,9 +233,15 @@ class EditorWindow:
     def load(self, level_data, name):
         # Bulk-load level data with reduced per-tile updates to avoid long stalls.
         self.loading = True
+        
+        self.changed = False
 
         self.level_data = level_data
         self.name = name
+
+        self.noneditible = []
+
+        self.delete_window.change(active = False)
 
         # Apply tile size first (may recreate internal structures)
         self.changeTileCount(self.level_data.get("tile_count_x", 20))
@@ -309,10 +327,28 @@ class EditorWindow:
                 pass
 
         self.loading = False
+
+        self.changeSelectedBlock(0) # Ensure UI reflects the current block selection after loading
+
+        self.updateNoneditible()
+    
+
+    def saveButton(self):
+        self.save()
+
+        self.bottom_buttons["save"].sprite.change(image = self.global_assets["buttons"].grid[7][0])
+
+        self.bottom_buttons["save_timer"].end()
+        self.bottom_buttons["save_timer"].start()
+
         self.updateNoneditible()
 
 
     def save(self):
+        if self.changed:
+            self.level_data["finished"] = False
+            self.level_data["possible"] = False
+
         level_data = self.level_data
 
         """
@@ -322,8 +358,6 @@ class EditorWindow:
         level_data["finish"] = list(self.level_data["finish"])
         level_data["spikes"] = list(self.level_data["spikes"])
         """
-
-        self.noneditible = []
 
         return level_data
     
@@ -380,6 +414,8 @@ class EditorWindow:
 
     def place(self, coords):
         coords = tuple(coords)
+
+        self.changed = True
 
         if self.selected_block == 0: #ground
             if coords in self.noneditible:
@@ -522,14 +558,12 @@ class EditorWindow:
         last_count = self.level_data["tile_count_x"]
         tile_count = max(10, min(count_x, 90))
         size = (self.grid_maxs[0] // (tile_count - 1), self.grid_maxs[0] // (tile_count - 1))
-        print(self.grid_maxs, size[0])
         self.level_grid.change(one_tile_size = size)
         self.level_data["tile_count_x"] = tile_count
         self.tile_resize["text"].change(text = str(int(tile_count)))
 
         self.grid_encloser.change(offset = (-size[0] // 2, (size[1] - (self.grid_maxs[1] % size[1])) // -2))
 
-        print(self.grid_encloser.offset)
 
         if last_count < tile_count:
             for block in list(self.ground.blocks.keys()):

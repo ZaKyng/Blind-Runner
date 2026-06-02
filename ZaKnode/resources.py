@@ -68,6 +68,10 @@ class Sound:
         self.sound = pygame.mixer.Sound(path)
         self.volume = max(0, min(volume, 1))
         self.sound.set_volume(self.volume)
+    
+    def changeVolume(self, volume):
+        self.volume = max(0, min(volume, 1))
+        self.sound.set_volume(self.volume)
 
 
 def SaveData(path, index, value):

@@ -791,7 +791,7 @@ class AnimatedSpriteBlock(Node):
         super().event(event)
     
     def update(self):
-        self.count += 1
+        self.count += 1 * self.game.delta
         if self.count >= self.frameLen:
             self.count = 0
             self.index += 1
@@ -843,7 +843,7 @@ class AnimatedSpriteBlock(Node):
         if sizer is not None:
             self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
         
-        self.frameLen = self.game.tick_speed // self.fps
+        self.frameLen = self.game.tick_speed / (self.fps * 100)
         
 
     def kill(self):
