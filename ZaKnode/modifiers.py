@@ -1279,7 +1279,7 @@ class MusicPlayer(Modifier):
     def change(self, volume : float = None, active : bool = None):
         if volume is not None:
             self.volume = max(0, min(volume, 1))
-            for track in self.tracks:
+            for track in self.tracks.values():
                 track.sound.set_volume(track.volume * self.volume)
         super().modifierChange(active)
 
@@ -1290,7 +1290,6 @@ class MusicPlayer(Modifier):
         self.tracks[name] = sound
     
     def play(self, name : str):
-        print("Playing music:", name)
         self.tracks[name].sound.play(loops = -1)
 
     def stop(self, name : str):

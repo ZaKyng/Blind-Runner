@@ -566,7 +566,7 @@ class GameLevel:
 
         tile_size = self.scene.size[0] / (level_data["tile_count_x"] - 1)
         tile_for_y = int(tile_size)
-        if tile_size - int(tile_size) > 0.5:
+        if tile_size - float(int(tile_size)) > 0.5:
             tile_size = int(tile_size) + 1
         else:
             tile_size = int(tile_size)

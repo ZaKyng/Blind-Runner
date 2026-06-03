@@ -226,56 +226,43 @@ def run():
 
     my_game.music_playing = "none"
 
-    def always(my_game, global_assets = global_assets):
-
+    def always(my_game, global_assets=global_assets):
         current_scene = my_game.scenes.current_scene
 
+        # 1. Handle Scene Transitions (only runs when scene changes)
         if my_game.last_scene != current_scene:
-            print("scene changed to:", current_scene)
             if current_scene in not_menu:
-                
-                print("playing level music")
                 my_game.audio_player.stop("menu-music")
-                if current_scene == one_story_level.name:
-                    my_game.audio_player.stop("menu-music")
-                    my_game.audio_player.play("level-music")
-                    my_game.audio_player.play("running-music")
-                    if not one_story_level.level.cover.active:
-                        if my_game.music_playing != "level-music":
-                            global_assets["music"][1].changeVolume(1)
-                            global_assets["music"][2].changeVolume(0)
-                            my_game.audio_player.change()
-                            my_game.music_playing = "level-music"
-                    else:
-                        if my_game.music_playing != "running-music":
-                            global_assets["music"][2].changeVolume(1)
-                            global_assets["music"][1].changeVolume(0)
-                            my_game.audio_player.change()
-                            my_game.music_playing = "running-music"
-                elif current_scene == one_player_level.name:
-                    my_game.audio_player.stop("menu-music")
-                    my_game.audio_player.play("level-music")
-                    my_game.audio_player.play("running-music")
-                    if not one_player_level.level.cover.active:
-                        if my_game.music_playing != "level-music":
-                            global_assets["music"][1].changeVolume(1)
-                            global_assets["music"][2].changeVolume(0)
-                            my_game.audio_player.change()
-                            my_game.music_playing = "level-music"
-                    else:
-                        if my_game.music_playing != "running-music":
-                            global_assets["music"][2].changeVolume(1)
-                            global_assets["music"][1].changeVolume(0)
-                            my_game.audio_player.change()
-                            my_game.music_playing = "running-music"
+                my_game.audio_player.play("level-music")
+                my_game.audio_player.play("running-music")
             else:
-                print("playing menu music")
                 if my_game.music_playing != "menu-music":
                     my_game.audio_player.stop("level-music")
                     my_game.audio_player.stop("running-music")
                     my_game.audio_player.play("menu-music")
                     my_game.music_playing = "menu-music"
-        my_game.last_scene = my_game.scenes.current_scene
+            
+            my_game.last_scene = current_scene
+
+        # 2. Handle In-Game Music Toggling (runs every frame while in a level)
+        if current_scene == one_story_level.name:
+            target_level = one_story_level
+        elif current_scene == one_player_level.name:
+            target_level = one_player_level
+        else:
+            return # Not in a playable level, nothing more to do
+
+        # Check cover status on every frame
+        if not target_level.level.cover.active:
+            if my_game.music_playing != "level-music":
+                global_assets["music"][1].changeVolume(1)
+                global_assets["music"][2].changeVolume(0)
+                my_game.music_playing = "level-music"
+        else:
+            if my_game.music_playing != "running-music":
+                global_assets["music"][2].changeVolume(1)
+                global_assets["music"][1].changeVolume(0)
+                my_game.music_playing = "running-music"
 
 
 

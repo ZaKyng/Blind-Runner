@@ -223,7 +223,7 @@ class EditorWindow:
 
         self.delete_window = nodes.ColorBlock(self.parentNode, (self.parentNode.size), color = (0, 0, 0, 200), alpha_channel = True, zindex = 999)
         nodes.Label(self.delete_window, "Are you sure you want to delete this level?", "main", "l", offset_str = "center", offset = (0, -50))
-        Button(self.delete_window, (100, 100), self.global_assets["arrows"].grid[0][6], self.delete, offset_str = "center", offset = (-100, 50))
+        Button(self.delete_window, (100, 100), self.global_assets["arrows"].grid[0][7], self.delete, offset_str = "center", offset = (-100, 50))
         Button(self.delete_window, (100, 100), self.global_assets["arrows"].grid[0][5], lambda: self.showDeleteWindow(False), offset_str = "center", offset = (100, 50))
 
         self.delete_window.change(active = False)
@@ -557,12 +557,19 @@ class EditorWindow:
     def changeTileCount(self, count_x):
         last_count = self.level_data["tile_count_x"]
         tile_count = max(10, min(count_x, 90))
-        size = (self.grid_maxs[0] // (tile_count - 1), self.grid_maxs[0] // (tile_count - 1))
+        size = [self.grid_maxs[0] / (tile_count - 1), self.grid_maxs[0] / (tile_count - 1)]
+
+        size_int = int(size[0])
+        if size[0] - float(int(size[0])) > 0.5:
+            size[0] = int(size[0]) + 1
+        else:
+            size[0] = int(size[0])
+
         self.level_grid.change(one_tile_size = size)
         self.level_data["tile_count_x"] = tile_count
         self.tile_resize["text"].change(text = str(int(tile_count)))
 
-        self.grid_encloser.change(offset = (-size[0] // 2, (size[1] - (self.grid_maxs[1] % size[1])) // -2))
+        self.grid_encloser.change(offset = (-size[0] // 2, (size_int - (self.grid_maxs[1] % size_int)) // -2))
 
 
         if last_count < tile_count:

@@ -16,7 +16,7 @@ class Settings:
         self.scene = nodes.Scene(self.name, game, bg_color = (26, 26, 26))
         self.changers = []
         self.changers.append(IntChanger(self.scene, "FPS cap", game.tick_speed, self.changeFPS, self.global_assets, step = 25, offset = (0, 120)))
-        self.changers.append(Toggle(self.scene, "Show FPS", self.showFPS, self.global_assets, offset = (0, 280), ))
+        self.changers.append(Toggle(self.scene, "Show FPS", self.showFPS, self.global_assets, offset = (90, 280)))
         self.changers.append(ButtonText(self.scene, "Factory reset", "main", lambda: self.hardReset(game), white_txt = False, offset_str = "top", offset = (0, 420)))
 
         self.fps_display = nodes.Label(self.scene, f"{1 / self.scene.game.delta} FPS", "main", "s", color = (10, 250, 10), zindex = 100, offset_str = "top-right")
