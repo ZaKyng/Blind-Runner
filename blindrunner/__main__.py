@@ -45,6 +45,10 @@ def run():
         "levels" : {
 
         },
+
+        "slider" : {
+
+        },
     
         "animations" : [
             {
@@ -94,10 +98,10 @@ def run():
     
 
     
-    global_assets["tile_maps"].append(resources.SpriteSheet(my_game.directory("assets/final_tiles-1-test.png"), (8, 8), alpha_channel = True))
-    global_assets["tile_maps"].append(resources.SpriteSheet(my_game.directory("assets/final_tiles-2-test.png"), (8, 8), alpha_channel = True))
-    global_assets["tile_maps"].append(resources.SpriteSheet(my_game.directory("assets/final_tiles-3-test.png"), (8, 8), alpha_channel = True))
-    global_assets["tile_maps"].append(resources.SpriteSheet(my_game.directory("assets/final_tiles-4-test.png"), (8, 8), alpha_channel = True))
+    global_assets["tile_maps"].append(resources.SpriteSheet(my_game.directory("assets/final-tiles-1-test.png"), (8, 8), alpha_channel = True))
+    global_assets["tile_maps"].append(resources.SpriteSheet(my_game.directory("assets/final-tiles-2-test.png"), (8, 8), alpha_channel = True))
+    global_assets["tile_maps"].append(resources.SpriteSheet(my_game.directory("assets/final-tiles-3-test.png"), (8, 8), alpha_channel = True))
+    global_assets["tile_maps"].append(resources.SpriteSheet(my_game.directory("assets/final-tiles-4-test.png"), (8, 8), alpha_channel = True))
 
     global_assets["backgrounds"].append(resources.Image(my_game.directory("assets/backgrounds-1-test.png")))
     global_assets["backgrounds"].append(resources.Image(my_game.directory("assets/backgrounds-2-test.png")))
@@ -106,13 +110,18 @@ def run():
 
     global_assets["buttons"] = resources.SpriteSheet(my_game.directory("assets/buttons2.png"), (64, 32), alpha_channel = True)
 
-    global_assets["level_card"] = resources.Image(my_game.directory("assets/player_level_card.png"), alpha_channel = True)
+    global_assets["level_card"] = resources.Image(my_game.directory("assets/player-level-card.png"), alpha_channel = True)
 
-    global_assets["add_button"] = resources.Image(my_game.directory("assets/add_button.png"), alpha_channel = True)
+    global_assets["add_button"] = resources.Image(my_game.directory("assets/add-button.png"), alpha_channel = True)
+
+    global_assets["test_button"] = resources.Image(my_game.directory("assets/test-button.png"), alpha_channel = True)
 
     global_assets["arrows"] = resources.SpriteSheet(my_game.directory("assets/arrows.png"), (16, 16), alpha_channel = True)
 
     global_assets["fps_buttons"] = resources.SpriteSheet(my_game.directory("assets/fps-buttons.png"), (16, 8), alpha_channel = True)
+
+    global_assets["slider"]["bg"] = resources.Image(my_game.directory("assets/slider-bg.png"), alpha_channel = True)
+    global_assets["slider"]["fg"] = resources.Image(my_game.directory("assets/slider-fg.png"), alpha_channel = True)
 
     global_assets["levels"]["unlocked"] = resources.SpriteSheet(my_game.directory("assets/level-icons.png"), (32, 32), alpha_channel = True)
     global_assets["levels"]["locked"] = resources.SpriteSheet(my_game.directory("assets/locked-icons.png"), (32, 32), alpha_channel = True)
@@ -190,6 +199,11 @@ def run():
     global_assets["music"].append(resources.Sound(my_game.directory("assets/test-music-3.mp3")))
 
 
+    editor = level_editor.LevelEditor(my_game, global_assets)
+
+
+    my_game.audio_player = lib.AudioManager(editor.scene)
+
 
     settings_scene = settings.Settings(my_game, global_assets)
 
@@ -201,18 +215,21 @@ def run():
 
     one_player_level = player_level_play.Level(my_game, settings_scene, global_assets)
 
-    editor = level_editor.LevelEditor(my_game, global_assets)
-
     editor_menu.PlayerLevels(my_game, one_player_level, editor, global_assets)
 
     settings_scene.addFPSToScenes()
     
     
-    my_game.audio_player = modifiers.MusicPlayer(menu_node.scene)
+    
 
-    my_game.audio_player.add("menu-music", global_assets["music"][0])
-    my_game.audio_player.add("level-music", global_assets["music"][1])
-    my_game.audio_player.add("running-music", global_assets["music"][2])
+    my_game.audio_player.addMusic("music", "menu-music", global_assets["music"][0])
+    my_game.audio_player.addMusic("music", "level-music", global_assets["music"][1])
+    my_game.audio_player.addMusic("music", "running-music", global_assets["music"][2])
+
+    my_game.audio_player.addMusic("sfx", "win", resources.Sound(my_game.directory("assets/victory.mp3")))
+    for i in range(5):
+        my_game.audio_player.addMusic("sfx", f"death{i + 1}", resources.Sound(my_game.directory(f"assets/death{i + 1}.mp3")))
+        my_game.audio_player.sfx_channel.sounds[f"death{i + 1}"].changeVolume(0.7)
 
 
     my_game.scenes.current_scene = "menu"
@@ -232,14 +249,14 @@ def run():
         # 1. Handle Scene Transitions (only runs when scene changes)
         if my_game.last_scene != current_scene:
             if current_scene in not_menu:
-                my_game.audio_player.stop("menu-music")
-                my_game.audio_player.play("level-music")
-                my_game.audio_player.play("running-music")
+                my_game.audio_player.stopMusic("music", "menu-music")
+                my_game.audio_player.playMusic("music", "level-music")
+                my_game.audio_player.playMusic("music", "running-music")
             else:
                 if my_game.music_playing != "menu-music":
-                    my_game.audio_player.stop("level-music")
-                    my_game.audio_player.stop("running-music")
-                    my_game.audio_player.play("menu-music")
+                    my_game.audio_player.stopMusic("music", "level-music")
+                    my_game.audio_player.stopMusic("music", "running-music")
+                    my_game.audio_player.playMusic("music", "menu-music")
                     my_game.music_playing = "menu-music"
             
             my_game.last_scene = current_scene
@@ -255,13 +272,13 @@ def run():
         # Check cover status on every frame
         if not target_level.level.cover.active:
             if my_game.music_playing != "level-music":
-                global_assets["music"][1].changeVolume(1)
-                global_assets["music"][2].changeVolume(0)
+                my_game.audio_player.music_channel.tracks["running-music"].changeVolume(0)
+                my_game.audio_player.music_channel.tracks["level-music"].changeVolume(0.35)
                 my_game.music_playing = "level-music"
         else:
             if my_game.music_playing != "running-music":
-                global_assets["music"][2].changeVolume(1)
-                global_assets["music"][1].changeVolume(0)
+                my_game.audio_player.music_channel.tracks["running-music"].changeVolume(0.35)
+                my_game.audio_player.music_channel.tracks["level-music"].changeVolume(0)
                 my_game.music_playing = "running-music"
 
 

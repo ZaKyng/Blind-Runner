@@ -556,7 +556,7 @@ class EditorWindow:
 
     def changeTileCount(self, count_x):
         last_count = self.level_data["tile_count_x"]
-        tile_count = max(10, min(count_x, 90))
+        tile_count = max(10, min(count_x, 50))
         size = [self.grid_maxs[0] / (tile_count - 1), self.grid_maxs[0] / (tile_count - 1)]
 
         size_int = int(size[0])

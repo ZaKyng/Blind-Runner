@@ -820,6 +820,8 @@ class Hover(Modifier):
 class PressKey(Modifier):
     def __init__(self, parentNode : Node, key, function : callable, keydown : bool = True, mouse : bool = False):
         super().__init__(parentNode)
+
+        self.mouse_press = False
         
         self.change(key = key, func = function, keydown = keydown, mouse = mouse, active = True)
 
@@ -846,10 +848,10 @@ class PressKey(Modifier):
             self.keydown = keydown
 
         if mouse is not None:
-            self.mouse = mouse
+            self.mouse_press = mouse
         
         if mouse is not None or keydown is not None:
-            if self.mouse:
+            if self.mouse_press:
                 self.input_type = self.mouse
                 if self.keydown:
                     self.event_type = pygame.MOUSEBUTTONDOWN
@@ -1244,8 +1246,9 @@ class SoundEffectPlayer(Modifier):
     def change(self, volume : float = None, active : bool = None):
         if volume is not None:
             self.volume = max(0, min(volume, 1))
-            for track in self.sounds:
-                track.sound.set_volume(track.volume * self.volume)
+            for sound in self.sounds.values():
+                sound.parent_volume = self.volume
+                sound.sound.set_volume(sound.volume * self.volume)
         super().modifierChange(active)
 
     def kill(self):
@@ -1280,6 +1283,7 @@ class MusicPlayer(Modifier):
         if volume is not None:
             self.volume = max(0, min(volume, 1))
             for track in self.tracks.values():
+                track.parent_volume = self.volume
                 track.sound.set_volume(track.volume * self.volume)
         super().modifierChange(active)
 

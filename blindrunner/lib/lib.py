@@ -1,4 +1,5 @@
 from platform import node
+import random
 
 import pygame
 from ZaKnode import *
@@ -6,14 +7,28 @@ from ZaKnode import *
 
 class Button:
     def __init__(self, parentNode, size, surface, func, higherBy = 6, offset_str = None, offset = (0, 0)):
+        self.func = func
+        self.size = size
+
+        self.can_be_big = True
+
         self.origin = nodes.BaseNode(parentNode, offset_str = offset_str, offset = offset)
-        self.sprite = nodes.SpriteBlock(self.origin, size, surface, offset_str = "Center")
+        self.sprite = nodes.SpriteBlock(self.origin, size, surface, offset_str = "Center", zindex = 5)
         self.collision = nodes.CollisionArea(self.origin, 1)
         self.collision.addCollisionBlock(size, offset_str = "center")
         modifiers.Hover(self.origin, 1, lambda: self.hoverReize((size[0] + higherBy, size[1] + (size[1] * higherBy / size[0] if size[0] != 0 else 0))), else_func = lambda: self.noHoverResize(size))
-        modifiers.ClickObject(self.origin, 1, function = func, button = 1)
+
+        modifiers.ClickObject(self.origin, 1, function = self.click, button = 1)
+
+        self.timer = modifiers.Timer(self.origin, 0.1, self.enableRise)
+
+    def enableRise(self):
+        self.can_be_big = True
     
     def hoverReize(self, size):
+        if not self.can_be_big:
+            return
+        
         self.sprite.change(size = size, offset_str = "center")
         self.collision.children[0].change(size = size, offset_str = "center")
 
@@ -21,6 +36,14 @@ class Button:
     def noHoverResize(self, size):
         self.sprite.change(size = size, offset_str = "center")
         self.collision.children[0].change(size = size, offset_str = "center")
+
+    def click(self):
+        self.can_be_big = False
+        self.noHoverResize(self.size)
+        self.func()
+
+        self.timer.start()
+
 
 class ButtonText:
     def __init__(self, parentNode, text, font_name, func, white_txt = True, button_down = True, offset_str = None, offset = (0, 0)):
@@ -71,7 +94,6 @@ class PauseMenu:
         self.game_level_node.reset()
         self.pause()
     
-
 
 class PlayerMove(base.Modifier):
     def __init__(self, parentNode, colide_with : int, self_layers : int = None, die_layer : int = None, speed = 60, gravity = 10, jump_power = 35):
@@ -302,7 +324,6 @@ class PlayerMove(base.Modifier):
                         ownHitBox.update()
         return new_change
 
-
 class EnemyMove(PlayerMove):
     def __init__(self, parentNode, colide_with : int, self_layers : int = None, die_layer : int = None, speed = 60, gravity = 0, jump_power = 0):
         super().__init__(parentNode, colide_with, self_layers, die_layer, speed = speed, gravity = gravity, jump_power = jump_power)
@@ -476,7 +497,6 @@ class EnemyMove(PlayerMove):
         return new_change
 
 
-
 class GameLevel:
     def __init__(self, scene, global_assets, finish_func, settings_node, scene_name, level_name, level_node, previous_scene):
         self.scene = scene
@@ -639,7 +659,8 @@ class GameLevel:
             self.playerDeath()
             return
 
-        if self.new_pos.distance_to(self.last_pos) > 2 or not self.player["move"].on_ground:
+        if self.new_pos.distance_to(self.last_pos) > self.grid.tile_size[0] / 45 or not self.player["move"].on_ground:
+            print(self.grid.tile_size[0] / 40)
             self.cover.change(active = True)
             #self.transparency = max(0, self.transparency - 40)
         else:
@@ -740,7 +761,8 @@ class GameLevel:
         self.player["sprite"].change(frames_arr = self.global_assets["animations"][self.level_data["tile_set"]]["player"]["fall"][self.player["last_dir"]].frames, fps = 40)
         self.player["collision"].change(active = False)
         self.player["current_anim"] = "fall"
-        
+
+        self.scene.game.audio_player.playMusic("sfx", "death" + str(random.randint(1, 5)))
 
         for enemy in self.enemys:
             enemy.active = False
@@ -757,6 +779,8 @@ class GameLevel:
         self.finished = True
 
         self.finish_func()
+
+        self.scene.game.audio_player.playMusic("sfx", "win")
 
         self.player["sprite"].change(frames_arr = self.global_assets["animations"][self.level_data["tile_set"]]["player"]["finish"].frames, fps = 20)
         self.player["move"].change(active = False)
@@ -854,7 +878,6 @@ class G_Enemy:
     def kill(self):
         self.box.kill()
 
-
 class F_Enemy:
     def __init__(self, scene, global_assets, size, coords, tile_set, player_box):
         self.scene = scene
@@ -899,6 +922,7 @@ class F_Enemy:
     def kill(self):
         self.box.kill()
 
+
 def changeTileApearance(coords, global_assets, level_data, ground):
     coords = tuple(coords)
 
@@ -933,3 +957,52 @@ def changeTileApearance(coords, global_assets, level_data, ground):
         checks.append(temp in level_data["ground"])
     
     ground.changeTile(coords, states[tuple(checks)])
+
+
+class AudioManager:
+    def __init__(self, parentNode):
+        self.parentNode = parentNode
+        self.game = parentNode.game
+
+        self.master_volume = 1.0
+
+        self.music_volume = 1.0
+        self.sfx_volume = 1.0
+
+        self.music_channel = modifiers.MusicPlayer(self.parentNode, 1)
+        self.sfx_channel = modifiers.SoundEffectPlayer(self.parentNode, 1)
+    
+
+    def changeMasterVolume(self, volume):
+        volume = max(0, min(1, volume))
+        self.master_volume = volume
+        self.changeVolume(self.music_volume, "music")
+        self.changeVolume(self.sfx_volume, "sfx")
+
+    def changeVolume(self, volume, channel):
+        volume = max(0, min(1, volume))
+        if channel == "music":
+            self.music_volume = volume
+            self.music_channel.change(volume = volume * self.master_volume)
+        elif channel == "sfx":
+            self.sfx_volume = volume
+            self.sfx_channel.change(volume = volume * self.master_volume)
+        
+
+    def addMusic(self, channel, name, sound):
+        if channel == "music":
+            self.music_channel.add(name, sound)
+        elif channel == "sfx":
+            self.sfx_channel.add(name, sound)
+    
+    def playMusic(self, channel, name):
+        if channel == "music":
+            self.music_channel.play(name)
+        elif channel == "sfx":
+            self.sfx_channel.play(name)
+    
+    def stopMusic(self, channel, name):
+        if channel == "music":
+            self.music_channel.stop(name)
+        elif channel == "sfx":
+            self.sfx_channel.stop(name)
