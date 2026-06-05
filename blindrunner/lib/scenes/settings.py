@@ -1,4 +1,5 @@
 import pygame
+import os
 from ZaKnode import *
 from ..lib import Button
 from ..lib import ButtonText
@@ -37,6 +38,7 @@ class Settings:
         sfx_test = Button(audio_tile, (110, 45), self.global_assets["test_button"].image, self.testSFXVolume, offset = (400, 220))
 
         self.changers.append(ButtonText(self.scene, "Factory reset", "main", lambda: self.hardReset(game), white_txt = False, offset_str = "bottom-right", offset = (-30, -20)))
+
         self.fps_display = nodes.Label(self.scene, f"{1 / self.scene.game.delta} FPS", "main", "s", color = (10, 250, 10), zindex = 100, offset_str = "top-right")
         self.fps_display.change(active = False)
         modifiers.ForeverDo(self.fps_display, self.updateFPS)
@@ -78,11 +80,13 @@ class Settings:
         self.game.audio_player.playMusic("sfx", "win")
 
     def hardReset(self, game):
-        backup = resources.ReadData(game.directory("levels_backup.txt"))
+        backup_folder = game.directory("backup_levels")
+        for file_name in os.listdir(backup_folder):
+            real_data = resources.ReadData(backup_folder + "/" + str(file_name))
 
-        resources.SaveDataList(game.directory("test-levels.txt"), list(backup.keys()), list(backup.values()))
+            for key in real_data.keys():
+                resources.SaveData(game.directory("ingame_levels/" + str(file_name)), key, real_data[key])
 
-        self.scene.game.scenes.changeScene("menu")
     
     def open(self, scene):
         self.last_scene = scene

@@ -99,7 +99,10 @@ class levelButton:
         self.body = nodes.SpriteBlock(window.background, window.button_size, global_assets["level_card"].image, offset_str = "top", offset = (0, offset_y))
         nodes.SpriteBlock(self.body, (80, 80), global_assets["levels"]["unlocked"].grid[tile_set][0], offset_str = "left", offset = (20, 0))
 
-        nodes.Label(self.body, file_name.removesuffix(".txt").upper(), "main", "m", offset_str = "left", offset = (120, 10))
+        label_text = file_name.removesuffix(".txt").upper()
+        label_text = label_text.replace("_", " ")
+
+        nodes.Label(self.body, label_text, "main", "m", offset_str = "left", offset = (120, 10))
         nodes.Label(self.body, possible_str, "main", "xs", color = possible_color, offset_str = "bottom-right", offset = (-380, 20))
 
         if finished:

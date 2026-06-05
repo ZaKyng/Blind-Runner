@@ -23,16 +23,23 @@ class Level:
 
 
     def finish(self):
-        level_data = resources.ReadData(self.scene.game.directory("test-levels.txt"), self.level_name)
-        level_data["finished"] = True
-        resources.SaveData(self.scene.game.directory("test-levels.txt"), self.level_name, level_data)
-        
-        for unlocked_id in level_data["unlock"]:
-            unlocked_level = resources.ReadData(self.scene.game.directory("test-levels.txt"), str(unlocked_id))
+        level_dir = self.scene.game.directory("ingame_levels/" + str(self.level_name))
+        level_data = resources.ReadData(level_dir)
 
-            if unlocked_level is not None and int(self.level_name) in unlocked_level["locked_by"]:
-                unlocked_level["locked_by"].remove(int(self.level_name))
-                resources.SaveData(self.scene.game.directory("test-levels.txt"), str(unlocked_id), unlocked_level)
+        if level_data["finished"]:
+            return
+
+        resources.SaveData(level_dir, "finished", True)
+        
+        for unlocked_level_name in level_data["unlocks"]:
+            unlocked_url = self.scene.game.directory(f"ingame_levels/{unlocked_level_name}.txt")
+            unlocked_level = resources.ReadData(unlocked_url)
+
+            level_name = str(self.level_name).removesuffix(".txt")
+
+            if unlocked_level is not None and level_name in unlocked_level["locked_by"]:
+                unlocked_level["locked_by"].remove(level_name)
+                resources.SaveData(unlocked_url, "locked_by", unlocked_level["locked_by"])
     
 
 

@@ -4,6 +4,7 @@ import pygame
 from pygame import Vector2
 from ZaKnode import *
 from .lib import lib
+from .lib import level_config
 from .lib.scenes import *
 
 
@@ -233,6 +234,9 @@ def run():
 
 
     my_game.scenes.current_scene = "menu"
+
+
+    #level_config.configourateLevels(my_game)
 
 
     def global_input(event):

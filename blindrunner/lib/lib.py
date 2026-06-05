@@ -570,7 +570,8 @@ class GameLevel:
         self.cover = nodes.SpriteBlock(self.scene, self.scene.size, self.global_assets["backgrounds"][0].image, offset = (0, 0), zindex = 50)
 
         self.cover.change(active = False)
-        self.transparency = 0 # 0 - 255, 0 being fully invisible, 255 being fully visible
+        self.can_cover = True
+        self.cover_timer = modifiers.Timer(self.cover, 0.08, lambda : self.coverCanCover(False))
 
         modifiers.ForeverDo(self.scene, self.coverSight)
 
@@ -581,8 +582,11 @@ class GameLevel:
 
         self.level_name = name
         self.pause_menu.change(active = False)
+
+        label_text = name.removesuffix(".txt").upper()
+        label_text = label_text.replace("_", " ")
         
-        self.label.change(text = name.removesuffix(".txt").upper(), offset_str = "top", offset = (0, 20), zindex = 100)
+        self.label.change(text = label_text, offset_str = "top", offset = (0, 20), zindex = 100)
 
         tile_size = self.scene.size[0] / (level_data["tile_count_x"] - 1)
         tile_for_y = int(tile_size)
@@ -642,7 +646,7 @@ class GameLevel:
 
         self.finish["box"].change(offset = (level_data["finish"][0] * self.grid.tile_size[0] + self.grid_encloser.offset[0], level_data["finish"][1] * self.grid.tile_size[1] + self.grid_encloser.offset[1]))
         self.finish["sprite"].change(size = self.grid.tile_size)
-        self.finish["collision"].collision_blocks[0].change(size = (self.grid.tile_size[0] * 0.8, self.grid.tile_size[1] * 0.8), offset = (self.grid.tile_size[0] * 0.1, self.grid.tile_size[1] * 0.1))
+        self.finish["collision"].collision_blocks[0].change(size = (self.grid.tile_size[0] * 0.5, self.grid.tile_size[1] * 0.2), offset = (self.grid.tile_size[0] * 0.1, self.grid.tile_size[1] * 0.8))
         self.finish["timer"].end()
 
         self.finished = False
@@ -657,25 +661,27 @@ class GameLevel:
 
         if self.new_pos.x + self.player["sprite"].size[0] > self.scene.size[0] or self.new_pos.x < 0 or self.new_pos.y + self.player["sprite"].size[1] > self.scene.size[1]:
             self.playerDeath()
-            return
+            return 
 
-        if self.new_pos.distance_to(self.last_pos) > self.grid.tile_size[0] / 45 or not self.player["move"].on_ground:
-            print(self.grid.tile_size[0] / 40)
-            self.cover.change(active = True)
-            #self.transparency = max(0, self.transparency - 40)
-        else:
-            self.cover.change(active = False)
-            #self.transparency = min(255, self.transparency + 50)
-
-        """#new_background = self.global_assets["backgrounds"][self.level_data["tile_set"]].image.copy()
-        #self.cover.change(image = new_background.set_alpha(self.transparency))"""
+        is_moving = self.new_pos.distance_to(self.last_pos) > (self.grid.tile_size[0] / 42)
         
+        if is_moving or not self.player["move"].on_ground:
+            self.cover.change(active = True)
+            self.can_cover = True
+            self.cover_timer.start()
+        else:
+            if not self.can_cover:
+                self.cover.change(active = False)
+
         x_dif = self.new_pos.x - self.last_pos.x
         y_dif = self.new_pos.y - self.last_pos.y
 
         dir_changed = self.figurePlayerDirection(x_dif)
         self.managePlayerAnimation(x_dif, y_dif, dir_changed)
         self.last_pos = self.new_pos
+
+    def coverCanCover(self, bool : bool):
+        self.can_cover = bool
 
     
     def figurePlayerDirection(self, x_dif):
@@ -892,7 +898,7 @@ class F_Enemy:
         self.sprite = nodes.AnimatedSpriteBlock(self.box, size, self.global_assets["animations"][tile_set]["f_enemy"]["idle"]["right"].frames, fps = 20, offset = [0, 0])
         self.collision = nodes.CollisionArea(self.box, 3)
         self.collision.addCollisionBlock([size[0] * 0.7, size[1] * 0.7], offset = [size[0] * 0.15, size[1] * 0.15])
-        self.move = EnemyMove(self.box, colide_with = 2, gravity = 0, speed = 55 * (size[0] / 40))
+        self.move = EnemyMove(self.box, colide_with = 2, gravity = 0, speed = 65 * (size[0] / 40))
 
         self.current_anim = "idle"
         self.last_dir = "right"
