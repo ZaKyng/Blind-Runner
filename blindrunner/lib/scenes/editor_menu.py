@@ -62,7 +62,7 @@ class PlayerLevels:
 
         offset_y += last_y_size + self.gap
         
-        self.background.change(size = (self.background.size.x, max(offset_y + self.gap, self.background.game.vh * 100)))
+        self.background.change(size = (self.background.size.x, max(offset_y + self.gap, self.background.game.vh * 120)))
         self.background.collision[0].collision_blocks[0].change(size = self.background.size)
     
     def playLevel(self, name):

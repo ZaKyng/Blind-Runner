@@ -113,19 +113,19 @@ class PlayerMove(base.Modifier):
 
     def event(self, event):
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE or event.key == pygame.K_w or event.key == pygame.K_UP:
                 self.jump = True
-            elif event.key == pygame.K_a:
+            elif event.key == pygame.K_a or event.key == pygame.K_LEFT:
                 self.a_pressed = True
-            elif event.key == pygame.K_d:
+            elif event.key == pygame.K_d or event.key == pygame.K_RIGHT:
                 self.d_pressed = True
         
         elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE or event.key == pygame.K_w or event.key == pygame.K_UP:
                 self.jump = False
-            elif event.key == pygame.K_a:
+            elif event.key == pygame.K_a or event.key == pygame.K_LEFT:
                 self.a_pressed = False
-            elif event.key == pygame.K_d:
+            elif event.key == pygame.K_d or event.key == pygame.K_RIGHT:
                 self.d_pressed = False
         
         self.direction.x = (self.d_pressed - self.a_pressed) if (self.a_pressed or self.d_pressed) else 0
@@ -145,8 +145,12 @@ class PlayerMove(base.Modifier):
             self.jump = False
 
         offset_change = pygame.Vector2(self.velocity.x * dt, self.velocity.y * dt)
-        offset_change = self.collide_x(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
-        offset_change = self.collide_y(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
+        if abs(offset_change.x) >= abs(offset_change.y):
+            offset_change = self.collide_x(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
+            offset_change = self.collide_y(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
+        else:
+            offset_change = self.collide_y(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
+            offset_change = self.collide_x(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
 
         self.parentNode.change(offset = self.parentNode.offset + offset_change)
         super().update()
@@ -211,9 +215,7 @@ class PlayerMove(base.Modifier):
             return new_change
 
         for node in parent_node.children:
-            child_change = self.collide_x(new_change, node)
-            if child_change != new_change:
-                return child_change
+            new_change = self.collide_x(new_change, node)
 
             if not isinstance(node, nodes.CollisionArea):
                 continue
@@ -227,7 +229,7 @@ class PlayerMove(base.Modifier):
 
                 for ownHitBox in ownHitArea.collision_blocks:
                     ownHitBox.update()
-                    predicted_left = ownHitBox.position.x + offset_change.x
+                    predicted_left = ownHitBox.position.x + new_change.x
                     predicted_top = ownHitBox.position.y
                     predicted_right = predicted_left + ownHitBox.size.x
                     predicted_bottom = predicted_top + ownHitBox.size.y
@@ -270,9 +272,7 @@ class PlayerMove(base.Modifier):
             return new_change
 
         for node in parent_node.children:
-            child_change = self.collide_y(new_change, node)
-            if child_change != new_change:
-                return child_change
+            new_change = self.collide_y(new_change, node)
 
             if not isinstance(node, nodes.CollisionArea):
                 continue
@@ -287,7 +287,7 @@ class PlayerMove(base.Modifier):
                 for ownHitBox in ownHitArea.collision_blocks:
                     ownHitBox.update()
                     predicted_left = ownHitBox.position.x
-                    predicted_top = ownHitBox.position.y + offset_change.y
+                    predicted_top = ownHitBox.position.y + new_change.y
                     predicted_right = predicted_left + ownHitBox.size.x
                     predicted_bottom = predicted_top + ownHitBox.size.y
 
@@ -346,8 +346,12 @@ class EnemyMove(PlayerMove):
             self.velocity.y = self.direction.y * self.speed
 
         offset_change = pygame.Vector2(self.velocity.x * dt, self.velocity.y * dt)
-        offset_change = self.collide_x(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
-        offset_change = self.collide_y(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
+        if abs(offset_change.x) >= abs(offset_change.y):
+            offset_change = self.collide_x(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
+            offset_change = self.collide_y(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
+        else:
+            offset_change = self.collide_y(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
+            offset_change = self.collide_x(offset_change, self.game.scenes.scenes[self.game.scenes.current_scene])
 
         self.parentNode.change(offset = self.parentNode.offset + offset_change)
         super().update()
@@ -383,9 +387,7 @@ class EnemyMove(PlayerMove):
             return new_change
 
         for node in parent_node.children:
-            child_change = self.collide_x(new_change, node)
-            if child_change != new_change:
-                return child_change
+            new_change = self.collide_x(new_change, node)
 
             if not isinstance(node, nodes.CollisionArea):
                 continue
@@ -399,7 +401,7 @@ class EnemyMove(PlayerMove):
 
                 for ownHitBox in ownHitArea.collision_blocks:
                     ownHitBox.update()
-                    predicted_left = ownHitBox.position.x + offset_change.x
+                    predicted_left = ownHitBox.position.x + new_change.x
                     predicted_top = ownHitBox.position.y
                     predicted_right = predicted_left + ownHitBox.size.x
                     predicted_bottom = predicted_top + ownHitBox.size.y
@@ -442,9 +444,7 @@ class EnemyMove(PlayerMove):
             return new_change
 
         for node in parent_node.children:
-            child_change = self.collide_y(new_change, node)
-            if child_change != new_change:
-                return child_change
+            new_change = self.collide_y(new_change, node)
 
             if not isinstance(node, nodes.CollisionArea):
                 continue
@@ -459,7 +459,7 @@ class EnemyMove(PlayerMove):
                 for ownHitBox in ownHitArea.collision_blocks:
                     ownHitBox.update()
                     predicted_left = ownHitBox.position.x
-                    predicted_top = ownHitBox.position.y + offset_change.y
+                    predicted_top = ownHitBox.position.y + new_change.y
                     predicted_right = predicted_left + ownHitBox.size.x
                     predicted_bottom = predicted_top + ownHitBox.size.y
 
@@ -502,6 +502,8 @@ class GameLevel:
         self.scene = scene
         self.global_assets = global_assets
         self.finish_func = finish_func
+
+        self.previous_scene = previous_scene
 
         self.level_name = level_name
 
@@ -554,7 +556,7 @@ class GameLevel:
         self.finish["sprite"] = nodes.SpriteBlock(self.finish["box"], (40, 40), self.global_assets["tile_maps"][0].grid[finish_tile[0]][finish_tile[1]], offset = [0, 0])
         self.finish["collision"] = nodes.CollisionArea(self.finish["box"], 4)
         self.finish["collision"].addCollisionBlock((40, 40), offset = [0, 0])
-        self.finish["timer"] = modifiers.Timer(self.finish["box"], 2.5, lambda: self.scene.game.scenes.changeScene(previous_scene))
+        self.finish["timer"] = modifiers.Timer(self.finish["box"], 2.5, lambda: self.scene.game.scenes.changeScene(self.previous_scene))
 
         modifiers.OnCollideDo(self.finish["box"], self.finish_level, 1)
 
@@ -781,6 +783,8 @@ class GameLevel:
     def finish_level(self):
         if self.finished:
             return
+        
+        
 
         self.finished = True
 
@@ -799,7 +803,27 @@ class GameLevel:
             if hasattr(enemy, "move"):
                 enemy.move.change(active = False)
 
+        self.credits()
+        
         self.finish["timer"].start()
+    
+    def credits(self):
+        if self.scene.name != "ingame_level":
+            return False
+    
+
+        if self.level_name != "dont_get_lost.txt":
+            return False
+
+        self.finish["timer"].change(func = self.tempTimerFunc)
+        
+    
+    def tempTimerFunc(self):
+        self.scene.game.scenes.changeScene("thanks")
+
+        self.finish["timer"].change(func = lambda: self.scene.game.scenes.changeScene(self.previous_scene))
+
+
 
 
 class Spike:

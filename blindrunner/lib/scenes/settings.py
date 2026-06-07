@@ -17,18 +17,19 @@ class Settings:
         self.global_assets = global_assets
 
         self.scene = nodes.Scene(self.name, game, bg_color = (26, 26, 26))
+        self.scene.change(onEntry = lambda: self.reset_screen.change(active = False))
         self.changers = []
 
         fps_tile = nodes.BaseNode(self.scene, offset_str = "top", offset = (0, 0))
 
-        fps_label = nodes.Label(fps_tile, "Visual settings", "main", "l", offset_str = "top", offset = (0, 40))
+        fps_label = nodes.Label(fps_tile, "Visual settings", "main", "l", offset_str = "top", offset = (0, 60))
 
-        self.changers.append(IntChanger(fps_tile, "FPS cap", game.tick_speed, self.changeFPS, self.global_assets, step = 25, offset = (-220, 220)))
-        self.changers.append(Toggle(fps_tile, "Show FPS", self.showFPS, self.global_assets, offset = (240, 220)))
+        self.changers.append(IntChanger(fps_tile, "FPS cap", game.tick_speed, self.changeFPS, self.global_assets, step = 25, offset = (-220, 260)))
+        self.changers.append(Toggle(fps_tile, "Show FPS", self.showFPS, self.global_assets, offset = (240, 260)))
 
-        spacer1 = nodes.ColorBlock(self.scene, (1600, 5), (120, 120, 120), offset_str = "top", offset = (0, 300))
+        spacer1 = nodes.ColorBlock(self.scene, (1600, 5), (120, 120, 120), offset_str = "top", offset = (0, 340))
 
-        audio_tile = nodes.BaseNode(self.scene, offset_str = "top", offset = (0, 340))
+        audio_tile = nodes.BaseNode(self.scene, offset_str = "top", offset = (0, 380))
 
         audio_label = nodes.Label(audio_tile, "Audio settings", "main", "l", offset_str = "top", offset = (0, 0))
         
@@ -37,14 +38,22 @@ class Settings:
         self.changers.append(Slider(audio_tile, "SFX volume", lambda value: self.game.audio_player.changeVolume(value, "sfx"), self.global_assets, init = 1, offset = (0, 230)))
         sfx_test = Button(audio_tile, (110, 45), self.global_assets["test_button"].image, self.testSFXVolume, offset = (400, 220))
 
-        self.changers.append(ButtonText(self.scene, "Factory reset", "main", lambda: self.hardReset(game), white_txt = False, offset_str = "bottom-right", offset = (-30, -20)))
-
         self.fps_display = nodes.Label(self.scene, f"{1 / self.scene.game.delta} FPS", "main", "s", color = (10, 250, 10), zindex = 100, offset_str = "top-right")
         self.fps_display.change(active = False)
         modifiers.ForeverDo(self.fps_display, self.updateFPS)
         self.display_update = 0.0
 
-        spacer2 = nodes.ColorBlock(self.scene, (1600, 5), (120, 120, 120), offset_str = "top", offset = (0, 640))
+        spacer2 = nodes.ColorBlock(self.scene, (1600, 5), (120, 120, 120), offset_str = "top", offset = (0, 680))
+
+        Button(self.scene, (240, 120), global_assets["buttons"].grid[9][0], lambda: game.scenes.changeScene("support"), 4, offset_str = "bottom", offset = (-390, -250))
+        Button(self.scene, (240, 120), global_assets["buttons"].grid[10][0], lambda: game.scenes.changeScene("credits"), 4, offset_str = "bottom", offset = (0, -250))
+        Button(self.scene, (240, 120), global_assets["buttons"].grid[11][0], self.switchResetScreen, 4, offset_str = "bottom", offset = (390, -250))
+
+        self.reset_screen = nodes.ColorBlock(self.scene, self.scene.size, color = (14, 14, 14, 210), zindex = 900, alpha_channel = True)
+
+        nodes.Label(self.reset_screen, "Do you want to reset the progress?", "main", "l", (248, 248, 248), offset_str = "center", offset = (0, -90))
+        Button(self.reset_screen, (110, 110), global_assets["arrows"].grid[0][17], lambda: self.hardReset(game), 0, "center", (-130, 40))
+        Button(self.reset_screen, (110, 110), global_assets["arrows"].grid[0][5], self.switchResetScreen, 0, "center", (130, 40))
         
         modifiers.PressKey(self.scene, pygame.K_ESCAPE, lambda: game.scenes.changeScene(self.last_scene))
     
@@ -79,6 +88,9 @@ class Settings:
     def testSFXVolume(self):
         self.game.audio_player.playMusic("sfx", "win")
 
+    def switchResetScreen(self):
+        self.reset_screen.change(active = self.reset_screen.active == False)
+
     def hardReset(self, game):
         backup_folder = game.directory("backup_levels")
         for file_name in os.listdir(backup_folder):
@@ -86,6 +98,8 @@ class Settings:
 
             for key in real_data.keys():
                 resources.SaveData(game.directory("ingame_levels/" + str(file_name)), key, real_data[key])
+
+        self.switchResetScreen()
 
     
     def open(self, scene):
@@ -144,7 +158,7 @@ class Slider:
 
         self.text = nodes.Label(self.origin, title, "main", "m", color = (210, 210, 210), offset_str = "right", offset = (-120, -5))
 
-        self.slider_bg = Button(self.origin, (384, 20), self.global_assets["slider"]["bg"].image, self.clickSlider, higherBy = 0, offset_str = "left", offset = (80, -10))
+        self.slider_bg = Button(self.origin, (384, 20), self.global_assets["slider"]["bg"].image, self.clickSlider, higherBy = 0, offset_str = "left", offset = (100, -10))
         self.slider_fg = Button(self.slider_bg.origin, (36, 36), self.global_assets["slider"]["fg"].image, self.activateDrag, offset_str = "center", offset = (((self.value * 2) - 1) * 192, 0))
         self.slider_fg.origin.change(zindex = 100)
         self.slider_fg.sprite.change(zindex = 100)

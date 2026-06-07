@@ -10,7 +10,7 @@
         5
     ],
     "possible": true,
-    "finished": false,
+    "finished": true,
     "spikes": [],
     "ground": [
         [
@@ -92,9 +92,7 @@
     ],
     "g_enemy": [],
     "f_enemy": [],
-    "locked_by": [
-        "i_cant_see"
-    ],
+    "locked_by": [],
     "unlocks": [
         "analyse",
         "dont_fall"

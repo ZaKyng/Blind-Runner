@@ -1,6 +1,6 @@
 [project]
 name = "BlindRunner"
-version = "0.1"
+version = "1.0"
 authors = [
   { name="Olievr Jan Pohl", email="zakyng32@gmail.com" },
 ]
@@ -26,6 +26,7 @@ blindrunner = [
     "assets/*",
     "ingame_levels/*",
     "player_levels/*",
+    "backup_levels/*",
     "lib/**/*",
     "*.txt"
 ]

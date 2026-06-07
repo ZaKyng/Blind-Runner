@@ -109,7 +109,7 @@ def run():
     global_assets["backgrounds"].append(resources.Image(my_game.directory("assets/backgrounds-3-test.png")))
     global_assets["backgrounds"].append(resources.Image(my_game.directory("assets/backgrounds-4-test.png")))
 
-    global_assets["buttons"] = resources.SpriteSheet(my_game.directory("assets/buttons2.png"), (64, 32), alpha_channel = True)
+    global_assets["buttons"] = resources.SpriteSheet(my_game.directory("assets/buttons3.png"), (64, 32), alpha_channel = True)
 
     global_assets["level_card"] = resources.Image(my_game.directory("assets/player-level-card.png"), alpha_channel = True)
 
@@ -195,9 +195,9 @@ def run():
         global_assets["animations"][tile_set]["f_enemy"]["idle"]["left"] = resources.Animation(f_enemy_idle_animation_l, 0, 1)
 
 
-    global_assets["music"].append(resources.Sound(my_game.directory("assets/test-music-1.mp3")))
-    global_assets["music"].append(resources.Sound(my_game.directory("assets/test-music-2.mp3")))
-    global_assets["music"].append(resources.Sound(my_game.directory("assets/test-music-3.mp3")))
+    global_assets["music"].append(resources.Sound(my_game.directory("assets/menu-music.mp3")))
+    global_assets["music"].append(resources.Sound(my_game.directory("assets/level-music.mp3")))
+    global_assets["music"].append(resources.Sound(my_game.directory("assets/running-music.mp3")))
 
 
     editor = level_editor.LevelEditor(my_game, global_assets)
@@ -217,6 +217,12 @@ def run():
     one_player_level = player_level_play.Level(my_game, settings_scene, global_assets)
 
     editor_menu.PlayerLevels(my_game, one_player_level, editor, global_assets)
+
+    br_credits.Credits(my_game, global_assets)
+
+    br_credits.Final(my_game, global_assets)
+
+    support.Support(my_game, global_assets)
 
     settings_scene.addFPSToScenes()
     

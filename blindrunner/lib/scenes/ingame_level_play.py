@@ -19,7 +19,7 @@ class Level:
     def load(self, name):
         self.level_name = name
 
-        self.level.load(self.scene.game.directory("player_levels/" + name), name)
+        self.level.load(self.scene.game.directory("ingame_levels/" + name), name)
 
 
     def finish(self):

@@ -11,7 +11,7 @@ class Levels:
 
         self.scene = nodes.Scene(self.name, game, bg_color = (0, 0, 0))
 
-        self.bg_image = resources.Image(game.directory("assets/blindrunner-map3.png"))
+        self.bg_image = resources.Image(game.directory("assets/blindrunner-map2.png"))
         self.background = nodes.SpriteBlock(self.scene, (296 * game.vh, 184 * game.vh), self.bg_image.image, offset = (-20 * game.vh, -20 * game.vh))
         self.background_limits = [[self.background.offset.x, game.orig_screen_size.x - self.background.size.x - self.background.offset.x], [self.background.offset.y, game.orig_screen_size.y - self.background.size.y - self.background.offset.y]]
         collision = nodes.CollisionArea(self.background, 12)
@@ -60,7 +60,8 @@ class Levels:
         self.drag_move.change(active = True)
 
         for level in self.level_array:
-            level.update()
+            if level.origin is not None:
+                level.update()
         
     def exitScene(self):
         self.drag_move.mouse_clicked = False
@@ -76,6 +77,9 @@ class oneLevel:
         self.lock = lock
 
         self.level_data = level_data
+
+        if level_data is None:
+            return
 
         self.name = name
 

@@ -241,9 +241,7 @@
     ],
     "g_enemy": [],
     "f_enemy": [],
-    "locked_by": [
-        "lava_island"
-    ],
+    "locked_by": [],
     "unlocks": [
         "not_friends",
         "they_fly_now"

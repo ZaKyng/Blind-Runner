@@ -214,7 +214,6 @@
     ],
     "f_enemy": [],
     "locked_by": [
-        "dont_fall",
         "a_long_jump"
     ],
     "unlocks": [

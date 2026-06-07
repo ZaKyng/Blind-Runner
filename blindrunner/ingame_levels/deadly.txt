@@ -145,10 +145,7 @@
         ]
     ],
     "f_enemy": [],
-    "locked_by": [
-        "analyse",
-        "dont_fall"
-    ],
+    "locked_by": [],
     "unlocks": [
         "duel"
     ],

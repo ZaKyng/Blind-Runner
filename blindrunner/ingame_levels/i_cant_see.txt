@@ -10,7 +10,7 @@
         5
     ],
     "possible": true,
-    "finished": false,
+    "finished": true,
     "spikes": [],
     "ground": [
         [
