@@ -791,7 +791,7 @@ class AnimatedSpriteBlock(Node):
         super().event(event)
     
     def update(self):
-        self.count += 1
+        self.count += 1 * self.game.delta
         if self.count >= self.frameLen:
             self.count = 0
             self.index += 1
@@ -843,7 +843,7 @@ class AnimatedSpriteBlock(Node):
         if sizer is not None:
             self.change(size = Vector2(self.size.x * sizer.x, self.size.y * sizer.y), offset = Vector2(self.offset.x * sizer.x, self.offset.y * sizer.y))
         
-        self.frameLen = self.game.tick_speed // self.fps
+        self.frameLen = self.game.tick_speed / (self.fps * 100)
         
 
     def kill(self):
@@ -972,6 +972,9 @@ class TileMapLayer(Node):
     def __init__(self, tileMap : TileMap, physical : bool = False, physics_layer : int = 0, zindex : float = 0):
         super().__init__(tileMap, size = Vector2(0, 0), offset = Vector2(0, 0), zindex = zindex)
 
+        self.blocks = {}
+        self.collision_blocks = {}
+
         self.collisionArea = CollisionArea(self, physics_layer = 0)
         self.change(physical = physical, physics_layer = physics_layer, zindex = zindex, active = True)
 
@@ -987,7 +990,7 @@ class TileMapLayer(Node):
     def addChild(self, newChild):
         super().addChild(newChild)
 
-    def change(self, physical : bool = None, physics_layer : int = 0, zindex = None, active = None):
+    def change(self, physical : bool = None, physics_layer : int = None, zindex = None, active = None):
         if physical is not None:
             if physical:
                 self.collisionArea.change(active = True)
@@ -1004,30 +1007,24 @@ class TileMapLayer(Node):
     
 
     def addTile(self, coords, tile_coords):
-        TileMapBlock(self, self.parentNode.tile_size, self.parentNode.tile_node, tile_coords, offset = Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]))
+        self.blocks[tuple(coords)] = TileMapBlock(self, self.parentNode.tile_size, self.parentNode.tile_node, tile_coords, offset = Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]))
+        
     
     def changeTile(self, coords, tile_coords):
-        for tile in self.children:
-            if isinstance(tile, TileMapBlock):
-                if tile.offset == Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]):
-                    tile.change(coords = tile_coords)
-                    return
+        self.blocks[tuple(coords)].change(coords = tile_coords)
     
     def killTile(self, coords):
-        for tile in self.children:
-            if isinstance(tile, TileMapBlock):
-                if tile.offset == Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]):
-                    tile.kill()
-                    return
+        if tuple(coords) in self.blocks:
+            self.blocks[tuple(coords)].kill()
+            del self.blocks[tuple(coords)]
     
     def addCollision(self, coords):
-        CollisionBlock(self.collisionArea, self.parentNode.tile_size, offset = Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]))
-    
+        self.collision_blocks[tuple(coords)] = CollisionBlock(self.collisionArea, self.parentNode.tile_size, offset = Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]))
+        
     def killCollision(self, coords):
-        for tile in self.collisionArea.collision_blocks:
-            if tile.offset == Vector2(coords[0] * self.parentNode.tile_size[0], coords[1] * self.parentNode.tile_size[1]):
-                tile.kill()
-                return
+        if tuple(coords) in self.collision_blocks:
+            self.collision_blocks[tuple(coords)].kill()
+            del self.collision_blocks[tuple(coords)]
 
 
 

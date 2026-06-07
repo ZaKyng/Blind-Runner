@@ -1,0 +1,76 @@
+{
+    "tile_count_x": 12,
+    "tile_set": 0,
+    "player_spawn": [
+        1,
+        5
+    ],
+    "finish": [
+        10,
+        5
+    ],
+    "possible": true,
+    "finished": false,
+    "spikes": [],
+    "ground": [
+        [
+            0,
+            6
+        ],
+        [
+            1,
+            6
+        ],
+        [
+            2,
+            6
+        ],
+        [
+            3,
+            6
+        ],
+        [
+            4,
+            6
+        ],
+        [
+            5,
+            6
+        ],
+        [
+            6,
+            6
+        ],
+        [
+            7,
+            6
+        ],
+        [
+            8,
+            6
+        ],
+        [
+            9,
+            6
+        ],
+        [
+            10,
+            6
+        ],
+        [
+            11,
+            6
+        ]
+    ],
+    "g_enemy": [],
+    "f_enemy": [],
+    "locked_by": [],
+    "unlocks": [
+        "grounded",
+        "lava_island"
+    ],
+    "offset": [
+        20,
+        20
+    ]
+}

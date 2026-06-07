@@ -1,0 +1,80 @@
+{
+    "tile_count_x": 18,
+    "tile_set": 0,
+    "player_spawn": [
+        2,
+        7
+    ],
+    "finish": [
+        4,
+        1
+    ],
+    "possible": true,
+    "finished": true,
+    "spikes": [],
+    "ground": [
+        [
+            1,
+            8
+        ],
+        [
+            2,
+            8
+        ],
+        [
+            3,
+            8
+        ],
+        [
+            6,
+            7
+        ],
+        [
+            10,
+            7
+        ],
+        [
+            14,
+            6
+        ],
+        [
+            16,
+            5
+        ],
+        [
+            17,
+            5
+        ],
+        [
+            12,
+            3
+        ],
+        [
+            3,
+            2
+        ],
+        [
+            4,
+            2
+        ],
+        [
+            5,
+            2
+        ],
+        [
+            8,
+            2
+        ]
+    ],
+    "g_enemy": [],
+    "f_enemy": [],
+    "locked_by": [],
+    "unlocks": [
+        "deadly",
+        "not_friends"
+    ],
+    "offset": [
+        63,
+        80
+    ]
+}

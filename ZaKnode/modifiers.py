@@ -820,6 +820,8 @@ class Hover(Modifier):
 class PressKey(Modifier):
     def __init__(self, parentNode : Node, key, function : callable, keydown : bool = True, mouse : bool = False):
         super().__init__(parentNode)
+
+        self.mouse_press = False
         
         self.change(key = key, func = function, keydown = keydown, mouse = mouse, active = True)
 
@@ -846,10 +848,10 @@ class PressKey(Modifier):
             self.keydown = keydown
 
         if mouse is not None:
-            self.mouse = mouse
+            self.mouse_press = mouse
         
         if mouse is not None or keydown is not None:
-            if self.mouse:
+            if self.mouse_press:
                 self.input_type = self.mouse
                 if self.keydown:
                     self.event_type = pygame.MOUSEBUTTONDOWN
@@ -928,6 +930,30 @@ class HoldKey(Modifier):
     
     def keyboard(self, event):
         return event.key == self.key
+
+class OnEventFunc(Modifier):
+    def __init__(self, parentNode : Node, func : callable):
+        super().__init__(parentNode)
+        self.change(func = func)
+
+    def event(self, event):
+        self.func(event)
+        super().event(event)
+    
+    def update(self):
+        super().update()
+
+    def draw(self, scale = Vector2(1, 1)):
+        super().draw(scale)
+
+    def change(self, func : callable = None, active : bool = None):
+        if func is not None:
+            self.func = func
+
+        super().modifierChange(active)
+
+    def kill(self):
+        super().kill()
 
 class ForeverDo(Modifier):
     def __init__(self, parentNode : Node, func : callable):
@@ -1191,6 +1217,9 @@ class Timer(Modifier):
         self.elapsed = 0.0
         self.active = True
     
+    def pause(self):
+        self.active = self.active == False
+    
     def end(self):
         self.active = False
 
@@ -1217,8 +1246,9 @@ class SoundEffectPlayer(Modifier):
     def change(self, volume : float = None, active : bool = None):
         if volume is not None:
             self.volume = max(0, min(volume, 1))
-            for track in self.sounds:
-                track.sound.set_volume(track.volume * self.volume)
+            for sound in self.sounds.values():
+                sound.parent_volume = self.volume
+                sound.sound.set_volume(sound.volume * self.volume)
         super().modifierChange(active)
 
     def kill(self):
@@ -1252,7 +1282,8 @@ class MusicPlayer(Modifier):
     def change(self, volume : float = None, active : bool = None):
         if volume is not None:
             self.volume = max(0, min(volume, 1))
-            for track in self.tracks:
+            for track in self.tracks.values():
+                track.parent_volume = self.volume
                 track.sound.set_volume(track.volume * self.volume)
         super().modifierChange(active)
 

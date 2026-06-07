@@ -6,12 +6,12 @@ from ..lib import Button
 
 
 class Levels:
-    def __init__(self, game : nodes.Game, level_node):
+    def __init__(self, game : nodes.Game, level_node, global_assets):
         self.name = "levels"
 
         self.scene = nodes.Scene(self.name, game, bg_color = (0, 0, 0))
 
-        self.bg_image = resources.Image(game.directory("assets/blindrunner-map.png"))
+        self.bg_image = resources.Image(game.directory("assets/blindrunner-map2.png"))
         self.background = nodes.SpriteBlock(self.scene, (296 * game.vh, 184 * game.vh), self.bg_image.image, offset = (-20 * game.vh, -20 * game.vh))
         self.background_limits = [[self.background.offset.x, game.orig_screen_size.x - self.background.size.x - self.background.offset.x], [self.background.offset.y, game.orig_screen_size.y - self.background.size.y - self.background.offset.y]]
         collision = nodes.CollisionArea(self.background, 12)
@@ -22,16 +22,16 @@ class Levels:
 
         self.scene.change(onEntry = self.enterScene, onExit = self.exitScene)
 
-        unlocked = resources.SpriteSheet(game.directory("assets/level-icons.png"), [32, 32], alpha_channel = True)
-        locked = resources.SpriteSheet(game.directory("assets/locked-icons.png"), [32, 32], alpha_channel = True)
-        check = resources.Image(game.directory("assets/level-check.png"), alpha_channel = True)
-        lock = resources.Image(game.directory("assets/lock.png"), alpha_channel = True)
+        unlocked = global_assets["levels"]["unlocked"]
+        locked = global_assets["levels"]["locked"]
+        check = global_assets["levels"]["check"]
+        lock = global_assets["levels"]["lock"]
 
         self.level_array = []
-        levels = resources.ReadData(game.directory("test-levels.txt"))
-        if levels is not None and len(levels) > 0:
-            for key in list(levels.keys()):
-                self.level_array.append(oneLevel(self.background, key, level_node, unlocked, locked, check, lock))
+        levels_folder = game.directory("ingame_levels")
+        for file_name in os.listdir(levels_folder):
+            level_data = resources.ReadData(levels_folder + "/" + file_name)
+            self.level_array.append(oneLevel(self.background, file_name, level_data, level_node, unlocked, locked, check, lock))
 
     def snapBackground(self):
         outside = False
@@ -60,7 +60,8 @@ class Levels:
         self.drag_move.change(active = True)
 
         for level in self.level_array:
-            level.update()
+            if level.origin is not None:
+                level.update()
         
     def exitScene(self):
         self.drag_move.mouse_clicked = False
@@ -69,18 +70,23 @@ class Levels:
 
 
 class oneLevel:
-    def __init__(self, parentNode, name, level_node, icons1, icons2, check, lock):
+    def __init__(self, parentNode, name, level_data, level_node, icons1, icons2, check, lock):
         self.parentNode = parentNode
         self.level_node = level_node
-        self.name = name
         self.icons = [icons1, icons2]
         self.lock = lock
 
-        level_data = resources.ReadData(self.parentNode.game.directory("test-levels.txt"), str(self.name))
-        self.origin = nodes.BaseNode(parentNode, offset = [level_data["offset"][0] * self.parentNode.game.vh, level_data["offset"][1] * self.parentNode.game.vh,])
+        self.level_data = level_data
+
+        if level_data is None:
+            return
+
+        self.name = name
+
+        self.origin = nodes.BaseNode(parentNode, offset = [(level_data["offset"][0] + 20) * self.parentNode.game.vh, (level_data["offset"][1] + 20) * self.parentNode.game.vh,])
         
         self.click_modifier = modifiers.ClickObject(self.origin, 7, lambda: self.enterLevel(name), button = 1)
-        self.sprite = nodes.TileMapBlock(self.origin, (self.origin.game.vh * 15, self.origin.game.vh * 15), icons1, [level_data["icon"], 0], offset_str = "center")
+        self.sprite = nodes.TileMapBlock(self.origin, (self.origin.game.vh * 15, self.origin.game.vh * 15), icons1, [level_data["tile_set"], 0], offset_str = "center")
 
         self.check = nodes.SpriteBlock(self.origin, (self.origin.game.vh * 7.5, self.origin.game.vh * 5), check.image, zindex = 5, offset = (self.origin.game.vh * 2.5, self.origin.game.vh * 3))
 
@@ -113,7 +119,7 @@ class oneLevel:
         self.lock_node.change(offset_str = "center")
 
     def update(self):
-        level_data = resources.ReadData(self.origin.game.directory("test-levels.txt"), str(self.name))
+        level_data = resources.ReadData(self.origin.game.directory("ingame_levels/" + str(self.name)))
 
         if level_data["locked_by"] != []:
             self.sprite.change(tile_node = self.icons[1])
