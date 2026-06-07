@@ -125,11 +125,17 @@ Two possible approaches:
 Install:
 ```bash
 pip install name-of-the-file.whl
+
+latest:
+pip install blindrunner-1.0-py3-none-any.whl
 ```
 
 Update/reinstall:
 ```bash
 pip install --force-reinstall name-of-the-file.whl
+
+latest:
+pip install --force-reinstall blindrunner-1.0-py3-none-any.whl
 ```
 
 ### Running
