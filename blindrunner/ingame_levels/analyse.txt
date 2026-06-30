@@ -10,7 +10,7 @@
         7
     ],
     "possible": true,
-    "finished": true,
+    "finished": false,
     "spikes": [
         [
             13,
@@ -193,7 +193,9 @@
     ],
     "g_enemy": [],
     "f_enemy": [],
-    "locked_by": [],
+    "locked_by": [
+        "grounded"
+    ],
     "unlocks": [
         "deadly"
     ],

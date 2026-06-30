@@ -3,9 +3,9 @@ import pygame
 #import new_nodes
 from pygame import Vector2
 from ZaKnode import *
-from .lib import lib
-from .lib import level_config
-from .lib.scenes import *
+from lib import lib
+from lib import level_config
+from lib.scenes import *
 
 
 # ----- Pygame setup ----- #

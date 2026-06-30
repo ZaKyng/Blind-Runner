@@ -10,7 +10,7 @@
         8
     ],
     "possible": true,
-    "finished": true,
+    "finished": false,
     "spikes": [
         [
             11,
@@ -161,7 +161,9 @@
     ],
     "g_enemy": [],
     "f_enemy": [],
-    "locked_by": [],
+    "locked_by": [
+        "i_cant_see"
+    ],
     "unlocks": [
         "dont_fall",
         "a_long_jump"
